@@ -68,5 +68,3 @@ Why this stack works for your idea:
 - **Real-Time Capabilities:** Supabase supports live updates, allowing parents to view bus movement instantly.
 - **Scalability:** PostgreSQL supports multi-tenancy so each school's data remains isolated and manageable.
 - **Geospatial Power:** PostgreSQL with PostGIS is a strong standard for route and distance calculations.
-
-Would you like these technical details embedded directly into a final Lovable-ready prompt?
