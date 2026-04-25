@@ -284,11 +284,84 @@ CREATE TABLE attendance (
 CREATE INDEX idx_bus_locations_bus_id ON bus_locations(bus_id, timestamp DESC);
 ```
 
-### Row Level Security (RLS) Summary
+### Row Level Security (RLS) Policies
+
+```sql
+-- Helper: get the current user's role
+CREATE OR REPLACE FUNCTION get_user_role()
+RETURNS TEXT AS $$
+  SELECT role FROM user_roles WHERE user_id = auth.uid() LIMIT 1;
+$$ LANGUAGE sql SECURITY DEFINER;
+
+-- Helper: get the current user's school_id
+CREATE OR REPLACE FUNCTION get_user_school_id()
+RETURNS UUID AS $$
+  SELECT school_id FROM user_roles WHERE user_id = auth.uid() LIMIT 1;
+$$ LANGUAGE sql SECURITY DEFINER;
+
+-- Enable RLS on all tables
+ALTER TABLE schools ENABLE ROW LEVEL SECURITY;
+ALTER TABLE buses ENABLE ROW LEVEL SECURITY;
+ALTER TABLE students ENABLE ROW LEVEL SECURITY;
+ALTER TABLE routes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE bus_locations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE announcements ENABLE ROW LEVEL SECURITY;
+ALTER TABLE attendance ENABLE ROW LEVEL SECURITY;
+
+-- SCHOOLS
+CREATE POLICY "Platform admin full access" ON schools FOR ALL
+  USING (get_user_role() = 'platform_admin');
+CREATE POLICY "School admin reads own school" ON schools FOR SELECT
+  USING (id = get_user_school_id());
+
+-- BUSES
+CREATE POLICY "Platform admin full access" ON buses FOR ALL
+  USING (get_user_role() = 'platform_admin');
+CREATE POLICY "School admin manages own buses" ON buses FOR ALL
+  USING (school_id = get_user_school_id());
+CREATE POLICY "Driver reads assigned bus" ON buses FOR SELECT
+  USING (driver_id = auth.uid());
+
+-- STUDENTS
+CREATE POLICY "Platform admin full access" ON students FOR ALL
+  USING (get_user_role() = 'platform_admin');
+CREATE POLICY "School admin manages own students" ON students FOR ALL
+  USING (school_id = get_user_school_id());
+CREATE POLICY "Driver reads students on their bus" ON students FOR SELECT
+  USING (bus_id IN (SELECT id FROM buses WHERE driver_id = auth.uid()));
+CREATE POLICY "Parent reads own child" ON students FOR SELECT
+  USING (parent_id = auth.uid());
+
+-- ROUTES
+CREATE POLICY "School admin manages own routes" ON routes FOR ALL
+  USING (school_id = get_user_school_id());
+CREATE POLICY "Driver reads their route" ON routes FOR SELECT
+  USING (bus_id IN (SELECT id FROM buses WHERE driver_id = auth.uid()));
+CREATE POLICY "Parent reads child's route" ON routes FOR SELECT
+  USING (bus_id IN (SELECT bus_id FROM students WHERE parent_id = auth.uid()));
+
+-- BUS LOCATIONS
+CREATE POLICY "Driver inserts own location" ON bus_locations FOR INSERT
+  WITH CHECK (bus_id IN (SELECT id FROM buses WHERE driver_id = auth.uid()));
+CREATE POLICY "School admin reads fleet locations" ON bus_locations FOR SELECT
+  USING (bus_id IN (SELECT id FROM buses WHERE school_id = get_user_school_id()));
+CREATE POLICY "Parent reads child's bus location" ON bus_locations FOR SELECT
+  USING (bus_id IN (SELECT bus_id FROM students WHERE parent_id = auth.uid()));
+
+-- ATTENDANCE
+CREATE POLICY "Driver manages attendance for their bus" ON attendance FOR ALL
+  USING (bus_id IN (SELECT id FROM buses WHERE driver_id = auth.uid()));
+CREATE POLICY "School admin reads own school attendance" ON attendance FOR SELECT
+  USING (bus_id IN (SELECT id FROM buses WHERE school_id = get_user_school_id()));
+CREATE POLICY "Parent reads own child's attendance" ON attendance FOR SELECT
+  USING (student_id IN (SELECT id FROM students WHERE parent_id = auth.uid()));
+```
+
+### RLS Summary
 - **Platform Admin**: Full access to all tables.
 - **School Admin**: CRUD on their own school's data only (filtered by `school_id`).
-- **Driver**: Read-only on their assigned bus and route. Write to `bus_locations`.
-- **Parent**: Read-only on their child's bus location and route. No access to other students.
+- **Driver**: Read-only on their assigned bus and route. Write to `bus_locations` and `attendance`.
+- **Parent**: Read-only on their child's bus location, route, and attendance. No access to other students.
 
 ---
 
