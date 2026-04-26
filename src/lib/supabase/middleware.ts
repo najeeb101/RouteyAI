@@ -10,6 +10,7 @@ const ROLE_PREFIXES: Record<string, Role> = {
   "/driver": "driver",
   "/parent": "parent",
 }
+const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE !== "false"
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({
@@ -57,6 +58,12 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith("/invite/") ||
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api/auth")
+
+  const isDemoRoute = Object.keys(ROLE_PREFIXES).some((p) => pathname.startsWith(p))
+
+  if (!user && DEMO_MODE && isDemoRoute) {
+    return response
+  }
 
   if (!user && !isPublic) {
     const url = request.nextUrl.clone()
