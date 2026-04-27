@@ -22,25 +22,29 @@ export const viewport: Viewport = {
   maximumScale: 1,
 }
 
+import { ThemeProvider } from "@/components/theme-provider"
+
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
-      <body className="min-h-screen antialiased">
-        {children}
-        <Toaster
-          position="top-center"
-          richColors
-          closeButton
-          toastOptions={{
-            classNames: {
-              toast: "rounded-xl border shadow-sm",
-            },
-          }}
-        />
+    <html lang="en" suppressHydrationWarning>
+      <body className="min-h-screen antialiased bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-50">
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+          {children}
+          <Toaster
+            position="top-center"
+            richColors
+            closeButton
+            toastOptions={{
+              classNames: {
+                toast: "rounded-xl border shadow-sm dark:border-slate-800 dark:bg-slate-900",
+              },
+            }}
+          />
+        </ThemeProvider>
       </body>
     </html>
   )

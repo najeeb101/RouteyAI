@@ -1,0 +1,22 @@
+{
+  "expo": {
+    "name": "RouteyAI",
+    "slug": "routeyai",
+    "version": "1.0.0",
+    "scheme": "routeyai",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.routeyai.app"
+    },
+    "android": {
+      "package": "com.routeyai.app"
+    },
+    "plugins": ["expo-router", "expo-secure-store"],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
