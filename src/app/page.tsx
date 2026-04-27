@@ -12,6 +12,15 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
+import { FeedbackSection } from '@/components/FeedbackSection'
+
+const NAV_LINKS = [
+  { label: 'Dashboard', href: '#dashboard' },
+  { label: 'Solutions', href: '#solutions' },
+  { label: 'Features', href: '#features' },
+  { label: 'FAQs', href: '#faqs' },
+  { label: 'Feedback', href: '#feedback' },
+]
 
 const FEATURES = [
   {
@@ -213,13 +222,29 @@ export default function HomePage() {
       {/* Nav */}
       <nav className="sticky top-0 z-20 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md border-b border-[#E2E8F0] dark:border-slate-800">
         <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-2">
+          <button 
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            className="flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer"
+          >
             <RouteyLogo size={26} variant="gradient" />
             <span className="text-base font-extrabold tracking-tight">
               <span className="text-[#0F172A] dark:text-white">Routey</span>
               <span className="text-[#1E3A8A] dark:text-blue-400">AI</span>
             </span>
+          </button>
+
+          <div className="hidden md:flex items-center gap-8">
+            {NAV_LINKS.map((link) => (
+              <a
+                key={link.href}
+                href={link.href}
+                className="text-sm font-medium text-[#64748B] dark:text-slate-400 hover:text-[#0F172A] dark:hover:text-white transition-colors"
+              >
+                {link.label}
+              </a>
+            ))}
           </div>
+
           <div className="flex items-center gap-4">
             <ThemeToggle />
             <button
@@ -276,7 +301,7 @@ export default function HomePage() {
       </section>
 
       {/* Map illustration */}
-      <section className="max-w-4xl mx-auto px-6 mb-16">
+      <section id="dashboard" className="max-w-4xl mx-auto px-6 mb-16 scroll-mt-24">
         <div className="bg-white dark:bg-slate-900 border border-[#E2E8F0] dark:border-slate-800 rounded-3xl shadow-[0_8px_40px_-12px_rgb(0_0_0/0.12)] dark:shadow-none overflow-hidden">
           <div className="flex items-center gap-1.5 px-4 py-3 border-b border-[#F1F5F9] dark:border-slate-800/50">
             {['#FF5F57','#FEBC2E','#28C840'].map(c => (
@@ -341,7 +366,7 @@ export default function HomePage() {
       </section>
 
       {/* Two surfaces section */}
-      <section className="max-w-6xl mx-auto px-6 mb-16">
+      <section id="solutions" className="max-w-6xl mx-auto px-6 mb-16 scroll-mt-24">
         <div className="text-center mb-10">
           <h2 className="text-3xl font-extrabold text-[#0F172A] dark:text-white tracking-tight mb-3">Two surfaces. One platform.</h2>
           <p className="text-[#64748B] dark:text-slate-400 text-base">The right experience for every role — web for admins, mobile for everyone else.</p>
@@ -400,7 +425,7 @@ export default function HomePage() {
       </section>
 
       {/* Features grid */}
-      <section className="max-w-6xl mx-auto px-6 mb-20">
+      <section id="features" className="max-w-6xl mx-auto px-6 mb-20 scroll-mt-24">
         <div className="text-center mb-10">
           <h2 className="text-3xl font-extrabold text-[#0F172A] dark:text-white tracking-tight mb-3">Everything your school needs</h2>
           <p className="text-[#64748B] dark:text-slate-400 text-base">From the first stop to drop-off at the gate.</p>
@@ -422,7 +447,7 @@ export default function HomePage() {
 
 
       {/* FAQ Section */}
-      <section className="py-24 bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800/40">
+      <section id="faqs" className="py-24 bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800/40 scroll-mt-10">
         <div className="max-w-6xl mx-auto px-6">
           <div className="flex flex-col md:flex-row gap-12 lg:gap-32">
             <div className="md:w-[45%] shrink-0">
@@ -446,6 +471,8 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      <FeedbackSection />
 
       {/* Footer */}
       <footer className="bg-[#0F172A] dark:bg-slate-950 pt-20 pb-10 border-t border-slate-800/40 dark:border-slate-800">
@@ -501,20 +528,36 @@ export default function HomePage() {
               </ul>
             </div>
 
-            {/* Newsletter */}
+            {/* App Download */}
             <div>
-              <h3 className="text-white font-bold mb-5 tracking-wide">Stay Updated</h3>
-              <p className="text-slate-400 text-sm mb-4">
-                Subscribe to our newsletter for the latest routing optimizations and feature updates.
+              <h3 className="text-white font-bold mb-5 tracking-wide">Download RouteyAI</h3>
+              <p className="text-slate-400 text-sm mb-6">
+                Available now for parents and drivers on all major platforms.
               </p>
-              <div className="flex gap-2">
-                <Input 
-                  type="email" 
-                  placeholder="Your email" 
-                  className="bg-slate-900 border-slate-800 text-white placeholder:text-slate-500 focus-visible:ring-blue-500 h-10 shadow-none"
-                />
-                <button className="h-10 px-4 bg-blue-600 hover:bg-blue-500 text-white rounded-lg flex items-center justify-center transition-colors shrink-0">
-                  <ArrowRight size={18} />
+              <div className="flex flex-col gap-3">
+                <button 
+                  onClick={() => setShowAppModal(true)}
+                  className="flex items-center gap-3 bg-slate-900 border border-slate-800 hover:border-blue-500/50 hover:bg-slate-800/50 transition-all px-4 py-2.5 rounded-xl group"
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+                    <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+                  </svg>
+                  <div className="text-left">
+                    <div className="text-[10px] text-slate-500 leading-none mb-1">Download on the</div>
+                    <div className="text-sm font-bold text-white group-hover:text-blue-400 transition-colors">App Store</div>
+                  </div>
+                </button>
+                <button 
+                  onClick={() => setShowAppModal(true)}
+                  className="flex items-center gap-3 bg-slate-900 border border-slate-800 hover:border-blue-500/50 hover:bg-slate-800/50 transition-all px-4 py-2.5 rounded-xl group"
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+                    <path d="M3.18 23.76c.3.17.65.19.97.08l11.46-6.62-2.36-2.36-10.07 8.9zM20.73 9.11L17.5 7.23 14.86 9.87l2.77 2.77 3.12-1.8c.89-.51.89-1.74-.02-2.73zM2.13.29C1.86.56 1.7.97 1.7 1.5v21c0 .53.16.94.43 1.21l.07.06 11.76-11.76v-.28L2.2.23l-.07.06zM14.57 10.53l-2.77-2.77L2.2.23l12.37 10.3z"/>
+                  </svg>
+                  <div className="text-left">
+                    <div className="text-[10px] text-slate-500 leading-none mb-1">Get it on</div>
+                    <div className="text-sm font-bold text-white group-hover:text-blue-400 transition-colors">Google Play</div>
+                  </div>
                 </button>
               </div>
             </div>
