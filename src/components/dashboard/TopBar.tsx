@@ -1,6 +1,8 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 
 const LABELS: Record<string, string> = {
   '/school': 'Overview',
@@ -11,8 +13,37 @@ const LABELS: Record<string, string> = {
 }
 
 export function TopBar() {
+  const supabase = createClient()
   const pathname = usePathname()
   const label = LABELS[pathname] ?? 'Dashboard'
+  const [fullName, setFullName] = useState('School Admin')
+  const [email, setEmail] = useState('—')
+  const [initials, setInitials] = useState('SA')
+
+  useEffect(() => {
+    let mounted = true
+
+    async function loadProfile() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!mounted || !user) return
+
+      const rawName =
+        (user.user_metadata?.full_name as string | undefined) ??
+        (user.user_metadata?.name as string | undefined) ??
+        null
+      const displayName = rawName?.trim() || 'School Admin'
+      const displayEmail = user.email ?? '—'
+      const parts = displayName.split(/\s+/).filter(Boolean)
+      const computedInitials = (parts[0]?.[0] ?? 'S') + (parts[1]?.[0] ?? 'A')
+
+      setFullName(displayName)
+      setEmail(displayEmail)
+      setInitials(computedInitials.toUpperCase())
+    }
+
+    loadProfile()
+    return () => { mounted = false }
+  }, [supabase])
 
   return (
     <header className="h-14 bg-white border-b border-[#E2E8F0] flex items-center justify-between px-6 shrink-0">
@@ -31,11 +62,11 @@ export function TopBar() {
         {/* User badge */}
         <div className="flex items-center gap-2 px-2.5 py-1 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl">
           <div className="w-7 h-7 rounded-full bg-[#1E3A8A] flex items-center justify-center text-xs font-bold text-white">
-            SA
+            {initials}
           </div>
           <div>
-            <div className="text-xs font-semibold text-[#0F172A] leading-none">School Admin</div>
-            <div className="text-[10px] text-[#94A3B8] leading-none mt-0.5">admin@alnour.edu.qa</div>
+            <div className="text-xs font-semibold text-[#0F172A] leading-none">{fullName}</div>
+            <div className="text-[10px] text-[#94A3B8] leading-none mt-0.5">{email}</div>
           </div>
         </div>
       </div>

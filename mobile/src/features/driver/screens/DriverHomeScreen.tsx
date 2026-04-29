@@ -7,18 +7,18 @@ import { MetricCard } from '@/components/primitives/MetricCard'
 import { ProgressBar } from '@/components/primitives/ProgressBar'
 import { ScreenHeader } from '@/components/primitives/ScreenHeader'
 import { StatusPill } from '@/components/primitives/StatusPill'
-import { driverProfile, routeStops } from '@/data/demoRoute'
+import { useDriverData } from '@/features/driver/hooks/useDriverData'
 import { colors } from '@/lib/colors'
 import { routes } from '@/lib/navigation/routes'
 import type { TripStatus } from '@/types/route'
 
 export function DriverHomeScreen() {
   const router = useRouter()
+  const { loading, error, profile, stops, totalStudents, boardedIds } = useDriverData()
   const [tripStatus, setTripStatus] = useState<TripStatus>('active')
-  const boarded = 5
-  const totalStudents = useMemo(() => routeStops.reduce((total, stop) => total + stop.students.length, 0), [])
-  const currentStop = routeStops.find(stop => stop.current) ?? routeStops[0]
-  const nextStop = routeStops.find(stop => !stop.done && !stop.current && !stop.isSchool) ?? routeStops[routeStops.length - 1]
+  const boarded = boardedIds.size
+  const currentStop = stops.find(stop => stop.current) ?? stops[0]
+  const nextStop = stops.find(stop => !stop.done && !stop.current) ?? stops[stops.length - 1]
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
@@ -44,6 +44,13 @@ export function DriverHomeScreen() {
           )
         }
       />
+      {error && (
+        <View style={{ paddingHorizontal: 16, paddingTop: 10 }}>
+          <Card style={{ borderColor: '#FECACA', backgroundColor: '#FEF2F2' }}>
+            <Text style={{ color: '#B91C1C', fontSize: 12, fontFamily: 'Inter_600SemiBold' }}>{error}</Text>
+          </Card>
+        </View>
+      )}
 
       <View style={{ backgroundColor: colors.dark, paddingHorizontal: 20, paddingBottom: 16 }}>
         <View
@@ -59,10 +66,10 @@ export function DriverHomeScreen() {
         >
           <View style={{ flex: 1 }}>
             <Text style={{ color: '#FFFFFF', fontFamily: 'Inter_700Bold', fontSize: 16 }}>
-              {driverProfile.bus} - {driverProfile.route}
+              {profile?.busName ?? 'Unassigned Bus'} - {profile?.routeName ?? 'Route'}
             </Text>
             <Text style={{ color: 'rgba(255,255,255,0.48)', fontSize: 12, fontFamily: 'Inter_400Regular', marginTop: 2 }}>
-              {driverProfile.name} / {driverProfile.run}
+              {profile?.driverName ?? 'Driver'} / Morning Run
             </Text>
           </View>
           {tripStatus === 'active' && <StatusPill label="Live" />}
@@ -79,47 +86,53 @@ export function DriverHomeScreen() {
           </View>
           <ProgressBar value={boarded} total={totalStudents} />
           <Text style={{ fontSize: 11, color: colors.subtle, marginTop: 6, fontFamily: 'Inter_400Regular' }}>
-            {totalStudents - boarded} students remaining
+            {Math.max(0, totalStudents - boarded)} students remaining
           </Text>
         </Card>
 
-        <View style={{ backgroundColor: colors.primary, borderRadius: 18, padding: 16 }}>
-          <Text
-            style={{
-              color: 'rgba(255,255,255,0.65)',
-              fontSize: 10,
-              fontFamily: 'Inter_600SemiBold',
-              textTransform: 'uppercase',
-              letterSpacing: 0.8,
-              marginBottom: 4,
-            }}
-          >
-            Current Stop
-          </Text>
-          <Text style={{ color: '#FFFFFF', fontFamily: 'Inter_800ExtraBold', fontSize: 20, marginBottom: 2 }}>
-            {currentStop.name}
-          </Text>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8, gap: 12 }}>
-            <Text style={{ color: 'rgba(255,255,255,0.65)', fontFamily: 'Inter_400Regular', fontSize: 12, flex: 1 }}>
-              {currentStop.students.length} students waiting
-            </Text>
-            <TouchableOpacity
-              onPress={() => router.push(routes.driverRoute)}
-              style={{ backgroundColor: 'rgba(255,255,255,0.16)', paddingHorizontal: 12, paddingVertical: 7, borderRadius: 8 }}
+        {loading ? (
+          <Card>
+            <Text style={{ fontSize: 13, color: colors.subtle, fontFamily: 'Inter_500Medium' }}>Loading route data...</Text>
+          </Card>
+        ) : (
+          <View style={{ backgroundColor: colors.primary, borderRadius: 18, padding: 16 }}>
+            <Text
+              style={{
+                color: 'rgba(255,255,255,0.65)',
+                fontSize: 10,
+                fontFamily: 'Inter_600SemiBold',
+                textTransform: 'uppercase',
+                letterSpacing: 0.8,
+                marginBottom: 4,
+              }}
             >
-              <Text style={{ color: '#FFFFFF', fontFamily: 'Inter_600SemiBold', fontSize: 12 }}>Check In</Text>
-            </TouchableOpacity>
+              Current Stop
+            </Text>
+            <Text style={{ color: '#FFFFFF', fontFamily: 'Inter_800ExtraBold', fontSize: 20, marginBottom: 2 }}>
+              {currentStop?.name ?? 'No assigned stops'}
+            </Text>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8, gap: 12 }}>
+              <Text style={{ color: 'rgba(255,255,255,0.65)', fontFamily: 'Inter_400Regular', fontSize: 12, flex: 1 }}>
+                {currentStop?.students.length ?? 0} students waiting
+              </Text>
+              <TouchableOpacity
+                onPress={() => router.push(routes.driverRoute)}
+                style={{ backgroundColor: 'rgba(255,255,255,0.16)', paddingHorizontal: 12, paddingVertical: 7, borderRadius: 8 }}
+              >
+                <Text style={{ color: '#FFFFFF', fontFamily: 'Inter_600SemiBold', fontSize: 12 }}>Check In</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
+        )}
 
         <Card style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           <View>
             <Text style={{ fontSize: 10, color: colors.subtle, fontFamily: 'Inter_600SemiBold', marginBottom: 3 }}>NEXT STOP</Text>
-            <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 15, color: colors.dark }}>{nextStop.name}</Text>
+            <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 15, color: colors.dark }}>{nextStop?.name ?? '—'}</Text>
           </View>
           <View style={{ alignItems: 'flex-end' }}>
             <Text style={{ fontSize: 10, color: colors.subtle, fontFamily: 'Inter_600SemiBold', marginBottom: 3 }}>ETA</Text>
-            <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 15, color: colors.info }}>{nextStop.eta}</Text>
+            <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 15, color: colors.info }}>{nextStop?.eta ?? '--:--'}</Text>
           </View>
         </Card>
 

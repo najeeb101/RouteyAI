@@ -15,17 +15,18 @@ export type StudentRow = {
   created_at: string
 }
 
-async function geocodeAddress(address: string): Promise<{ lat: number; lng: number }> {
+async function geocodeAddress(address: string): Promise<{ lat: number; lng: number; geocoded: boolean }> {
   const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN
-  if (!token) return { lat: 25.2854, lng: 51.5310 }
+  if (!token) return { lat: 25.2854, lng: 51.5310, geocoded: false }
   try {
-    const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${token}&limit=1`
+    const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${token}&limit=1&country=QA&proximity=51.531,25.2854`
     const res  = await fetch(url)
     const json = await res.json()
-    const [lng, lat] = json.features?.[0]?.center ?? [51.5310, 25.2854]
-    return { lat, lng }
+    if (!json.features?.length) return { lat: 25.2854, lng: 51.5310, geocoded: false }
+    const [lng, lat] = json.features[0].center as [number, number]
+    return { lat, lng, geocoded: true }
   } catch {
-    return { lat: 25.2854, lng: 51.5310 }
+    return { lat: 25.2854, lng: 51.5310, geocoded: false }
   }
 }
 
@@ -126,11 +127,12 @@ export default function StudentsTable({
   const [inviteStudent,    setInviteStudent]    = useState<StudentRow | null>(null)
   const [inviteLink,       setInviteLink]       = useState<string | null>(null)
   const [copied,           setCopied]           = useState(false)
+  const [geocodeWarning,   setGeocodeWarning]   = useState(false)
 
   // Add form
   const [addName,    setAddName]    = useState('')
   const [addAddress, setAddAddress] = useState('')
-  const [addBusId,   setAddBusId]   = useState<string>(buses[0]?.id ?? '')
+  const [addBusId,   setAddBusId]   = useState('')
 
   // Edit form
   const [editName,    setEditName]    = useState('')
@@ -150,6 +152,13 @@ export default function StudentsTable({
     if (data) setStudents(data as StudentRow[])
   }, [supabase])
 
+  const triggerOptimization = useCallback(async (schoolId?: string) => {
+    if (!schoolId) return
+    await supabase.functions.invoke('optimize-route', {
+      body: { school_id: schoolId },
+    })
+  }, [supabase])
+
   const openEdit = (s: StudentRow) => {
     setEditStudent(s)
     setEditName(s.name)
@@ -163,8 +172,9 @@ export default function StudentsTable({
 
   const handleAdd = async () => {
     if (!addName.trim() || !addAddress.trim()) return
-    setLoading(true); setError(null)
-    const { lat, lng } = await geocodeAddress(addAddress)
+    setLoading(true); setError(null); setGeocodeWarning(false)
+    const { lat, lng, geocoded } = await geocodeAddress(addAddress)
+    if (!geocoded) setGeocodeWarning(true)
     const { error: err } = await supabase.rpc('add_student', {
       p_name:         addName.trim(),
       p_home_address: addAddress.trim(),
@@ -175,7 +185,8 @@ export default function StudentsTable({
     setLoading(false)
     if (err) { setError(err.message); return }
     setAddOpen(false)
-    setAddName(''); setAddAddress(''); setAddBusId(buses[0]?.id ?? '')
+    setAddName(''); setAddAddress(''); setAddBusId('')
+    await triggerOptimization(students[0]?.school_id)
     await refetch()
   }
 
@@ -204,6 +215,7 @@ export default function StudentsTable({
       .eq('id', changeBusStudent.id)
     setLoading(false)
     if (err) { setError(err.message); return }
+    await triggerOptimization(changeBusStudent.school_id)
     setChangeBusStudent(null)
     await refetch()
   }
@@ -214,6 +226,7 @@ export default function StudentsTable({
     const { error: err } = await supabase.from('students').delete().eq('id', deleteStudent.id)
     setLoading(false)
     if (err) { setError(err.message); return }
+    await triggerOptimization(deleteStudent.school_id)
     setDeleteStudent(null)
     await refetch()
   }
@@ -330,11 +343,11 @@ export default function StudentsTable({
 
       {/* ── Add Student Modal ── */}
       {addOpen && (
-        <div className="fixed inset-0 bg-[#0F172A]/45 backdrop-blur-sm flex items-center justify-center z-50" onClick={() => setAddOpen(false)}>
+        <div className="fixed inset-0 bg-[#0F172A]/45 backdrop-blur-sm flex items-center justify-center z-50" onClick={() => { setAddOpen(false); setGeocodeWarning(false) }}>
           <div className="bg-white rounded-2xl p-6 w-[480px] shadow-[0_20px_60px_-15px_rgb(0_0_0/0.3)]" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-5">
               <span className="text-lg font-bold text-[#0F172A]">Add New Student</span>
-              <CloseBtn onClick={() => setAddOpen(false)} />
+              <CloseBtn onClick={() => { setAddOpen(false); setGeocodeWarning(false) }} />
             </div>
             <div className="flex flex-col gap-4">
               <div>
@@ -364,7 +377,7 @@ export default function StudentsTable({
                   onChange={e => setAddBusId(e.target.value)}
                   className="w-full border border-[#E2E8F0] rounded-xl py-2.5 px-3 text-sm text-[#0F172A] bg-[#FAFAFA] outline-none"
                 >
-                  <option value="">Unassigned</option>
+                  <option value="">Auto-assign (smart placement)</option>
                   {buses.map(b => {
                     const isFull = b.student_count >= b.capacity
                     return (
@@ -381,8 +394,17 @@ export default function StudentsTable({
                 </svg>
                 <p className="text-xs text-[#1E3A8A]">The address will be geocoded via Mapbox to record the exact pickup location for route optimization.</p>
               </div>
+              {geocodeWarning && (
+                <div className="px-3 py-2.5 bg-[#FFFBEB] border border-[#FDE68A] text-[#92400E] text-xs rounded-xl flex items-start gap-2">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="shrink-0 mt-0.5">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                    <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                  </svg>
+                  Address could not be geocoded — student saved with approximate Qatar coordinates. Re-add with a more specific address for accurate route distances.
+                </div>
+              )}
               <div className="flex gap-2 justify-end mt-1">
-                <button onClick={() => setAddOpen(false)} className="bg-[#F8FAFC] text-[#64748B] border border-[#E2E8F0] rounded-lg px-4 py-2 text-sm font-medium">Cancel</button>
+                <button onClick={() => { setAddOpen(false); setGeocodeWarning(false) }} className="bg-[#F8FAFC] text-[#64748B] border border-[#E2E8F0] rounded-lg px-4 py-2 text-sm font-medium">Cancel</button>
                 <button
                   onClick={handleAdd}
                   disabled={!addName.trim() || !addAddress.trim() || loading}

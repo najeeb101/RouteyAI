@@ -1,9 +1,11 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { RouteyLogo } from '@/components/RouteyLogo'
+import { createClient } from '@/lib/supabase/client'
 
 const NAV_ITEMS = [
   {
@@ -37,11 +39,51 @@ const NAV_ITEMS = [
 const BUS_ICON_PATH = 'M8 6v6m0 0v6m0-6h.01M8 12H4'
 
 export function Sidebar() {
+  const supabase = createClient()
+  const router = useRouter()
   const pathname = usePathname()
+  const [schoolName, setSchoolName] = useState('School')
+  const [signingOut, setSigningOut] = useState(false)
 
   const isActive = (href: string) => {
     if (href === '/school') return pathname === '/school'
     return pathname.startsWith(href)
+  }
+
+  useEffect(() => {
+    let mounted = true
+
+    async function loadSchool() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!mounted || !user) return
+
+      const { data: roleRow } = await supabase
+        .from('user_roles')
+        .select('school_id')
+        .eq('user_id', user.id)
+        .maybeSingle()
+
+      const schoolId = roleRow?.school_id
+      if (!schoolId) return
+
+      const { data: school } = await supabase
+        .from('schools')
+        .select('name')
+        .eq('id', schoolId)
+        .maybeSingle()
+
+      if (mounted && school?.name) setSchoolName(school.name)
+    }
+
+    loadSchool()
+    return () => { mounted = false }
+  }, [supabase])
+
+  async function handleSignOut() {
+    setSigningOut(true)
+    await supabase.auth.signOut()
+    router.push('/login')
+    router.refresh()
   }
 
   return (
@@ -61,7 +103,7 @@ export function Sidebar() {
           <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
           <polyline points="9 22 9 12 15 12 15 22" />
         </svg>
-        <span className="text-[11px] text-white/50 font-medium">Al Nour Int&apos;l School</span>
+        <span className="text-[11px] text-white/50 font-medium">{schoolName}</span>
       </div>
 
       {/* Nav */}
@@ -95,8 +137,9 @@ export function Sidebar() {
 
       {/* Sign out */}
       <div className="p-3 pb-5">
-        <Link
-          href="/login"
+        <button
+          onClick={handleSignOut}
+          disabled={signingOut}
           className="flex items-center gap-2.5 mx-2 px-3 py-2 rounded-lg text-[13px] font-medium text-white/50 hover:text-white/80 hover:bg-white/[0.05] transition-all duration-150"
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round">
@@ -104,8 +147,8 @@ export function Sidebar() {
             <polyline points="16 17 21 12 16 7" />
             <line x1="21" y1="12" x2="9" y2="12" />
           </svg>
-          Sign Out
-        </Link>
+          {signingOut ? 'Signing Out...' : 'Sign Out'}
+        </button>
       </div>
     </aside>
   )

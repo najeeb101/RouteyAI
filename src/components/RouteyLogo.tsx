@@ -1,5 +1,6 @@
 import Image from 'next/image'
-import logoAsset from '@/media/RouteyAI_logo_temp-removebg-preview.png'
+
+const logoAsset = '/assets/brand/RouteyAI_logo_temp-removebg-preview.png'
 
 interface RouteyLogoProps {
   size?: number

@@ -29,28 +29,45 @@ export default function RoutesClient({ initialRoutes }: { initialRoutes: RouteRo
   const [recalcRoute,   setRecalcRoute]   = useState<RouteRow | null>(null)
   const [recalcLoading, setRecalcLoading] = useState(false)
   const [recalcDone,    setRecalcDone]    = useState(false)
+  const [recalcError,   setRecalcError]   = useState<string | null>(null)
+  const [allLoading,    setAllLoading]    = useState(false)
 
   const openRecalc = (r: RouteRow) => {
     setRecalcRoute(r)
     setRecalcDone(false)
+    setRecalcError(null)
   }
 
   const handleRecalc = async () => {
     if (!recalcRoute) return
     setRecalcLoading(true)
-    
-    const { error } = await supabase.rpc('recalculate_route', {
-      p_route_id: recalcRoute.id
+    setRecalcError(null)
+
+    const { error } = await supabase.functions.invoke('optimize-route', {
+      body: { bus_id: recalcRoute.bus_id },
     })
 
     if (error) {
-      console.error('Optimization error:', error)
+      setRecalcError(error.message)
       setRecalcLoading(false)
       return
     }
 
     setRecalcLoading(false)
     setRecalcDone(true)
+    router.refresh()
+  }
+
+  const handleOptimizeAll = async () => {
+    const schoolId = routes[0]?.school_id
+    if (!schoolId) return
+    setAllLoading(true)
+    const { error } = await supabase.functions.invoke('optimize-route', { body: { school_id: schoolId } })
+    setAllLoading(false)
+    if (error) {
+      console.error('Optimize all error:', error)
+      return
+    }
     router.refresh()
   }
 
@@ -64,7 +81,7 @@ export default function RoutesClient({ initialRoutes }: { initialRoutes: RouteRo
           </p>
         </div>
         <button
-          onClick={() => routes.forEach(r => openRecalc(r))}
+          onClick={handleOptimizeAll}
           disabled={routes.length === 0}
           className="flex items-center gap-2 bg-[#1E3A8A] text-white rounded-xl px-4 py-2.5 text-sm font-semibold hover:bg-[#1e40af] transition-colors disabled:opacity-50"
         >
@@ -72,7 +89,7 @@ export default function RoutesClient({ initialRoutes }: { initialRoutes: RouteRo
             <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/>
             <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
           </svg>
-          Optimize All Routes
+          {allLoading ? 'Optimizing...' : 'Optimize All Routes'}
         </button>
       </div>
 
@@ -197,6 +214,11 @@ export default function RoutesClient({ initialRoutes }: { initialRoutes: RouteRo
                   </div>
                 ) : (
                   <>
+                    {recalcError && (
+                      <div className="mb-4 px-3 py-2.5 bg-[#FEF2F2] border border-[#FEE2E2] text-[#DC2626] text-xs rounded-lg">
+                        {recalcError}
+                      </div>
+                    )}
                     <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-4 mb-5">
                       <p className="text-xs font-semibold text-[#64748B] uppercase tracking-wide mb-2">This will:</p>
                       <ul className="flex flex-col gap-1.5 text-sm text-[#0F172A]">

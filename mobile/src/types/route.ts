@@ -3,7 +3,7 @@ export type Role = 'driver' | 'parent'
 export type TripStatus = 'idle' | 'active' | 'done'
 
 export type Student = {
-  id: number
+  id: string | number
   name: string
   grade: string
   initials: string

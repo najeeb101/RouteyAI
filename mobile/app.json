@@ -6,17 +6,48 @@
     "scheme": "routeyai",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.routeyai.app"
     },
     "android": {
-      "package": "com.routeyai.app"
+      "package": "com.routeyai.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#1E3A8A"
+      }
     },
-    "plugins": ["expo-router", "expo-secure-store"],
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      [
+        "expo-notifications",
+        {
+          "color": "#1E3A8A",
+          "defaultChannel": "default",
+          "sounds": []
+        }
+      ],
+      [
+        "@rnmapbox/maps",
+        {
+          "RNMapboxMapsDownloadToken": "sk.eyJ1IjoibmFqZWViMTAxIiwiYSI6ImNtb2tkMHoycjAwNWUycHFsYjIyYjd5YXgifQ.LDmeEge6bCbzYacpS0Ns0w"
+        }
+      ]
+    ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "7280e0a3-5530-4b7c-8a4c-3807acd177e0"
+      }
+    },
+    "owner": "najeeb101"
   }
 }

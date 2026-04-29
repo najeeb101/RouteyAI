@@ -3,12 +3,12 @@ import { motion } from 'framer-motion'
 
 function DriverPhone() {
   return (
-    <div className="relative w-[230px] h-[480px] drop-shadow-[0_20px_50px_rgba(0,0,0,0.6)] rounded-[38px] overflow-hidden border-[8px] border-[#1c2035]">
+    <div className="relative w-[240px] h-[490px] drop-shadow-[0_30px_60px_rgba(0,0,0,0.2)]">
       <Image 
         src="/assets/mockups/driver-app.png" 
         alt="Driver App Mockup" 
         fill
-        className="object-cover"
+        className="object-contain"
       />
     </div>
   )
@@ -16,12 +16,12 @@ function DriverPhone() {
 
 function ParentPhone() {
   return (
-    <div className="relative w-[230px] h-[480px] drop-shadow-[0_20px_50px_rgba(0,0,0,0.6)] rounded-[38px] overflow-hidden border-[8px] border-[#1c2035]">
+    <div className="relative w-[240px] h-[490px] drop-shadow-[0_30px_60px_rgba(0,0,0,0.2)]">
       <Image 
         src="/assets/mockups/parent-app.png" 
         alt="Parent App Mockup" 
         fill
-        className="object-cover"
+        className="object-contain"
       />
     </div>
   )
@@ -29,7 +29,7 @@ function ParentPhone() {
 
 export function MobileAppsSection({ onDownloadClick }: { onDownloadClick: () => void }) {
   return (
-    <section id="solutions" className="max-w-6xl mx-auto px-6 mb-16 scroll-mt-24">
+    <section id="apps" className="max-w-6xl mx-auto px-6 mb-16 scroll-mt-24">
       <div className="text-center mb-12">
         <div className="inline-flex items-center gap-2 bg-white dark:bg-slate-900 border border-[#BFDBFE] dark:border-slate-700 rounded-full px-4 py-1.5 text-[11px] font-bold text-[#1E3A8A] dark:text-blue-400 mb-5 uppercase tracking-wide shadow-sm">
           Free Mobile Apps

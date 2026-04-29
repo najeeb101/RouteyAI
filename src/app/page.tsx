@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { RouteyLogo } from '@/components/RouteyLogo'
 import { ThemeToggle } from '@/components/ThemeToggle'
@@ -14,12 +15,11 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion"
 import { FeedbackSection } from '@/components/FeedbackSection'
-import { DashboardPreview } from '@/components/DashboardPreview'
 import { MobileAppsSection } from '@/components/MobileApps'
+import { AdminOrchestrator } from '@/components/AdminOrchestrator'
 
 const NAV_LINKS = [
-  { label: 'Dashboard', href: '#dashboard' },
-  { label: 'Solutions', href: '#solutions' },
+  { label: 'Apps', href: '#apps' },
   { label: 'Features', href: '#features' },
   { label: 'FAQs', href: '#faqs' },
   { label: 'Feedback', href: '#feedback' },
@@ -307,45 +307,31 @@ export default function HomePage() {
             Download the App
           </button>
         </div>
+
+        {/* Dashboard Screenshot Hero */}
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.2 }}
+          className="relative max-w-5xl mx-auto mt-16 px-4"
+        >
+          <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-[2rem] blur-xl opacity-20" />
+          <div className="relative bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden group">
+            <Image 
+              src="/assets/dashboard-screenshot.png" 
+              alt="RouteyAI Dashboard" 
+              width={1200} 
+              height={675}
+              className="w-full h-auto transition-transform duration-700 group-hover:scale-[1.01]"
+            />
+          </div>
+        </motion.div>
       </motion.section>
 
-      {/* Trust Bar */}
-      <motion.section
-        initial={{ opacity: 0 }}
-        whileInView={{ opacity: 1 }}
-        viewport={{ once: true }}
-        transition={{ duration: 1, delay: 0.5 }}
-        className="max-w-6xl mx-auto px-6 mb-24"
-      >
-        <p className="text-center text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-8">
-          Trusted by Qatar&apos;s Leading Schools
-        </p>
-        <div className="flex flex-wrap justify-center items-center gap-x-12 gap-y-8 opacity-40 grayscale hover:grayscale-0 transition-all duration-700">
-          {['Al Khor International', 'Doha College', 'ASD', 'Park House', 'Sherborne Qatar', 'Swiss School'].map((school) => (
-            <div key={school} className="flex items-center gap-2 group cursor-default">
-              <div className="w-8 h-8 rounded bg-slate-200 dark:bg-slate-800 flex items-center justify-center font-black text-slate-500 dark:text-slate-400 text-xs">
-                {school.split(' ').map(n => n[0]).join('')}
-              </div>
-              <span className="text-sm font-bold text-slate-600 dark:text-slate-400 tracking-tight group-hover:text-[#1E3A8A] dark:group-hover:text-blue-400 transition-colors">
-                {school}
-              </span>
-            </div>
-          ))}
-        </div>
-      </motion.section>
+      <AdminOrchestrator />
 
-      {/* Dashboard preview */}
-      <motion.section 
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.6, delay: 0.2 }}
-        id="dashboard" 
-        className="max-w-5xl mx-auto px-6 mb-16 scroll-mt-24"
-      >
-        <DashboardPreview />
-        <p className="text-center text-[12px] text-[#94A3B8] dark:text-slate-500 mt-3">School admin web dashboard — live fleet, routes & real-time ETAs</p>
-      </motion.section>
+
+
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -408,7 +394,7 @@ export default function HomePage() {
             </h2>
             
             <p className="text-slate-500 dark:text-slate-400 text-lg md:text-xl max-w-2xl mx-auto mb-12 leading-relaxed">
-              Join leading schools in Qatar. Optimize your routes, enhance safety, and give parents complete peace of mind.
+              Modernize your school transport in Qatar. Optimize your routes, enhance safety, and give parents complete peace of mind.
             </p>
             
             <div className="flex flex-col sm:flex-row gap-5 items-center justify-center w-full">

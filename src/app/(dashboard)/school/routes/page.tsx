@@ -3,6 +3,7 @@ import RoutesClient from './RoutesClient'
 
 export type RouteRow = {
   id: string
+  school_id: string
   bus_id: string
   bus_name: string | null
   bus_color: string | null

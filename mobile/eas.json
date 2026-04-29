@@ -1,0 +1,28 @@
+{
+  "cli": {
+    "version": ">= 12.0.0"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "https://cdfomzdbxftpvrygdxuq.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_Qe2PRaJKgIiSlLHxqeHwNA_9B8inOSI",
+        "EXPO_PUBLIC_MAPBOX_TOKEN": "sk.eyJ1IjoibmFqZWViMTAxIiwiYSI6ImNtb2tkMHoycjAwNWUycHFsYjIyYjd5YXgifQ.LDmeEge6bCbzYacpS0Ns0w"
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "ios": {
+        "simulator": true
+      }
+    },
+    "production": {
+      "autoIncrement": true
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}

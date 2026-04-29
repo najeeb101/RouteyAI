@@ -4,7 +4,8 @@
       "Bash(pnpm build *)",
       "Bash(pnpm tsc *)",
       "Bash(npx tsc *)",
-      "Read(//c/Users/ACER/.claude/projects/c--Users-ACER-Documents-GitHub-RouteyAI/memory/**)"
+      "Read(//c/Users/ACER/.claude/projects/c--Users-ACER-Documents-GitHub-RouteyAI/memory/**)",
+      "Bash(npx supabase *)"
     ],
     "additionalDirectories": [
       "c:\\Users\\ACER\\Documents\\GitHub\\RouteyAI\\src\\app\\(auth)\\invite",
