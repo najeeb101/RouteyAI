@@ -18,6 +18,12 @@ import type { Role } from '@/types/route'
 
 const hasSupabaseEnv = Boolean(process.env.EXPO_PUBLIC_SUPABASE_URL && process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY)
 
+type RoleOption = { role: Role; label: string; icon: string; color: string; bg: string; border: string }
+const ROLE_OPTIONS: RoleOption[] = [
+  { role: 'parent', label: 'Parent', icon: '👨‍👧', color: colors.info, bg: colors.infoBg, border: 'rgba(59,130,246,0.35)' },
+  { role: 'driver', label: 'Driver', icon: '🚌', color: colors.success, bg: colors.successBg, border: 'rgba(16,185,129,0.35)' },
+]
+
 export function LoginScreen() {
   const router = useRouter()
   const [email, setEmail] = useState('')
@@ -26,6 +32,8 @@ export function LoginScreen() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [selectedRole, setSelectedRole] = useState<Role>('parent')
+  const [emailFocused, setEmailFocused] = useState(false)
+  const [passwordFocused, setPasswordFocused] = useState(false)
 
   async function handleLogin() {
     setError('')
@@ -34,12 +42,12 @@ export function LoginScreen() {
     if (hasSupabaseEnv && email && password) {
       const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
       if (signInError) {
-        setError('Sign in failed. Check the email and password.')
+        setError('Sign in failed. Check your email and password.')
         setLoading(false)
         return
       }
     } else {
-      await new Promise(resolve => setTimeout(resolve, 550))
+      await new Promise(resolve => setTimeout(resolve, 600))
     }
 
     setLoading(false)
@@ -50,212 +58,314 @@ export function LoginScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.dark }}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <ScrollView
-          contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingTop: 48, paddingBottom: 32 }}
+          contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingBottom: 32 }}
           keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
-          <View style={{ alignItems: 'center', marginBottom: 32 }}>
+          {/* ── Brand Header ── */}
+          <View style={{ alignItems: 'center', paddingTop: 52, paddingBottom: 36 }}>
+            {/* App icon */}
             <View
               style={{
-                width: 64,
-                height: 64,
-                borderRadius: 18,
+                width: 80,
+                height: 80,
+                borderRadius: 24,
                 backgroundColor: colors.primary,
                 alignItems: 'center',
                 justifyContent: 'center',
-                marginBottom: 12,
+                marginBottom: 16,
+                shadowColor: colors.accent,
+                shadowOpacity: 0.4,
+                shadowRadius: 20,
+                shadowOffset: { width: 0, height: 6 },
+                borderWidth: 1,
+                borderColor: 'rgba(0,212,255,0.25)',
               }}
             >
-              <Text style={{ fontSize: 28, fontFamily: 'Inter_800ExtraBold', color: colors.accent }}>R</Text>
+              <Text style={{ fontSize: 38 }}>🚌</Text>
             </View>
-            <Text style={{ fontSize: 26, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF' }}>
+
+            <Text style={{ fontSize: 30, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF', letterSpacing: -0.8 }}>
               Routey<Text style={{ color: colors.accent }}>AI</Text>
             </Text>
-            <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', marginTop: 4, fontFamily: 'Inter_400Regular' }}>
-              Smart routing. Real-time tracking.
+            <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', marginTop: 6, fontFamily: 'Inter_400Regular', letterSpacing: 0.2 }}>
+              Smart routing · Real-time tracking
             </Text>
+
+            {/* Decorative dots */}
+            <View style={{ flexDirection: 'row', gap: 5, marginTop: 18 }}>
+              {[colors.accent, 'rgba(255,255,255,0.2)', 'rgba(255,255,255,0.1)'].map((c, i) => (
+                <View key={i} style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: c }} />
+              ))}
+            </View>
           </View>
 
+          {/* ── Login Card ── */}
           <View
             style={{
               backgroundColor: colors.surface,
-              borderRadius: 24,
+              borderRadius: 28,
               padding: 24,
               shadowColor: '#000',
-              shadowOffset: { width: 0, height: 8 },
-              shadowOpacity: 0.25,
-              shadowRadius: 24,
-              elevation: 12,
+              shadowOffset: { width: 0, height: 16 },
+              shadowOpacity: 0.3,
+              shadowRadius: 32,
+              elevation: 16,
             }}
           >
-            <Text style={{ fontSize: 20, fontFamily: 'Inter_700Bold', color: colors.dark, marginBottom: 4 }}>Welcome back</Text>
-            <Text style={{ fontSize: 13, color: colors.muted, marginBottom: 20, fontFamily: 'Inter_400Regular' }}>
-              Sign in to continue
+            <Text style={{ fontSize: 22, fontFamily: 'Inter_800ExtraBold', color: colors.dark, marginBottom: 2, letterSpacing: -0.4 }}>
+              Welcome back
+            </Text>
+            <Text style={{ fontSize: 13, color: colors.muted, marginBottom: 22, fontFamily: 'Inter_400Regular' }}>
+              Sign in to your account to continue
             </Text>
 
+            {/* Role Selector */}
             <Text
               style={{
-                fontSize: 11,
-                fontFamily: 'Inter_600SemiBold',
-                color: colors.dark,
+                fontSize: 10,
+                fontFamily: 'Inter_700Bold',
+                color: colors.subtle,
                 marginBottom: 8,
                 textTransform: 'uppercase',
-                letterSpacing: 0.8,
+                letterSpacing: 1,
               }}
             >
               I am a
             </Text>
-            <View style={{ flexDirection: 'row', gap: 10, marginBottom: 20 }}>
-              {[
-                { role: 'parent' as Role, label: 'Parent', color: colors.primary, bg: colors.infoBg },
-                { role: 'driver' as Role, label: 'Driver', color: colors.success, bg: colors.successBg },
-              ].map(item => (
-                <TouchableOpacity
-                  key={item.role}
-                  onPress={() => setSelectedRole(item.role)}
-                  style={{
-                    flex: 1,
-                    paddingVertical: 10,
-                    paddingHorizontal: 14,
-                    borderRadius: 12,
-                    borderWidth: 1.5,
-                    borderColor: selectedRole === item.role ? item.color : colors.border,
-                    backgroundColor: selectedRole === item.role ? item.bg : '#FAFAFA',
-                    alignItems: 'center',
-                  }}
-                >
-                  <Text
+            <View style={{ flexDirection: 'row', gap: 10, marginBottom: 22 }}>
+              {ROLE_OPTIONS.map(item => {
+                const active = selectedRole === item.role
+                return (
+                  <TouchableOpacity
+                    key={item.role}
+                    onPress={() => setSelectedRole(item.role)}
+                    activeOpacity={0.75}
                     style={{
-                      fontSize: 13,
-                      fontFamily: 'Inter_600SemiBold',
-                      color: selectedRole === item.role ? item.color : colors.muted,
+                      flex: 1,
+                      paddingVertical: 12,
+                      paddingHorizontal: 12,
+                      borderRadius: 14,
+                      borderWidth: 1.5,
+                      borderColor: active ? item.color : colors.border,
+                      backgroundColor: active ? item.bg : '#FAFAFA',
+                      alignItems: 'center',
+                      gap: 4,
+                      shadowColor: active ? item.color : 'transparent',
+                      shadowOpacity: active ? 0.2 : 0,
+                      shadowRadius: 8,
+                      shadowOffset: { width: 0, height: 3 },
                     }}
                   >
-                    {item.label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+                    <Text style={{ fontSize: 22 }}>{item.icon}</Text>
+                    <Text
+                      style={{
+                        fontSize: 13,
+                        fontFamily: active ? 'Inter_700Bold' : 'Inter_500Medium',
+                        color: active ? item.color : colors.muted,
+                      }}
+                    >
+                      {item.label}
+                    </Text>
+                  </TouchableOpacity>
+                )
+              })}
             </View>
 
+            {/* Email Field */}
             <View style={{ marginBottom: 14 }}>
-              <Text style={{ fontSize: 11, fontFamily: 'Inter_600SemiBold', color: colors.dark, marginBottom: 6 }}>EMAIL</Text>
-              <TextInput
-                value={email}
-                onChangeText={setEmail}
-                placeholder="you@example.com"
-                placeholderTextColor={colors.subtle}
-                keyboardType="email-address"
-                autoCapitalize="none"
+              <Text
                 style={{
-                  borderWidth: 1,
-                  borderColor: colors.border,
-                  borderRadius: 12,
-                  paddingVertical: 12,
-                  paddingHorizontal: 14,
-                  fontSize: 14,
-                  color: colors.dark,
-                  backgroundColor: '#FAFAFA',
-                  fontFamily: 'Inter_400Regular',
+                  fontSize: 10,
+                  fontFamily: 'Inter_700Bold',
+                  color: colors.subtle,
+                  marginBottom: 7,
+                  textTransform: 'uppercase',
+                  letterSpacing: 1,
                 }}
-              />
+              >
+                Email
+              </Text>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  borderWidth: emailFocused ? 1.5 : 1,
+                  borderColor: emailFocused ? colors.primary : colors.border,
+                  borderRadius: 14,
+                  backgroundColor: emailFocused ? '#F8FAFF' : '#FAFAFA',
+                  paddingHorizontal: 14,
+                }}
+              >
+                <Text style={{ fontSize: 16, marginRight: 8, opacity: 0.6 }}>✉️</Text>
+                <TextInput
+                  value={email}
+                  onChangeText={setEmail}
+                  placeholder="you@example.com"
+                  placeholderTextColor={colors.subtle}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  onFocus={() => setEmailFocused(true)}
+                  onBlur={() => setEmailFocused(false)}
+                  style={{
+                    flex: 1,
+                    paddingVertical: 13,
+                    fontSize: 14,
+                    color: colors.dark,
+                    fontFamily: 'Inter_400Regular',
+                  }}
+                />
+              </View>
             </View>
 
-            <View style={{ marginBottom: 18 }}>
-              <Text style={{ fontSize: 11, fontFamily: 'Inter_600SemiBold', color: colors.dark, marginBottom: 6 }}>PASSWORD</Text>
-              <View>
+            {/* Password Field */}
+            <View style={{ marginBottom: 20 }}>
+              <Text
+                style={{
+                  fontSize: 10,
+                  fontFamily: 'Inter_700Bold',
+                  color: colors.subtle,
+                  marginBottom: 7,
+                  textTransform: 'uppercase',
+                  letterSpacing: 1,
+                }}
+              >
+                Password
+              </Text>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  borderWidth: passwordFocused ? 1.5 : 1,
+                  borderColor: passwordFocused ? colors.primary : colors.border,
+                  borderRadius: 14,
+                  backgroundColor: passwordFocused ? '#F8FAFF' : '#FAFAFA',
+                  paddingHorizontal: 14,
+                }}
+              >
+                <Text style={{ fontSize: 16, marginRight: 8, opacity: 0.6 }}>🔒</Text>
                 <TextInput
                   value={password}
                   onChangeText={setPassword}
                   placeholder="Password"
                   placeholderTextColor={colors.subtle}
                   secureTextEntry={!showPassword}
+                  onFocus={() => setPasswordFocused(true)}
+                  onBlur={() => setPasswordFocused(false)}
                   style={{
-                    borderWidth: 1,
-                    borderColor: colors.border,
-                    borderRadius: 12,
-                    paddingVertical: 12,
-                    paddingHorizontal: 14,
-                    paddingRight: 58,
+                    flex: 1,
+                    paddingVertical: 13,
                     fontSize: 14,
                     color: colors.dark,
-                    backgroundColor: '#FAFAFA',
                     fontFamily: 'Inter_400Regular',
                   }}
                 />
-                <TouchableOpacity onPress={() => setShowPassword(value => !value)} style={{ position: 'absolute', right: 12, top: 12 }}>
-                  <Text style={{ color: colors.primary, fontSize: 12, fontFamily: 'Inter_700Bold' }}>
-                    {showPassword ? 'Hide' : 'Show'}
+                <TouchableOpacity onPress={() => setShowPassword(v => !v)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                  <Text style={{ color: colors.muted, fontSize: 14, fontFamily: 'Inter_500Medium' }}>
+                    {showPassword ? '🙈' : '👁️'}
                   </Text>
                 </TouchableOpacity>
               </View>
             </View>
 
+            {/* Error */}
             {error ? (
-              <Text style={{ color: colors.danger, fontSize: 12, fontFamily: 'Inter_500Medium', marginBottom: 12 }}>{error}</Text>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'flex-start',
+                  gap: 8,
+                  backgroundColor: colors.dangerBg,
+                  borderWidth: 1,
+                  borderColor: 'rgba(239,68,68,0.25)',
+                  borderRadius: 10,
+                  padding: 10,
+                  marginBottom: 14,
+                }}
+              >
+                <Text style={{ fontSize: 14 }}>⚠️</Text>
+                <Text style={{ color: colors.danger, fontSize: 12, fontFamily: 'Inter_500Medium', flex: 1 }}>{error}</Text>
+              </View>
             ) : null}
 
+            {/* Sign In Button */}
             <TouchableOpacity
               onPress={handleLogin}
               disabled={loading}
+              activeOpacity={0.85}
               style={{
                 backgroundColor: colors.primary,
-                borderRadius: 14,
-                paddingVertical: 14,
+                borderRadius: 16,
+                paddingVertical: 15,
                 alignItems: 'center',
                 justifyContent: 'center',
-                opacity: loading ? 0.72 : 1,
+                opacity: loading ? 0.75 : 1,
+                shadowColor: colors.primary,
+                shadowOpacity: 0.45,
+                shadowRadius: 16,
+                shadowOffset: { width: 0, height: 6 },
+                elevation: 6,
               }}
             >
               {loading ? (
                 <ActivityIndicator color="#FFFFFF" size="small" />
               ) : (
-                <Text style={{ color: '#FFFFFF', fontFamily: 'Inter_700Bold', fontSize: 15 }}>Sign In</Text>
+                <Text style={{ color: '#FFFFFF', fontFamily: 'Inter_800ExtraBold', fontSize: 16, letterSpacing: 0.2 }}>
+                  Sign In →
+                </Text>
               )}
             </TouchableOpacity>
           </View>
 
-          <View style={{ marginTop: 20 }}>
-            <Text
-              style={{
-                textAlign: 'center',
-                fontSize: 11,
-                color: 'rgba(255,255,255,0.38)',
-                marginBottom: 10,
-                fontFamily: 'Inter_400Regular',
-              }}
-            >
-              Demo shortcuts
-            </Text>
+          {/* ── Demo Shortcuts ── */}
+          <View style={{ marginTop: 24 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+              <View style={{ flex: 1, height: 1, backgroundColor: 'rgba(255,255,255,0.08)' }} />
+              <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', fontFamily: 'Inter_500Medium' }}>Demo shortcuts</Text>
+              <View style={{ flex: 1, height: 1, backgroundColor: 'rgba(255,255,255,0.08)' }} />
+            </View>
             <View style={{ flexDirection: 'row', gap: 10 }}>
               <TouchableOpacity
                 onPress={() => router.replace(routes.driverHome)}
+                activeOpacity={0.8}
                 style={{
                   flex: 1,
-                  backgroundColor: 'rgba(16,185,129,0.15)',
+                  backgroundColor: 'rgba(16,185,129,0.12)',
                   borderWidth: 1,
-                  borderColor: 'rgba(16,185,129,0.35)',
-                  borderRadius: 12,
-                  paddingVertical: 10,
+                  borderColor: 'rgba(16,185,129,0.3)',
+                  borderRadius: 14,
+                  paddingVertical: 12,
                   alignItems: 'center',
+                  gap: 4,
                 }}
               >
+                <Text style={{ fontSize: 20 }}>🚌</Text>
                 <Text style={{ color: colors.success, fontFamily: 'Inter_600SemiBold', fontSize: 12 }}>Driver Demo</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => router.replace(routes.parentHome)}
+                activeOpacity={0.8}
                 style={{
                   flex: 1,
-                  backgroundColor: 'rgba(59,130,246,0.15)',
+                  backgroundColor: 'rgba(59,130,246,0.12)',
                   borderWidth: 1,
-                  borderColor: 'rgba(59,130,246,0.35)',
-                  borderRadius: 12,
-                  paddingVertical: 10,
+                  borderColor: 'rgba(59,130,246,0.3)',
+                  borderRadius: 14,
+                  paddingVertical: 12,
                   alignItems: 'center',
+                  gap: 4,
                 }}
               >
+                <Text style={{ fontSize: 20 }}>👨‍👧</Text>
                 <Text style={{ color: colors.info, fontFamily: 'Inter_600SemiBold', fontSize: 12 }}>Parent Demo</Text>
               </TouchableOpacity>
             </View>
           </View>
+
+          {/* Footer */}
+          <Text style={{ textAlign: 'center', fontSize: 11, color: 'rgba(255,255,255,0.2)', marginTop: 24, fontFamily: 'Inter_400Regular' }}>
+            RouteyAI · Doha, Qatar
+          </Text>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

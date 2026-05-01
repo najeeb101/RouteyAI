@@ -11,18 +11,23 @@ export default function ParentLayout() {
           backgroundColor: colors.surface,
           borderTopColor: colors.border,
           borderTopWidth: 1,
-          height: 72,
-          paddingBottom: 10,
-          paddingTop: 8,
+          height: 76,
+          paddingBottom: 12,
+          paddingTop: 10,
+          shadowColor: colors.dark,
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.06,
+          shadowRadius: 8,
+          elevation: 8,
         },
         tabBarShowLabel: false,
       }}
     >
-      <Tabs.Screen name="index" options={{ tabBarIcon: ({ focused }) => <TabIcon label="Home" glyph="H" focused={focused} /> }} />
-      <Tabs.Screen name="map" options={{ tabBarIcon: ({ focused }) => <TabIcon label="Map" glyph="M" focused={focused} /> }} />
+      <Tabs.Screen name="index" options={{ tabBarIcon: ({ focused }) => <TabIcon label="Home" icon="🏠" focused={focused} /> }} />
+      <Tabs.Screen name="map" options={{ tabBarIcon: ({ focused }) => <TabIcon label="Track" icon="📍" focused={focused} activeColor={colors.info} /> }} />
       <Tabs.Screen
         name="notifications"
-        options={{ tabBarIcon: ({ focused }) => <TabIcon label="Alerts" glyph="A" focused={focused} activeColor={colors.info} /> }}
+        options={{ tabBarIcon: ({ focused }) => <TabIcon label="Alerts" icon="🔔" focused={focused} activeColor={colors.warning} /> }}
       />
     </Tabs>
   )

@@ -12,10 +12,15 @@ export function Card({ children, style }: CardProps) {
       style={[
         {
           backgroundColor: colors.surface,
-          borderRadius: 18,
+          borderRadius: 20,
           borderWidth: 1,
           borderColor: colors.border,
           padding: 16,
+          shadowColor: colors.dark,
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.06,
+          shadowRadius: 8,
+          elevation: 2,
         },
         style,
       ]}

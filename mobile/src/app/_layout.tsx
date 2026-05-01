@@ -2,7 +2,7 @@ import { Slot } from 'expo-router'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { useFonts, Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold, Inter_800ExtraBold } from '@expo-google-fonts/inter'
-import { View, ActivityIndicator, Platform } from 'react-native'
+import { View, Text, ActivityIndicator, Platform } from 'react-native'
 import { useEffect } from 'react'
 import * as Notifications from 'expo-notifications'
 import * as Device from 'expo-device'
@@ -69,8 +69,24 @@ export default function RootLayout() {
 
   if (!fontsLoaded) {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#0F172A' }}>
-        <ActivityIndicator color="#00D4FF" />
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#0F172A', gap: 16 }}>
+        <View
+          style={{
+            width: 72,
+            height: 72,
+            borderRadius: 20,
+            backgroundColor: '#1E3A8A',
+            alignItems: 'center',
+            justifyContent: 'center',
+            shadowColor: '#00D4FF',
+            shadowOpacity: 0.4,
+            shadowRadius: 20,
+            shadowOffset: { width: 0, height: 6 },
+          }}
+        >
+          <Text style={{ fontSize: 34 }}>🚌</Text>
+        </View>
+        <ActivityIndicator color="#00D4FF" size="small" />
       </View>
     )
   }

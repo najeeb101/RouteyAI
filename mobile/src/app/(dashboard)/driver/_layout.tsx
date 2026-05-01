@@ -11,16 +11,21 @@ export default function DriverLayout() {
           backgroundColor: colors.surface,
           borderTopColor: colors.border,
           borderTopWidth: 1,
-          height: 72,
-          paddingBottom: 10,
-          paddingTop: 8,
+          height: 76,
+          paddingBottom: 12,
+          paddingTop: 10,
+          shadowColor: colors.dark,
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.06,
+          shadowRadius: 8,
+          elevation: 8,
         },
         tabBarShowLabel: false,
       }}
     >
-      <Tabs.Screen name="index" options={{ tabBarIcon: ({ focused }) => <TabIcon label="Home" glyph="H" focused={focused} /> }} />
-      <Tabs.Screen name="route" options={{ tabBarIcon: ({ focused }) => <TabIcon label="Route" glyph="R" focused={focused} /> }} />
-      <Tabs.Screen name="messages" options={{ tabBarIcon: ({ focused }) => <TabIcon label="Messages" glyph="M" focused={focused} /> }} />
+      <Tabs.Screen name="index" options={{ tabBarIcon: ({ focused }) => <TabIcon label="Home" icon="🚌" focused={focused} /> }} />
+      <Tabs.Screen name="route" options={{ tabBarIcon: ({ focused }) => <TabIcon label="Route" icon="🗺️" focused={focused} activeColor={colors.info} /> }} />
+      <Tabs.Screen name="messages" options={{ tabBarIcon: ({ focused }) => <TabIcon label="Messages" icon="💬" focused={focused} activeColor={colors.success} /> }} />
     </Tabs>
   )
 }

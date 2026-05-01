@@ -44,7 +44,7 @@ const NAV_ICONS = [
 
 export function DashboardPreview() {
   return (
-    <div className="bg-white dark:bg-slate-900 border border-[#E2E8F0] dark:border-slate-800 rounded-3xl shadow-[0_8px_40px_-12px_rgb(0_0_0/0.14)] dark:shadow-[0_8px_40px_-12px_rgb(0_0_0/0.5)] overflow-hidden select-none">
+    <div className="bg-white dark:bg-slate-900 border border-[#E2E8F0] dark:border-slate-800 rounded-3xl shadow-[0_24px_70px_-30px_rgb(15_23_42/0.35)] ring-1 ring-white/70 dark:shadow-[0_24px_70px_-30px_rgb(0_0_0/0.6)] dark:ring-slate-700/40 overflow-hidden select-none">
 
       {/* Browser chrome */}
       <div className="flex items-center gap-1.5 px-4 py-3 border-b border-[#F1F5F9] dark:border-slate-800 bg-[#FAFAFA] dark:bg-slate-950 shrink-0">
@@ -101,8 +101,8 @@ export function DashboardPreview() {
             {[
               { label: 'Active Buses',      value: '4',     sub: 'of 6 in fleet',       color: '#3B82F6' },
               { label: 'Students En Route', value: '63',    sub: 'route capacity: 92',   color: '#10B981' },
-              { label: 'On-Time Rate',      value: '94%',   sub: '↑ 2% this week',       color: '#8B5CF6' },
-              { label: 'Next Arrival',      value: '3 min', sub: 'Bus #5 · Route C',     color: '#F59E0B' },
+              { label: 'On-Time Rate',      value: '94%',   sub: '+2% this week',       color: '#8B5CF6' },
+              { label: 'Next Arrival',      value: '3 min', sub: 'Bus #5 - Route C',     color: '#F59E0B' },
             ].map(s => (
               <div key={s.label} className="bg-white dark:bg-slate-800/80 rounded-xl p-2.5 border border-[#E8EDF2] dark:border-slate-700/60 shadow-sm">
                 <div className="text-[8px] font-semibold uppercase tracking-wide text-[#94A3B8] mb-1">{s.label}</div>
@@ -258,7 +258,7 @@ export function DashboardPreview() {
             <div className="w-44 bg-white dark:bg-slate-800/80 rounded-xl border border-[#E8EDF2] dark:border-slate-700/60 flex flex-col overflow-hidden shadow-sm shrink-0">
               <div className="px-3 py-2 border-b border-[#F1F5F9] dark:border-slate-700/60 shrink-0">
                 <div className="text-[10px] font-bold text-[#0F172A] dark:text-white">Active Fleet</div>
-                <div className="text-[9px] text-[#94A3B8]">4 buses · 63 students</div>
+                <div className="text-[9px] text-[#94A3B8]">4 buses - 63 students</div>
               </div>
 
               <div className="overflow-auto flex-1">
@@ -276,7 +276,7 @@ export function DashboardPreview() {
                         b.status === 'delayed'  ? 'bg-red-100   text-red-600   dark:bg-red-900/40   dark:text-red-400'   :
                         'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400'
                       }`}>
-                        {b.status === 'arriving' ? '▲ Arriving' : b.status === 'delayed' ? '⚠ Delayed' : '✓ On time'}
+                        {b.status === 'arriving' ? 'Arriving' : b.status === 'delayed' ? 'Delayed' : 'On time'}
                       </span>
                       <span className="text-[11px] font-extrabold text-[#0F172A] dark:text-white">{b.eta}</span>
                     </div>
@@ -292,7 +292,7 @@ export function DashboardPreview() {
 
               <div className="px-3 py-2 border-t border-[#F1F5F9] dark:border-slate-700/60 shrink-0">
                 <div className="w-full text-[9px] font-bold text-[#1E3A8A] dark:text-blue-400 bg-[#EFF6FF] dark:bg-blue-950/40 rounded-lg py-1.5 text-center">
-                  View All Buses →
+                  View All Buses {'->'}
                 </div>
               </div>
             </div>
@@ -302,3 +302,4 @@ export function DashboardPreview() {
     </div>
   )
 }
+

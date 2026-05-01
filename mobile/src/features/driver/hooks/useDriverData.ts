@@ -34,6 +34,13 @@ export type DriverMessage = {
   type: 'ok' | 'info' | 'warn'
 }
 
+export type DriverRoutePoint = {
+  lat: number
+  lng: number
+  stopOrder: number
+  studentId: string
+}
+
 type BusRow = {
   id: string
   name: string
@@ -61,9 +68,29 @@ type AnnouncementRow = {
   created_at: string
 }
 
+type WaypointRow = {
+  lat: number
+  lng: number
+  student_id: string
+  stop_order: number
+}
+
+type RouteRow = {
+  waypoints: WaypointRow[] | null
+  encoded_polyline: string | null
+}
+
 function initialsFromName(name: string) {
   const parts = name.trim().split(/\s+/).filter(Boolean)
   return ((parts[0]?.[0] ?? 'S') + (parts[1]?.[0] ?? '')).toUpperCase()
+}
+
+function getLocalDateKey() {
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
 }
 
 export function useDriverData() {
@@ -73,6 +100,8 @@ export function useDriverData() {
   const [stops, setStops] = useState<DriverStop[]>([])
   const [messages, setMessages] = useState<DriverMessage[]>([])
   const [boardedIds, setBoardedIds] = useState<Set<string>>(new Set())
+  const [routePoints, setRoutePoints] = useState<DriverRoutePoint[]>([])
+  const [encodedPolyline, setEncodedPolyline] = useState<string | null>(null)
 
   const refresh = useCallback(async () => {
     setLoading(true)
@@ -145,7 +174,27 @@ export function useDriverData() {
       }))
       setStops(stopList)
 
-      const today = new Date().toISOString().slice(0, 10)
+      const { data: routeData } = await supabase
+        .from('routes')
+        .select('waypoints, encoded_polyline')
+        .eq('bus_id', bus.id)
+        .order('optimized_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      const latestRoute = routeData as RouteRow | null
+      const points = (latestRoute?.waypoints ?? [])
+        .filter((wp) => typeof wp?.lat === 'number' && typeof wp?.lng === 'number')
+        .sort((a, b) => a.stop_order - b.stop_order)
+        .map((wp) => ({
+          lat: wp.lat,
+          lng: wp.lng,
+          stopOrder: wp.stop_order,
+          studentId: wp.student_id,
+        }))
+      setRoutePoints(points)
+      setEncodedPolyline(latestRoute?.encoded_polyline ?? null)
+
+      const today = getLocalDateKey()
       const { data: attendanceData } = await supabase
         .from('attendance')
         .select('student_id')
@@ -196,6 +245,8 @@ export function useDriverData() {
     totalStudents,
     boardedIds,
     messages,
+    routePoints,
+    encodedPolyline,
     refresh,
     setBoardedIds,
   }
