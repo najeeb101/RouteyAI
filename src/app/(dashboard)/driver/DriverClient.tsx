@@ -51,7 +51,7 @@ export default function DriverClient({ bus, stops, attendedIds: initialAttendedI
 
   async function toggleAttendance(studentId: string) {
     if (!bus || toggling) return
-    const today = new Date().toISOString().split('T')[0]
+    const today = new Date().toISOString().slice(0, 10)
     const wasBoarded = boardedIds.has(studentId)
 
     setToggling(studentId)

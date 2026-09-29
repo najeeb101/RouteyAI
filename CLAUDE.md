@@ -55,7 +55,7 @@ routeyai/
 │   ├── lib/
 │   │   ├── supabase/         # client.ts, server.ts, middleware.ts
 │   │   └── mapbox/config.ts
-│   └── types/database.ts     # generated — do not hand-edit
+│   └── types/database.ts     # Supabase schema types — hand-maintained to match migrations (every table needs `Relationships`, every RPC must be listed); replace with `pnpm db:types` output when the DB is reachable
 ├── mobile/
 │   └── src/
 │       ├── app/              # expo-router file-based routes

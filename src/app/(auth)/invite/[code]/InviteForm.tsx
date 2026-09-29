@@ -6,7 +6,7 @@ import { Eye, EyeOff } from 'lucide-react'
 import { RouteyLogo } from '@/components/RouteyLogo'
 import { createClient } from '@/lib/supabase/client'
 import { ROLE_HOME, type Role } from '@/lib/constants'
-import type { InviteRole } from '@/types/database'
+import type { InviteRole, RedeemInviteResult } from '@/types/database'
 
 const ROLE_LABELS: Record<InviteRole, string> = {
   school_admin: 'School Administrator',
@@ -78,20 +78,21 @@ export default function InviteForm({ code, role }: Props) {
       return
     }
 
-    const { data: redeemResult, error: redeemError } = await supabase.rpc('redeem_invite', {
+    const { data: redeemData, error: redeemError } = await supabase.rpc('redeem_invite', {
       p_code: code,
       p_user_id: data.user.id,
     })
+    const redeemResult = redeemData as RedeemInviteResult | null
 
-    if (redeemError || redeemResult?.error) {
-      const msg = redeemResult?.error ?? redeemError?.message ?? 'Failed to redeem invite.'
+    if (redeemError || !redeemResult || 'error' in redeemResult) {
+      const msg = (redeemResult && 'error' in redeemResult ? redeemResult.error : null) ?? redeemError?.message ?? 'Failed to redeem invite.'
       setError(msg === 'invite_already_used' ? 'This invite has already been used.' :
                msg === 'invite_expired' ? 'This invite has expired.' : msg)
       setLoading(false)
       return
     }
 
-    const assignedRole = (redeemResult?.role ?? role) as Role
+    const assignedRole = (redeemResult.role ?? role) as Role
     router.push(ROLE_HOME[assignedRole] ?? '/login')
     router.refresh()
   }

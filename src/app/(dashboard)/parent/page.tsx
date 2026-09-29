@@ -83,7 +83,7 @@ export default async function ParentPage() {
   // Today's attendance for this child
   let attendanceStatus: 'boarded' | 'absent' | null = null
   if (child?.id) {
-    const today = new Date().toISOString().split('T')[0]
+    const today = new Date().toISOString().slice(0, 10)
     const { data: att } = await supabase
       .from('attendance')
       .select('status')

@@ -95,7 +95,7 @@ export default async function DriverPage() {
   }
 
   // Today's boarded students
-  const today = new Date().toISOString().split('T')[0]
+  const today = new Date().toISOString().slice(0, 10)
   const { data: attData } = await supabase
     .from('attendance')
     .select('student_id')

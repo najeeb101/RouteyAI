@@ -10,6 +10,11 @@ export type Role = 'platform_admin' | 'school_admin' | 'driver' | 'parent'
 export type AttendanceStatus = 'boarded' | 'absent'
 export type InviteRole = 'school_admin' | 'driver' | 'parent'
 
+/** JSONB returned by the redeem_invite RPC (supabase/migrations/0002_invites.sql). */
+export type RedeemInviteResult =
+  | { error: 'invite_not_found' | 'invite_already_used' | 'invite_expired' }
+  | { role: InviteRole; school_id: string | null; bus_id: string | null }
+
 export interface RouteWaypoint {
   lat: number
   lng: number
@@ -48,6 +53,7 @@ export interface Database {
           created_by?: string | null
           updated_at?: string
         }
+        Relationships: []
       }
       user_roles: {
         Row: {
@@ -55,6 +61,7 @@ export interface Database {
           user_id: string
           role: Role
           school_id: string | null
+          push_token: string | null
           created_at: string
         }
         Insert: {
@@ -62,6 +69,7 @@ export interface Database {
           user_id: string
           role: Role
           school_id?: string | null
+          push_token?: string | null
           created_at?: string
         }
         Update: {
@@ -69,7 +77,9 @@ export interface Database {
           user_id?: string
           role?: Role
           school_id?: string | null
+          push_token?: string | null
         }
+        Relationships: []
       }
       buses: {
         Row: {
@@ -104,6 +114,7 @@ export interface Database {
           is_active?: boolean
           updated_at?: string
         }
+        Relationships: []
       }
       students: {
         Row: {
@@ -141,6 +152,7 @@ export interface Database {
           stop_order?: number | null
           updated_at?: string
         }
+        Relationships: []
       }
       routes: {
         Row: {
@@ -175,6 +187,7 @@ export interface Database {
           encoded_polyline?: string | null
           optimized_at?: string
         }
+        Relationships: []
       }
       bus_locations: {
         Row: {
@@ -201,6 +214,7 @@ export interface Database {
           speed?: number | null
           timestamp?: string
         }
+        Relationships: []
       }
       announcements: {
         Row: {
@@ -226,6 +240,7 @@ export interface Database {
           sender_id?: string | null
           message?: string
         }
+        Relationships: []
       }
       attendance: {
         Row: {
@@ -251,6 +266,7 @@ export interface Database {
           status?: AttendanceStatus | null
           date?: string
         }
+        Relationships: []
       }
       invites: {
         Row: {
@@ -290,6 +306,7 @@ export interface Database {
           used_at?: string | null
           used_by?: string | null
         }
+        Relationships: []
       }
       demo_requests: {
         Row: {
@@ -318,21 +335,95 @@ export interface Database {
           phone?: string | null
           notes?: string | null
         }
+        Relationships: []
       }
     }
     Views: Record<string, never>
     Functions: {
-      get_user_role: {
-        Args: Record<string, never>
-        Returns: Role
+      get_user_role: { Args: Record<PropertyKey, never>; Returns: Role }
+      get_user_school_id: { Args: Record<PropertyKey, never>; Returns: string }
+      redeem_invite: { Args: { p_code: string; p_user_id: string }; Returns: Json }
+      // 0005_admin_helpers.sql
+      get_platform_stats: { Args: Record<PropertyKey, never>; Returns: Json }
+      get_schools_with_admins: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          name: string
+          address: string
+          created_at: string
+          bus_count: number
+          student_count: number
+          admin_name: string | null
+          admin_email: string | null
+        }[]
       }
-      get_user_school_id: {
-        Args: Record<string, never>
+      create_school: { Args: { p_name: string; p_address: string; p_lat?: number; p_lng?: number }; Returns: string }
+      generate_school_admin_invite: { Args: { p_school_id: string }; Returns: string }
+      // 0006_school_helpers.sql
+      get_school_info: { Args: Record<PropertyKey, never>; Returns: Json }
+      get_school_stats: { Args: Record<PropertyKey, never>; Returns: Json }
+      get_buses_with_drivers: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          school_id: string
+          name: string
+          capacity: number
+          driver_id: string | null
+          driver_name: string | null
+          driver_email: string | null
+          color: string
+          is_active: boolean
+          student_count: number
+          created_at: string
+        }[]
+      }
+      get_students_with_bus: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          school_id: string
+          name: string
+          home_address: string
+          bus_id: string | null
+          bus_name: string | null
+          stop_order: number | null
+          created_at: string
+        }[]
+      }
+      get_recent_announcements: {
+        Args: { p_limit?: number }
+        Returns: {
+          id: string
+          message: string
+          bus_id: string | null
+          bus_name: string | null
+          created_at: string
+        }[]
+      }
+      create_bus: { Args: { p_name: string; p_capacity?: number; p_color?: string }; Returns: string }
+      add_student: {
+        Args: { p_name: string; p_home_address: string; p_lat?: number; p_lng?: number; p_bus_id?: string | null }
         Returns: string
       }
-      redeem_invite: {
-        Args: { p_code: string; p_user_id: string }
-        Returns: Json
+      generate_driver_invite: { Args: { p_bus_id: string }; Returns: string }
+      generate_parent_invite: { Args: { p_student_id: string }; Returns: string }
+      send_announcement: { Args: { p_message: string; p_bus_id?: string | null }; Returns: string }
+      // 0010_routes_with_school_id.sql
+      get_routes_with_buses: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          school_id: string
+          bus_id: string
+          bus_name: string
+          bus_color: string
+          waypoints: Json
+          total_distance_km: number | null
+          total_duration_min: number | null
+          optimized_at: string | null
+        }[]
       }
     }
     Enums: Record<string, never>
