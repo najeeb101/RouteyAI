@@ -7,9 +7,9 @@ Mobile: Expo (React Native) | React Native styles | Mapbox RN | EAS
 
 ## Current Status Snapshot (2026-09-29)
 
-- Completed: Phases 2–10.
-- Nearly done: Phase 1 (only Vercel deploy left) and Phase 11 (Lighthouse audit and custom domain left).
-- In progress: Phase 13 — landing page built; Vercel production deploy failing, Supabase project paused.
+- Completed: Phases 1–10.
+- Nearly done: Phase 11 (Lighthouse audit and custom domain left).
+- In progress: Phase 13 — landing page live at https://routeyai.vercel.app; Supabase project paused; launch placeholders in `src/lib/siteConfig.ts`.
 - Not started: Phase 12 (store submission).
 - Loose end: `mobile/src/components/route/LiveMapPreview.tsx` still reads `mobile/src/data/demoRoute.ts`.
 
@@ -24,7 +24,7 @@ Mobile: Expo (React Native) | React Native styles | Mapbox RN | EAS
 - [x] Configure Mapbox (`src/lib/mapbox/config.ts`)
 - [x] Build landing page: Hero, Features, Pricing, CTA, Footer
 - [x] Add responsive navbar: Logo, Features, Pricing, Login, Sign Up
-- [ ] Deploy to Vercel and connect GitHub repo
+- [x] Deploy to Vercel and connect GitHub repo
 
 ## Phase 2: Authentication and Role System
 
@@ -164,9 +164,9 @@ Full plan: [plans/2026-09-29-landing-page-launch.md](plans/2026-09-29-landing-pa
 - [x] `/privacy` and `/terms` pages (also required for Phase 12)
 - [x] `sitemap.ts`, `robots.ts`, `opengraph-image.tsx`, JSON-LD
 - [x] Vercel project `routeyai` created and linked to GitHub; production env vars set (`NEXT_PUBLIC_DEMO_MODE=false`)
-- [ ] Fix Vercel production build (fails on Vercel, passes locally — check build log)
+- [x] Fix Vercel production build (Supabase packages aligned, `database.ts` completed) — live at https://routeyai.vercel.app
 - [ ] Restore paused Supabase project (host no longer resolves), then test demo form end to end
 - [ ] Add real `NEXT_PUBLIC_MAPBOX_TOKEN` (`.env.local` has the placeholder) locally and on Vercel
-- [ ] Set `NEXT_PUBLIC_APP_URL` on Vercel once the production URL is known (used by sitemap, robots, OG)
+- [x] Set `NEXT_PUBLIC_APP_URL=https://routeyai.vercel.app` on Vercel (production)
 - [ ] Launch placeholders in `src/lib/siteConfig.ts`: set `NEXT_PUBLIC_CONTACT_EMAIL` (routeyai.com has no DNS/MX yet), legal review then `LEGAL_REVIEWED = true`, fill `PLAN_SUPPORT`
 - [ ] Lighthouse ≥ 90 on mobile
