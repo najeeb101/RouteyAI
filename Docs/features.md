@@ -13,6 +13,7 @@ The highest access tier — used by RouteyAI owners to manage the SaaS.
 | Multi-Tenant School Management | Create, edit, and disable schools on the platform |
 | School Admin Assignment | Invite and assign admin accounts to schools |
 | Global Analytics | Macro stats across all schools (total buses, students, active routes) |
+| Demo Requests | Leads submitted from the landing page "Book a demo" form (`demo_requests`) |
 
 ---
 
@@ -44,8 +45,8 @@ Designed for one-handed use on a phone while managing a route.
 
 | Feature | Description |
 |---|---|
-| Turn-by-Turn Route | Follow the AI-optimized route saved in DB — no memorization needed |
-| Start Route / GPS Broadcast | Triggers simulated GPS broadcasting along waypoints (real GPS in v2) |
+| Next Pickup Card | Shows the next student's name and address in AI-optimized order; advances as attendance is marked |
+| Start Route / GPS Broadcast | Sends the phone's real GPS position (`expo-location`) every 10 seconds while the route is active |
 | Passenger Manifest | Ordered stop list with student names per stop |
 | Digital Attendance | Tap to mark each student as Boarded or Absent |
 | Send Parent Announcements | Push quick updates to parents on that specific bus |
@@ -64,6 +65,7 @@ Focused entirely on peace of mind. Zero admin UI.
 | Stop Highlight | Child's stop is visually highlighted on the map |
 | Driver Announcements | See real-time updates pushed by the bus driver |
 | Attendance Confirmation | Know instantly when their child boarded the bus |
+| Push Notifications | Alerts when their child boards or is marked absent, and when the bus is close |
 | Secure Isolation | RLS enforces parents can only see their own child's bus — nothing else |
 
 ---
@@ -81,3 +83,16 @@ The background logic that powers route assignment and optimization.
 | Capacity Enforcement | Hard limit | Blocks assignment if bus exceeds set capacity (default 40) |
 | Dynamic Recalculation | Trigger-based | Route recalculates automatically on student add/remove |
 | Upgrade Path | Google OR-Tools / OSRM | Planned for v2 when scale demands higher optimization quality |
+
+---
+
+## 🌐 Marketing Site (Landing Page)
+
+Public page at `/`. Plan: `plans/2026-09-29-landing-page-launch.md`.
+
+| Feature | Description |
+|---|---|
+| Product overview | Hero, how it works, admin dashboard and mobile app showcases, features, safety & privacy |
+| Pricing | Plans by fleet size with "Contact us" |
+| Book a demo | Form saved to `demo_requests` (anyone can submit; only platform admins can read) |
+| Legal | `/privacy` and `/terms` pages (also linked from app store listings) |

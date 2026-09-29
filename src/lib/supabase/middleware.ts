@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server"
 import { ROLE_HOME, type Role } from "@/lib/constants"
 import type { Database } from "@/types/database"
 
-const PUBLIC_PATHS = ["/", "/login", "/signup", "/invite", "/api/health"]
+const PUBLIC_PATHS = ["/", "/login", "/signup", "/invite", "/privacy", "/terms", "/opengraph-image", "/api/health"]
 const ROLE_PREFIXES: Record<string, Role> = {
   "/admin": "platform_admin",
   "/school": "school_admin",

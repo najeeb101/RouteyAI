@@ -48,7 +48,7 @@ export function AdminOrchestrator() {
                 {[
                   { label: 'Total Students', value: '842', color: 'text-blue-600', sub: 'Geocoded & Active' },
                   { label: 'AI Clusters', value: '14', color: 'text-indigo-600', sub: 'Geographically Optimized' },
-                  { label: 'Fleet Efficiency', value: '22%', color: 'text-emerald-600', sub: 'Fuel Costs Saved' },
+                  { label: 'Fleet Capacity', value: '91%', color: 'text-emerald-600', sub: 'Seats Filled' },
                 ].map((s, i) => (
                   <div key={i} className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/30 border border-slate-100 dark:border-slate-800/50">
                     <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">{s.label}</div>

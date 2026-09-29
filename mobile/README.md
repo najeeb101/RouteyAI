@@ -10,6 +10,8 @@ mobile/
     app/
       (auth)/
         login.tsx
+      invite/
+        [code].tsx
       (dashboard)/
         driver/
           index.tsx
@@ -24,11 +26,16 @@ mobile/
       primitives/
       route/
     data/
-      demoRoute.ts
+      demoRoute.ts        # leftover — only LiveMapPreview still uses it
     features/
       auth/screens/
-      driver/screens/
-      parent/screens/
+      driver/
+        context/          # DriverDataContext
+        hooks/            # useDriverData (Supabase queries, attendance, GPS)
+        screens/
+      parent/
+        context/          # ParentDataContext
+        screens/          # includes useParentData (Realtime + ETA)
     lib/
       navigation/
       supabase.ts
@@ -39,7 +46,10 @@ mobile/
 
 - Route files stay thin and import screens from `features/*/screens`.
 - Shared UI lives in `components/primitives`, `components/navigation`, and `components/route`.
-- Demo data is centralized in `data/demoRoute.ts` so it can later be replaced by Supabase queries.
+- Driver and parent screens read live Supabase data. The only remaining demo data is `data/demoRoute.ts`, used by `components/route/LiveMapPreview.tsx`.
+- Styling uses React Native styles with shared tokens in `lib/colors` (NativeWind is not installed).
+- The driver app sends GPS every 10 seconds while a route is active (`expo-location`).
+- Push tokens are registered on launch (`expo-notifications`) and saved to `user_roles.push_token`.
 - `/login`, `/driver`, and `/parent` are the stable app paths used by navigation.
 
 ## Commands

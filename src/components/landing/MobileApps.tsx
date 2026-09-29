@@ -1,4 +1,5 @@
 import Image from 'next/image'
+import { AppDownloadButton } from '@/components/landing/AppDownloadButton'
 
 function DriverPhone() {
   return (
@@ -8,7 +9,7 @@ function DriverPhone() {
       <div className="absolute inset-[7px] overflow-hidden rounded-[2rem] bg-black">
         <Image
           src="/assets/mockups/driver-app.png"
-          alt="Driver App Mockup"
+          alt="RouteyAI driver app showing the next pickup and route progress"
           fill
           className="object-cover object-center scale-[1.26]"
         />
@@ -25,7 +26,7 @@ function ParentPhone() {
       <div className="absolute inset-[7px] overflow-hidden rounded-[2rem] bg-white">
         <Image
           src="/assets/mockups/parent-app.png"
-          alt="Parent App Mockup"
+          alt="RouteyAI parent app showing the live bus on a map"
           fill
           className="object-cover object-center scale-[1.26]"
         />
@@ -39,12 +40,12 @@ const storeButtonPrimary =
 const storeButtonSecondary =
   'flex-1 rounded-xl bg-white py-3 text-sm font-bold text-slate-900 ring-1 ring-slate-300 transition-all hover:-translate-y-0.5 hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-100 dark:ring-slate-700 dark:hover:bg-slate-700'
 
-export function MobileAppsSection({ onDownloadClick }: { onDownloadClick: () => void }) {
+export function MobileAppsSection() {
   return (
     <section id="apps" className="mx-auto mb-16 max-w-6xl scroll-mt-24 px-6">
       <div className="mb-12 text-center">
         <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-[#BFDBFE] bg-white px-4 py-1.5 text-[11px] font-bold uppercase tracking-wide text-[#1E3A8A] shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-blue-400">
-          Free Mobile Apps
+          Mobile Apps · Coming Soon
         </div>
         <h2 className="mb-4 text-4xl font-extrabold tracking-tight text-[#0F172A] dark:text-white md:text-5xl">
           Built for every role.
@@ -52,7 +53,7 @@ export function MobileAppsSection({ onDownloadClick }: { onDownloadClick: () => 
           <span className="bg-gradient-to-r from-emerald-500 to-indigo-500 bg-clip-text text-transparent">In every pocket.</span>
         </h2>
         <p className="mx-auto max-w-2xl text-lg text-[#64748B] dark:text-slate-400">
-          Free apps for drivers and parents - real-time navigation, live tracking, and instant updates.
+          Free apps for drivers and parents — live tracking, digital attendance, and instant updates.
         </p>
       </div>
 
@@ -71,16 +72,16 @@ export function MobileAppsSection({ onDownloadClick }: { onDownloadClick: () => 
                 </svg>
                 For Drivers
               </div>
-              <h3 className="mb-2 text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">Navigate. Check in. Repeat.</h3>
+              <h3 className="mb-2 text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">Pick up. Check in. Repeat.</h3>
               <p className="mb-5 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-                Turn-by-turn routing, per-stop student check-ins, and instant messages from school - all hands-free.
+                An ordered pickup list, one-tap student check-ins, and instant messages from school — built for one-handed use.
               </p>
               <ul className="mb-6 space-y-2.5">
                 {[
-                  'Turn-by-turn route navigation',
+                  'Next pickup card in optimized stop order',
                   'Digital student check-in at every stop',
                   'Instant broadcast alerts from school',
-                  'Live route progress and ETA updates',
+                  'Live GPS broadcast to parents during the route',
                 ].map((feature) => (
                   <li key={feature} className="flex items-center gap-2.5 text-sm text-slate-700 dark:text-slate-300">
                     <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-emerald-300 bg-emerald-100 text-emerald-600 dark:border-emerald-500/30 dark:bg-emerald-500/15">
@@ -93,12 +94,12 @@ export function MobileAppsSection({ onDownloadClick }: { onDownloadClick: () => 
                 ))}
               </ul>
               <div className="flex gap-3">
-                <button onClick={onDownloadClick} className={storeButtonPrimary}>
+                <AppDownloadButton className={storeButtonPrimary}>
                   App Store
-                </button>
-                <button onClick={onDownloadClick} className={storeButtonSecondary}>
+                </AppDownloadButton>
+                <AppDownloadButton className={storeButtonSecondary}>
                   Google Play
-                </button>
+                </AppDownloadButton>
               </div>
             </div>
             <div className="mx-auto">
@@ -119,14 +120,14 @@ export function MobileAppsSection({ onDownloadClick }: { onDownloadClick: () => 
               </div>
               <h3 className="mb-2 text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">Know where your child is. Always.</h3>
               <p className="mb-5 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-                Live bus location, boarding confirmation, and real-time ETA - before your child even gets on the bus.
+                Live bus location, boarding confirmation, and a real-time ETA — before your child even gets on the bus.
               </p>
               <ul className="mb-6 space-y-2.5">
                 {[
                   'Live bus location on an interactive map',
-                  'Boarding and drop-off confirmations',
-                  'Real-time ETA to stop and school',
-                  'Instant delay and absence alerts',
+                  'Boarding and absence confirmations',
+                  'Live ETA to your child\'s stop',
+                  'Push alerts and school announcements',
                 ].map((feature) => (
                   <li key={feature} className="flex items-center gap-2.5 text-sm text-slate-700 dark:text-slate-300">
                     <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-indigo-300 bg-indigo-100 text-indigo-600 dark:border-indigo-500/30 dark:bg-indigo-500/15">
@@ -139,12 +140,12 @@ export function MobileAppsSection({ onDownloadClick }: { onDownloadClick: () => 
                 ))}
               </ul>
               <div className="flex gap-3">
-                <button onClick={onDownloadClick} className={storeButtonPrimary}>
+                <AppDownloadButton className={storeButtonPrimary}>
                   App Store
-                </button>
-                <button onClick={onDownloadClick} className={storeButtonSecondary}>
+                </AppDownloadButton>
+                <AppDownloadButton className={storeButtonSecondary}>
                   Google Play
-                </button>
+                </AppDownloadButton>
               </div>
             </div>
             <div className="mx-auto">

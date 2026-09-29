@@ -43,8 +43,18 @@ RouteyAI uses **Mapbox** as its core mapping and routing provider.
 3. **Logistics-First APIs:**
    - **Matrix API:** Feeds precise travel times and distances into the K-Means + TSP solvers for accurate route optimization.
    - **Directions API:** Renders real road-network route lines on the map (not straight lines).
-   - **Navigation SDK:** Enables in-app turn-by-turn guidance for drivers without redirecting to an external app.
-4. **Offline Tile Support:** Drivers retain route guidance in areas with poor cellular coverage.
+   - **Navigation SDK:** Could enable in-app turn-by-turn guidance later. Not used today — the driver app deliberately has no map or navigation.
+4. **Offline Tile Support:** Available if drivers ever need map guidance in poor-coverage areas (not used today).
+
+---
+
+## Mobile App: Expo
+
+Drivers and parents use a native app built with **Expo (React Native)** in `mobile/`, built and shipped with **EAS**.
+
+- **Driver:** sends the phone's GPS position (`expo-location`) to `bus_locations` every 10 seconds while a route is active, and records attendance.
+- **Parent:** subscribes to `bus_locations` over Supabase Realtime and renders the bus with `@rnmapbox/maps`.
+- **Push notifications:** device tokens are stored in `user_roles.push_token`; the `send-notification` Edge Function sends through the Expo push service (boarded/absent, announcements, ETA alerts).
 
 ---
 
@@ -54,9 +64,13 @@ RouteyAI uses **Mapbox** as its core mapping and routing provider.
 ┌─────────────────────────────────────────────────┐
 │                   VERCEL (CDN)                  │
 │          Next.js 14 App (TypeScript)            │
-│   Admin Dashboard │ Driver View │ Parent View   │
+│   Landing Page │ Platform Admin │ School Admin  │
 └────────────────────┬────────────────────────────┘
-                     │ API Routes / Server Actions
+                     │ Server Actions        ┌──────────────────────┐
+                     │                       │  EXPO APP (mobile/)  │
+                     │                       │  Driver │ Parent     │
+                     │                       └──────────┬───────────┘
+                     │                                  │ supabase-js
           ┌──────────▼──────────┐
           │      SUPABASE        │
           │  ┌───────────────┐   │
@@ -71,7 +85,7 @@ RouteyAI uses **Mapbox** as its core mapping and routing provider.
           │  │  WebSockets   │───┼──► Parent live tracking
           │  └───────────────┘   │
           │  ┌───────────────┐   │
-          │  │ Edge Functions│   │ ◄── Route optimization
+          │  │ Edge Functions│   │ ◄── Route optimization + push notifications
           │  └───────────────┘   │
           └─────────────────────┘
                      │

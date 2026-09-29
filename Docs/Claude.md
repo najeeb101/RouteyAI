@@ -119,31 +119,30 @@ routeyai/
 │   │   │   ├── parent/               # Parent pages
 │   │   │   │   └── page.tsx
 │   │   │   └── layout.tsx            # Dashboard shell (sidebar + topbar)
-│   │   ├── api/                      # API routes
-│   │   │   └── optimize-route/route.ts
-│   │   ├── page.tsx                  # Landing page
+│   │   ├── privacy/page.tsx          # Privacy policy (also used for store listings)
+│   │   ├── terms/page.tsx            # Terms of service
+│   │   ├── sitemap.ts · robots.ts · opengraph-image.tsx
+│   │   ├── page.tsx                  # Landing page (Server Component)
 │   │   ├── layout.tsx                # Root layout
 │   │   └── globals.css
 │   ├── components/
 │   │   ├── ui/                       # shadcn/ui components
-│   │   ├── maps/                     # Mapbox components
-│   │   │   ├── MapView.tsx
-│   │   │   ├── BusMarker.tsx
-│   │   │   ├── StopMarker.tsx
-│   │   │   └── RouteLayer.tsx
+│   │   ├── maps/                     # SVG map previews (web uses no mapbox-gl yet)
+│   │   │   ├── FleetMapSvg.tsx
+│   │   │   ├── RouteMapSvg.tsx
+│   │   │   └── ParentMapSvg.tsx
 │   │   ├── dashboard/                # Dashboard components
 │   │   │   ├── Sidebar.tsx
 │   │   │   ├── TopBar.tsx
 │   │   │   ├── StatsCard.tsx
 │   │   │   └── DataTable.tsx
-│   │   ├── forms/                    # Form components
-│   │   │   ├── AddStudentForm.tsx
-│   │   │   ├── AddBusForm.tsx
-│   │   │   └── AddSchoolForm.tsx
-│   │   └── landing/                  # Landing page sections
+│   │   └── landing/                  # Landing page sections (see Docs/plans/2026-09-29-landing-page-launch.md)
+│   │       ├── LandingNav.tsx        # client: mobile menu + app modal trigger
 │   │       ├── Hero.tsx
 │   │       ├── Features.tsx
 │   │       ├── Pricing.tsx
+│   │       ├── Faq.tsx
+│   │       ├── DemoRequestForm.tsx   # client: Server Action → demo_requests
 │   │       └── Footer.tsx
 │   ├── lib/
 │   │   ├── supabase/
@@ -155,21 +154,17 @@ routeyai/
 │   │   ├── utils.ts                  # General utilities
 │   │   └── constants.ts
 │   ├── hooks/
-│   │   ├── useAuth.ts
-│   │   ├── useRealtime.ts            # Supabase realtime subscription
-│   │   ├── useBusLocation.ts
-│   │   └── useRouteOptimizer.ts
+│   │   └── useAuth.ts
 │   ├── types/
 │   │   ├── database.ts               # Supabase generated types
 │   │   ├── mapbox.ts
 │   │   └── index.ts
-│   └── store/                        # Zustand stores (if needed)
-│       └── useAppStore.ts
+├── mobile/                           # Expo app for drivers and parents (see mobile/README.md)
 ├── supabase/
 │   ├── migrations/                   # SQL migrations
 │   ├── functions/                    # Edge Functions
-│   │   └── optimize-route/
-│   │       └── index.ts
+│   │   ├── optimize-route/index.ts   # K-Means + TSP
+│   │   └── send-notification/index.ts # Expo push notifications
 │   └── seed.sql                      # Seed data for development
 ├── .env.local                        # Local env vars (NOT committed)
 ├── .env.example                      # Template for env vars
@@ -367,73 +362,44 @@ CREATE POLICY "Parent reads own child's attendance" ON attendance FOR SELECT
 
 ## 6. Build Phases (Execution Order)
 
-### Phase 1: Project Setup & Landing Page
-- Initialize Next.js + TypeScript + Tailwind + shadcn/ui
-- Configure Supabase client
-- Build a stunning landing page (Hero, Features, Pricing, CTA, Footer)
-- Responsive navigation bar with Logo, Features, Pricing, Login, Sign Up
+Numbering matches [task.md](task.md), which holds the live checklist.
 
-### Phase 2: Authentication & Role System
-- Supabase Auth (email/password)
-- Login page, Signup page (role selection during signup)
-- Auth middleware for route protection
-- Post-login redirect based on role
-- `user_roles` table + RLS policies
+| Phase | Scope | Status (2026-09-29) |
+|---|---|---|
+| 1 | Project setup & first landing page | Done except Vercel deploy |
+| 2 | Auth & role system (login, signup, invites, role redirects) | Done |
+| 3 | Database schema, PostGIS, RLS, seed | Done |
+| 4 | Platform Admin dashboard | Done |
+| 5 | School Admin dashboard (buses, students, Smart Placement, announcements, analytics) | Done |
+| 6 | AI route optimization Edge Function (K-Means + TSP + Matrix API) | Done |
+| 7 | Expo app setup (routing, Supabase, Mapbox, deep links, push tokens, EAS) | Done |
+| 8 | Expo driver interface | Done (one leftover demo-data component) |
+| 9 | Expo parent interface | Done |
+| 10 | Push notifications (`send-notification` Edge Function) | Done |
+| 11 | Web polish & production | Lighthouse audit + custom domain left |
+| 12 | App Store & Play Store submission | Not started |
+| 13 | Landing page launch | In progress |
 
-### Phase 3: Database & Schema
-- Run all SQL migrations in Supabase
-- Enable PostGIS extension
-- Create all tables with proper foreign keys
-- Set up RLS policies per role
-- Generate TypeScript types from Supabase schema
-
-### Phase 4: Platform Admin Dashboard
-- Overview: total schools, buses, students (stat cards)
-- Schools CRUD table
-- Assign School Admins to schools
-- Platform-wide analytics charts
-
-### Phase 5: School Admin Dashboard
-- Sidebar navigation (Overview, Buses, Students, Routes, Analytics)
-- Bus management (table + modals for add/edit/assign driver)
-- Student management (table + add form with Mapbox geocoding)
-- Route & Cluster visualization on Mapbox (color-coded per bus)
-- Smart Placement: Auto-assign students to the absolute nearest viable cluster/bus
-- Push Announcements: Send updates to specific drivers or the whole fleet
-- Advanced Analytics: Bird's-eye metrics covering all vehicle capacity and student metrics
-
-### Phase 6: AI Route Optimization
-- Supabase Edge Function (or Next.js API route)
-- Hybrid clustering and Nearest-Neighbor heuristic
-- Accepts student locations + school starting point → returns optimized route
-- Recalculates on student add/remove
-- Capacity alerts when bus > 40 students
-
-### Phase 7: Bus Driver Interface
-- Mobile-first layout, one-handed operation — no map, no navigation (drivers know their roads)
-- **Next pickup card**: large card showing the next student's name + address; auto-advances when marked Boarded or Absent
+### Driver interface rules (Phase 8)
+- Mobile-first, one-handed — **no map, no turn-by-turn navigation** (drivers know their roads)
+- **Next pickup card**: next student's name + address; auto-advances when marked Boarded or Absent
 - **Progress indicator**: "X of Y students picked up" — always visible at the top
-- **Passenger manifest**: ordered list of all students with stop addresses for the full run
-- **Digital attendance checklist**: tap each student to mark Boarded / Absent; drives the next pickup card
-- **GPS broadcast status**: prominent "Live" badge so the driver knows parents can see their location
+- **Passenger manifest**: ordered list of all students with stop addresses
+- **Digital attendance**: tap to mark Boarded / Absent
+- **GPS broadcast**: "Start Route" sends the device location (`expo-location`) to `bus_locations` every 10 seconds; "Live" badge while active
 - **Bus capacity bar**: seats filled vs. total capacity (e.g. 18 / 40)
-- **"Start Route" / "End Route" button**: triggers and stops GPS broadcasting to parents
-- **Push Announcements**: send real-time text updates to parents on that route
+- **Announcements**: send updates to parents on that route; receive School Admin alerts
 
-### Phase 8: Parent Tracking View
-- Full-screen Mapbox map (mobile-first)
-- Real-time bus position via Supabase Realtime (`bus_locations`)
+### Parent interface rules (Phase 9)
+- Full-screen Mapbox map, live bus position via Supabase Realtime (`bus_locations`)
 - Child's stop highlighted with ETA countdown
-- View real-time driver announcements and attendance confirmation
-- Bottom card: child name, bus number, ETA, status
+- Driver announcements and attendance confirmation
+- Bottom sheet: child name, bus number, ETA, status
 
-### Phase 9: Polish & Production
-- Dark mode support
-- Notification system (bus arriving, delays)
-- Performance optimization (lazy loading, code splitting)
-- SEO meta tags on all pages
-- Error boundaries and 404 page
-- Vercel deployment + custom domain
+### Landing page rules (Phase 13)
+- Every claim must describe a shipped feature (no invented integrations)
+- Primary CTA is **Book a demo** (writes to `demo_requests`); parents and drivers join via invite links
+- Page is a Server Component; only nav menu, app modal, FAQ accordion and demo form are client islands
 
 ---
 
@@ -510,6 +476,6 @@ CREATE POLICY "Parent reads own child's attendance" ON attendance FOR SELECT
 - **Never use the Supabase service role key on the client** — it bypasses RLS.
 - **Always test with multiple roles** — admin, school admin, driver, parent.
 - **Mapbox token** must have the correct scopes (Geocoding, Directions, GL JS).
-- **Simulated GPS** is for MVP only — real GPS integration comes later.
+- **GPS** comes from the driver's phone via `expo-location` (every 10 seconds while a route is active). There is no simulated GPS any more.
 - **Route optimization** starts with nearest-neighbor heuristic — upgrade path to Google OR-Tools / OSRM is planned.
 - **The UI must feel like a transport app** (Karwa/Metro Link), not a generic SaaS dashboard. Clean, blue, map-first, trustworthy.

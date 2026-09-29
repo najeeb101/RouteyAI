@@ -19,8 +19,9 @@ RouteyAI is a multi-tenant SaaS platform that uses AI to optimize school bus rou
 - 📊 **Advanced Analytics** — Fleet metrics, capacity utilization, and visual route cluster maps
 - 🚍 **Fleet Management** — Add buses, assign drivers, manage capacity (default 40 seats)
 - 👨‍🎓 **Student Management** — Register students, geocode addresses, auto-assign to the nearest optimal route
-- ✅ **Driver Utility** — Turn-by-turn navigation and digital attendance (boarded/absent) manifest
-- 📱 **Mobile-First** — Driver and parent interfaces optimized for phones
+- ✅ **Driver Utility** — Ordered pickup list, live GPS broadcast, and digital attendance (boarded/absent)
+- 🔔 **Push Notifications** — Parents are alerted on boarding, absence, and approaching ETA
+- 📱 **Native Mobile App** — Expo (React Native) app for drivers and parents in `mobile/`
 - 🔒 **Role-Based Access** — Platform Admin, School Admin, Driver, and Parent roles with RLS enforcement
 
 ## Tech Stack
@@ -33,7 +34,8 @@ RouteyAI is a multi-tenant SaaS platform that uses AI to optimize school bus rou
 | Maps | Mapbox GL JS (Geocoding, Directions, Matrix APIs) |
 | State | Zustand |
 | Forms | React Hook Form + Zod |
-| Deployment | Vercel |
+| Mobile | Expo (React Native), expo-router, @rnmapbox/maps, EAS |
+| Deployment | Vercel (web), EAS (mobile) |
 | Package Manager | pnpm |
 
 ## User Roles
@@ -69,6 +71,9 @@ cp .env.example .env.local
 
 # Run development server
 pnpm dev
+
+# Mobile app
+cd mobile && npm install && npx expo start
 ```
 
 ### Environment Variables
@@ -86,31 +91,30 @@ NEXT_PUBLIC_MAPBOX_TOKEN=your_mapbox_token
 routeyai/
 ├── src/
 │   ├── app/
-│   │   ├── (auth)/               # Login, Signup pages
+│   │   ├── (auth)/               # Login, Signup, invite/[code]
 │   │   ├── (dashboard)/
 │   │   │   ├── admin/            # Platform Admin pages
 │   │   │   ├── school/           # School Admin pages
-│   │   │   ├── driver/           # Driver mobile interface
-│   │   │   └── parent/           # Parent tracking view
-│   │   ├── api/
-│   │   │   └── optimize-route/   # Route optimization API
+│   │   │   ├── driver/           # Web driver view
+│   │   │   └── parent/           # Web parent view
+│   │   ├── privacy/ · terms/     # Legal pages
 │   │   └── page.tsx              # Landing page
 │   ├── components/
 │   │   ├── ui/                   # shadcn/ui components
-│   │   ├── maps/                 # Mapbox components
+│   │   ├── maps/                 # SVG map previews
 │   │   ├── dashboard/            # Sidebar, TopBar, StatsCard
-│   │   ├── forms/                # AddStudentForm, AddBusForm
-│   │   └── landing/              # Hero, Features, Pricing, Footer
+│   │   └── landing/              # Landing page sections
 │   ├── lib/
 │   │   ├── supabase/             # Browser + server clients, middleware
 │   │   └── mapbox/               # Mapbox config
-│   ├── hooks/                    # useAuth, useRealtime, useBusLocation
-│   ├── types/                    # Supabase generated types, Mapbox types
-│   └── store/                    # Zustand stores
+│   ├── hooks/                    # useAuth
+│   └── types/                    # Supabase generated types
+├── mobile/                       # Expo app (drivers + parents)
 ├── supabase/
-│   ├── migrations/               # SQL schema migrations
+│   ├── migrations/               # SQL schema migrations (0001–0012)
 │   ├── functions/
-│   │   └── optimize-route/       # Edge Function (K-Means + TSP)
+│   │   ├── optimize-route/       # Edge Function (K-Means + TSP)
+│   │   └── send-notification/    # Edge Function (Expo push)
 │   └── seed.sql                  # Dev seed data
 ├── .env.example
 ├── tailwind.config.ts
@@ -127,7 +131,9 @@ All technical documentation lives in `/Docs`:
 | `Claude.md` | Master reference for AI assistants — tech stack, schema, conventions, build phases |
 | `Architecture.md` | Infrastructure decisions, Vercel + Supabase + Mapbox rationale, architecture diagram |
 | `features.md` | Full feature catalog organized by user role |
-| `task.md` | Phase-by-phase task checklist |
+| `task.md` | Phase-by-phase task checklist and current status |
+| `busflow.md` | How students, clusters, buses and drivers relate |
+| `plans/` | Dated implementation plans (latest: landing page launch) |
 
 ## Design Inspiration
 

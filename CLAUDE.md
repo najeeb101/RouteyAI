@@ -6,13 +6,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 [Docs/Claude.md](Docs/Claude.md) is the canonical reference for the full database schema, RLS policies, color tokens, and design principles. When this file and Docs/Claude.md disagree, Docs/Claude.md wins.
 
-Current build status: **Phases 1–7 complete. Phase 8 in progress** (Expo driver interface — screens exist with demo data; Supabase wiring and GPS not yet built). See [Docs/task.md](Docs/task.md) for the full checklist.
+Current build status: **Phases 2–10 complete; Phases 1 and 11 nearly done. Phase 13 (landing page launch) in progress**, followed by the first Vercel deploy. Phase 12 (store submission) not started. See [Docs/task.md](Docs/task.md) for the full checklist and [Docs/plans/2026-09-29-landing-page-launch.md](Docs/plans/2026-09-29-landing-page-launch.md) for the landing page plan.
 
 ## Stack
 
 **Web**: Next.js 14 App Router · TypeScript strict · Tailwind · shadcn/ui · Supabase · Mapbox GL JS · Zustand · React Hook Form + Zod · pnpm · Vercel
 
-**Mobile**: Expo (React Native) · NativeWind · `@rnmapbox/maps` · `expo-router` · EAS — lives in `mobile/`
+**Mobile**: Expo (React Native) · React Native styles (`mobile/src/lib/colors`; NativeWind is not installed) · `@rnmapbox/maps` · `expo-router` · `expo-location` · `expo-notifications` · EAS — lives in `mobile/`
 
 ## Commands
 
@@ -44,12 +44,13 @@ routeyai/
 │   │   │   ├── school/       # school admin: overview, buses, students, routes, analytics
 │   │   │   ├── driver/       # web driver view
 │   │   │   └── parent/       # web parent view
-│   │   └── page.tsx          # landing page
+│   │   ├── privacy/, terms/  # legal pages
+│   │   └── page.tsx          # landing page (Server Component)
 │   ├── components/
 │   │   ├── ui/               # shadcn/ui primitives
 │   │   ├── dashboard/        # Sidebar, TopBar, StatsCard, DataTable
 │   │   ├── maps/             # SVG map previews (FleetMapSvg, RouteMapSvg, ParentMapSvg)
-│   │   └── landing/          # Hero, Features, Pricing sections
+│   │   └── landing/          # landing page sections + client islands (nav, modal, demo form)
 │   ├── hooks/useAuth.ts
 │   ├── lib/
 │   │   ├── supabase/         # client.ts, server.ts, middleware.ts
@@ -62,14 +63,16 @@ routeyai/
 │       │   ├── (dashboard)/  # driver/ and parent/ stacks
 │       │   └── invite/[code].tsx
 │       ├── features/
-│       │   ├── driver/       # DriverHomeScreen, DriverRouteScreen, DriverMessagesScreen
-│       │   └── parent/       # ParentHomeScreen, ParentMapScreen, ParentNotificationsScreen
+│       │   ├── driver/       # screens/, hooks/useDriverData, context/DriverDataContext
+│       │   └── parent/       # screens/ (incl. useParentData), context/ParentDataContext
 │       ├── components/primitives/  # Card, MetricCard, ProgressBar, ScreenHeader, StatusPill
-│       ├── data/demoRoute.ts       # demo data used while Phase 8 Supabase wiring is pending
+│       ├── data/demoRoute.ts       # leftover demo data — only LiveMapPreview still uses it
 │       └── lib/supabase.ts
 ├── supabase/
-│   ├── migrations/           # 0001_schema.sql … 0011_push_tokens.sql
-│   ├── functions/optimize-route/index.ts  # Edge Function
+│   ├── migrations/           # 0001_schema.sql … 0012_notification_triggers.sql
+│   ├── functions/
+│   │   ├── optimize-route/index.ts     # Edge Function: K-Means + TSP
+│   │   └── send-notification/index.ts  # Edge Function: Expo push
 │   └── seed.sql
 └── Docs/                     # architecture, schema, feature catalog, task tracker
 ```

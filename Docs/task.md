@@ -1,15 +1,17 @@
 # RouteyAI - Task Tracker
 
 Stack: Next.js 14 | TypeScript | Tailwind CSS | shadcn/ui | Supabase | Mapbox GL JS | Vercel  
-Mobile: Expo (React Native) | NativeWind | Mapbox RN | EAS
+Mobile: Expo (React Native) | React Native styles | Mapbox RN | EAS
 
 ---
 
-## Current Status Snapshot (2026-04-29)
+## Current Status Snapshot (2026-09-29)
 
-- Completed: Phases 1–7 (except push token registration on app launch).
-- In progress: Phase 8 (Expo driver interface — screens exist with demo data, Supabase wiring and GPS not yet built).
-- Not started: Phases 9–12.
+- Completed: Phases 2–10.
+- Nearly done: Phase 1 (only Vercel deploy left) and Phase 11 (Lighthouse audit and custom domain left).
+- In progress: Phase 13 — landing page built; Vercel production deploy failing, Supabase project paused.
+- Not started: Phase 12 (store submission).
+- Loose end: `mobile/src/components/route/LiveMapPreview.tsx` still reads `mobile/src/data/demoRoute.ts`.
 
 ## Phase 1: Project Setup and Landing Page
 
@@ -76,7 +78,7 @@ Mobile: Expo (React Native) | NativeWind | Mapbox RN | EAS
 ## Phase 7: Expo App - Setup and Infrastructure
 
 - [x] Initialize Expo project in `mobile/` directory (TypeScript)
-- [x] Configure NativeWind (Tailwind for React Native)
+- [x] ~~Configure NativeWind~~ — dropped: not installed; screens use React Native styles with `mobile/src/lib/colors`
 - [x] Set up navigation stacks/routes
 - [x] Set up Supabase client for React Native
 - [x] Configure `@rnmapbox/maps` with Mapbox token
@@ -89,8 +91,8 @@ Mobile: Expo (React Native) | NativeWind | Mapbox RN | EAS
 
 ## Phase 8: Expo - Driver Interface
 
-- [x] Driver home screen (UI only — demo data)
-- [x] Passenger manifest screen (UI only — demo data, inside route screen)
+- [x] Driver home screen
+- [x] Passenger manifest (inside route screen)
 - [x] Connect driver screens to real Supabase data (replace demo data)
 - [x] Next pickup card: student name + address, auto-advances on attendance mark
 - [x] Progress indicator: "X of Y students picked up" at top of screen
@@ -101,7 +103,8 @@ Mobile: Expo (React Native) | NativeWind | Mapbox RN | EAS
 - [x] GPS writes to `bus_locations`
 - [x] Stop Route flow and bus status update
 - [x] Driver announcements to parents
-- [x] Realtime subscription to School Admin announcements (messages screen exists — demo data)
+- [x] Realtime subscription to School Admin announcements
+- [ ] Replace remaining demo data in `LiveMapPreview.tsx`
 
 ## Phase 9: Expo - Parent Interface
 
@@ -145,3 +148,25 @@ Mobile: Expo (React Native) | NativeWind | Mapbox RN | EAS
 - [ ] Submit to App Store review
 - [ ] Submit to Google Play review
 - [ ] Configure OTA updates via `eas update`
+
+## Phase 13: Landing Page Launch
+
+Full plan: [plans/2026-09-29-landing-page-launch.md](plans/2026-09-29-landing-page-launch.md)
+
+- [x] Decide: primary CTA = "Book a demo"; pricing = fleet-size plans with "Contact us"; Arabic/RTL after launch; placeholder phone/socials removed
+- [x] Split `src/app/page.tsx` into `src/components/landing/*`; page becomes a Server Component with client islands
+- [x] Fix `Math.random()` QR hydration mismatch; add mobile nav menu; delete unused `DashboardPreview.tsx`
+- [x] Correct copy: GPS every 10s (not 2s), remove turn-by-turn/QR/SIS claims, apps "Coming soon"
+- [x] Remove `FeedbackSection`
+- [x] New sections: Problem → outcome, How it works, Safety & privacy, Pricing
+- [x] Server Action + Zod writing to existing `demo_requests` table (created in 0001, RLS in 0003: public insert, platform_admin select)
+- [x] Wire "Book a demo" form
+- [x] `/privacy` and `/terms` pages (also required for Phase 12)
+- [x] `sitemap.ts`, `robots.ts`, `opengraph-image.tsx`, JSON-LD
+- [x] Vercel project `routeyai` created and linked to GitHub; production env vars set (`NEXT_PUBLIC_DEMO_MODE=false`)
+- [ ] Fix Vercel production build (fails on Vercel, passes locally — check build log)
+- [ ] Restore paused Supabase project (host no longer resolves), then test demo form end to end
+- [ ] Add real `NEXT_PUBLIC_MAPBOX_TOKEN` (`.env.local` has the placeholder) locally and on Vercel
+- [ ] Set `NEXT_PUBLIC_APP_URL` on Vercel once the production URL is known (used by sitemap, robots, OG)
+- [ ] Launch placeholders in `src/lib/siteConfig.ts`: set `NEXT_PUBLIC_CONTACT_EMAIL` (routeyai.com has no DNS/MX yet), legal review then `LEGAL_REVIEWED = true`, fill `PLAN_SUPPORT`
+- [ ] Lighthouse ≥ 90 on mobile

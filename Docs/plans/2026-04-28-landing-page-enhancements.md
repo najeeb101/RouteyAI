@@ -1,5 +1,7 @@
 # Landing Page Premium Enhancements Implementation Plan
 
+> **Superseded (2026-09-29)** by [2026-09-29-landing-page-launch.md](2026-09-29-landing-page-launch.md). Framer Motion, the app mockups and the final CTA from this plan have shipped; kept for history only.
+
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
 **Goal:** Transform the RouteyAI landing page from a standard SaaS site to an elite, interactive experience using micro-animations, high-fidelity mockups, and trust-building sections.
