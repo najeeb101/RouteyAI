@@ -107,7 +107,7 @@ export function HowItWorks() {
 
           <div
             ref={panelRef}
-            className="order-first self-start lg:sticky lg:order-none"
+            className="order-first min-w-0 self-start lg:sticky lg:order-none"
             style={{ top: 'max(5.5rem, calc(50vh - 19rem))' }}
           >
             <OptimizeDemo stage={stage} inView={panelInView} />

@@ -126,16 +126,6 @@
   }
 }
 
-@layer utilities {
-  /* Faint street-grid texture used behind map-like visuals on the landing page. */
-  .bg-map-grid {
-    background-image:
-      linear-gradient(to right, hsl(var(--border) / 0.7) 1px, transparent 1px),
-      linear-gradient(to bottom, hsl(var(--border) / 0.7) 1px, transparent 1px);
-    background-size: 32px 32px;
-  }
-}
-
 @layer base {
   * {
     @apply border-border;

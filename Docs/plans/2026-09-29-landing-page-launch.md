@@ -45,7 +45,7 @@ The first rebuild had 12 sections and read as a generic AI-generated template (n
 |---|---|---|---|
 | 1 | Nav | `LandingNav` | Floats over the hero photo, turns solid on scroll. How it works, Drivers & parents, Privacy, Pricing, FAQ · theme switch · Log in · **Book a demo** · mobile menu |
 | 2 | Hero | `Hero`, `HeroLiveCards`, `WordReveal` | Full-width photo of a school bus on the Doha Corniche; headline animates in word by word (CSS only); "Bus 3" tag pinned to the bus; parent ETA card counts down and the real push notifications arrive |
-| 3 | How it works | `HowItWorks`, `OptimizeDemo` | Scroll story: on wide screens the route planner stays pinned and changes with each step (addresses, K-Means routes, drivers assigned, buses running); on phones it plays through the steps |
+| 3 | How it works | `HowItWorks`, `OptimizeDemo` | Scroll story: on wide screens the route planner stays pinned and changes with each step (home pins, K-Means grouping, routes drawn along the roads, drivers assigned, buses driving the routes); on phones it plays through the steps. The map is real OpenStreetMap data around Aspire Park (see below) |
 | 4 | Drivers & parents | `MobileAppsSection`, `AppShowcase`, `DriverAppScreen`, `ParentAppScreen` | Photo plus a live coded phone screen for each app (driver checks a student in; parent ETA counts down, then the boarding notification arrives); "Parent or driver?" row with Log in / Get the app |
 | 5 | Student data and privacy | `SafetyPrivacy` | Navy band with the students photo filling the right half; per-school isolation (RLS), role-scoped access; links to `/privacy` |
 | 6 | Pricing | `Pricing` | Plan sizes plus one "Included in every plan" list |
@@ -64,6 +64,7 @@ Rules for this page:
 - Visual style (2026-09-30) takes cues from Qatar Post's [Connected](https://connected.qa/en/): real photos, product screens on devices, brand-coloured circles around photos, round icon badges.
 - Photos are AI-generated for Qatar (Higgsfield, Nano Banana Pro, approved by the user 2026-09-30); see `src/components/landing/photos.ts`. Replace with real photos from pilot schools when available. The hero photo (`hero-corniche.jpg`) had nonsense Arabic lettering on the bus, which was painted out; check any new generated photo for fake text.
 - No invented proof: no school logos, numbers or quotes until real ones exist (user confirmed 2026-10-01 there are none yet).
+- Route planner map (2026-10-01): `node scripts/landing-map/build.mjs` downloads OpenStreetMap data around Aspire Park, places the school and 27 homes on real residential streets, runs K-Means, routes each bus along the road network (one-way streets respected) and writes `public/assets/maps/aspire-{light,dark}.webp` plus `src/components/landing/optimizeDemoData.ts`. Re-run it to change the area or the homes; don't edit the data file by hand. The map must keep its "© OpenStreetMap contributors" credit (ODbL).
 - The phone screens are HTML redrawn from the real Expo screens (`DriverRouteScreen`, `ParentHomeScreen`), so they stay sharp and only show shipped features. The old AI-generated mockup images (garbled map labels, a "Start Navigation" button the app does not have) and the empty dashboard screenshot were deleted. Update the coded screens if the app UI changes.
 
 ---
