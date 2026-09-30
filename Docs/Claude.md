@@ -276,6 +276,20 @@ CREATE TABLE attendance (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Absence reports (0013): a parent says ahead of time that a child won't ride on a day.
+-- Separate from attendance, which is what the driver recorded at the stop.
+CREATE TABLE absence_reports (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  student_id UUID REFERENCES students(id) ON DELETE CASCADE NOT NULL,
+  school_id UUID REFERENCES schools(id) ON DELETE CASCADE NOT NULL,  -- set by trigger from the student
+  date DATE NOT NULL,
+  reason TEXT NOT NULL DEFAULT 'other' CHECK (reason IN ('sick','appointment','travel','other')),
+  note TEXT CHECK (char_length(note) <= 200),
+  reported_by UUID REFERENCES auth.users(id) DEFAULT auth.uid(),  -- set by trigger
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE (student_id, date)
+);
+
 -- Create index for real-time queries
 CREATE INDEX idx_bus_locations_bus_id ON bus_locations(bus_id, timestamp DESC);
 ```
@@ -351,13 +365,29 @@ CREATE POLICY "School admin reads own school attendance" ON attendance FOR SELEC
   USING (bus_id IN (SELECT id FROM buses WHERE school_id = get_user_school_id()));
 CREATE POLICY "Parent reads own child's attendance" ON attendance FOR SELECT
   USING (student_id IN (SELECT id FROM students WHERE parent_id = auth.uid()));
+
+-- ABSENCE REPORTS (0013)
+CREATE POLICY "Parent reads own child's absence reports" ON absence_reports FOR SELECT
+  USING (student_id IN (SELECT id FROM students WHERE parent_id = auth.uid()));
+CREATE POLICY "Parent reports own child absent" ON absence_reports FOR INSERT
+  WITH CHECK (student_id IN (SELECT id FROM students WHERE parent_id = auth.uid()) AND date >= CURRENT_DATE);
+CREATE POLICY "Parent cancels own child's upcoming absence" ON absence_reports FOR DELETE
+  USING (student_id IN (SELECT id FROM students WHERE parent_id = auth.uid()) AND date >= CURRENT_DATE);
+CREATE POLICY "Driver reads absence reports for own bus" ON absence_reports FOR SELECT
+  USING (student_id IN (SELECT id FROM students WHERE bus_id IN (SELECT id FROM buses WHERE driver_id = auth.uid())));
+CREATE POLICY "School admin reads own school absence reports" ON absence_reports FOR SELECT
+  USING (school_id = get_user_school_id());
+
+-- PUSH TOKENS (0013): user_roles has no UPDATE policy for parents/drivers; this SECURITY DEFINER
+-- function updates only the caller's push_token.
+-- set_push_token(p_token TEXT)
 ```
 
 ### RLS Summary
 - **Platform Admin**: Full access to all tables.
 - **School Admin**: CRUD on their own school's data only (filtered by `school_id`).
-- **Driver**: Read-only on their assigned bus and route. Write to `bus_locations` and `attendance`.
-- **Parent**: Read-only on their child's bus location, route, and attendance. No access to other students.
+- **Driver**: Read-only on their assigned bus and route. Write to `bus_locations`, `attendance` and `announcements` (own bus). Reads absence reports for students on their bus.
+- **Parent**: Read-only on their children's bus location, route, and attendance. Can report their own children absent for today or later, and cancel those reports. No access to other students.
 
 ---
 
@@ -380,6 +410,7 @@ Numbering matches [task.md](task.md), which holds the live checklist.
 | 11 | Web polish & production | Lighthouse audit + custom domain left |
 | 12 | App Store & Play Store submission | Not started |
 | 13 | Landing page launch | In progress |
+| 14 | Parent and driver app upgrade (child switcher, absence reports, history, delay notices, trip summary) | Built; migration 0013 to apply |
 
 ### Driver interface rules (Phase 8)
 - Mobile-first, one-handed — **no map, no turn-by-turn navigation** (drivers know their roads)
@@ -390,12 +421,14 @@ Numbering matches [task.md](task.md), which holds the live checklist.
 - **GPS broadcast**: "Start Route" sends the device location (`expo-location`) to `bus_locations` every 10 seconds; "Live" badge while active
 - **Bus capacity bar**: seats filled vs. total capacity (e.g. 18 / 40)
 - **Announcements**: send updates to parents on that route; receive School Admin alerts
+- Phase 14: running-late notice in one tap; students reported absent by parents count as done at their stop; end-of-route summary; Account tab
 
 ### Parent interface rules (Phase 9)
 - Full-screen Mapbox map, live bus position via Supabase Realtime (`bus_locations`)
 - Child's stop highlighted with ETA countdown
 - Driver announcements and attendance confirmation
 - Bottom sheet: child name, bus number, ETA, status
+- Phase 14: every child on the account with a switcher; report absences ahead of time; 30-day history; Account tab (push switch, sign out). The map shows only the child's own stop, not other students' stops.
 
 ### Landing page rules (Phase 13)
 - Every claim must describe a shipped feature (no invented integrations)

@@ -1,248 +1,354 @@
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native'
+import { useState, type ComponentProps } from 'react'
+import { ActivityIndicator, Alert, RefreshControl, ScrollView, Text, TouchableOpacity, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
+import { Ionicons } from '@expo/vector-icons'
+import { Banner } from '@/components/primitives/Banner'
 import { Card } from '@/components/primitives/Card'
 import { ScreenHeader } from '@/components/primitives/ScreenHeader'
-import { StatusPill } from '@/components/primitives/StatusPill'
+import { ChildSwitcher } from '@/features/parent/components/ChildSwitcher'
+import { CHILD_STATUS } from '@/features/parent/components/childStatus'
+import { ReportAbsenceSheet } from '@/features/parent/components/ReportAbsenceSheet'
 import { useParentContext } from '@/features/parent/context/ParentDataContext'
+import { reasonLabel } from '@/lib/absence'
 import { colors } from '@/lib/colors'
+import { dayLabel, greeting, timeLabel, whenLabel } from '@/lib/dates'
 import { routes } from '@/lib/navigation/routes'
-import type { RouteUpdateType } from '@/types/route'
 
-const typeIcon: Record<RouteUpdateType, string> = {
-  ok: '✅',
-  info: 'ℹ️',
-  warn: '⚠️',
-}
-
-function attendancePill(status: 'boarded' | 'absent' | null) {
-  if (status === 'boarded') return { label: 'On Bus', tone: 'success' as const }
-  if (status === 'absent') return { label: 'Absent', tone: 'danger' as const }
-  return { label: 'Waiting', tone: 'warning' as const }
-}
+type IconName = ComponentProps<typeof Ionicons>['name']
 
 export function ParentHomeScreen() {
   const router = useRouter()
-  const { loading, error, child, attendanceStatus, announcements, etaMinutes } = useParentContext()
+  const {
+    loading,
+    error,
+    parentName,
+    children,
+    child,
+    selectChild,
+    statusFor,
+    status,
+    attendance,
+    today,
+    reports,
+    announcements,
+    busLocation,
+    etaMinutes,
+    stopsBefore,
+    reportAbsence,
+    cancelAbsence,
+    refresh,
+  } = useParentContext()
+  const [sheetOpen, setSheetOpen] = useState(false)
+  const [cancelling, setCancelling] = useState<string | null>(null)
 
-  const pill = attendancePill(attendanceStatus)
-  const etaDisplay = attendanceStatus === 'boarded'
-    ? 'On Bus'
-    : attendanceStatus === 'absent'
-      ? 'Absent'
-      : etaMinutes === null
-        ? '--'
-        : etaMinutes <= 1
-          ? 'Arriving'
-          : `~${etaMinutes} min`
+  const first = child?.firstName ?? 'your child'
+  const record = child ? attendance[child.id] : undefined
+  const childReports = reports.filter((r) => r.studentId === child?.id)
+  const todayReport = childReports.find((r) => r.date === today)
+  const updates = announcements.filter((a) => !a.busId || a.busId === child?.busId).slice(0, 3)
+  const meta = CHILD_STATUS[status]
+
+  let big = 'Not started'
+  let sub = `${child?.busName ?? 'The bus'} hasn't started the route yet.`
+  let label = 'Arriving at your stop'
+  if (status === 'boarded') {
+    label = 'Today'
+    big = 'On the bus'
+    sub = record ? `${first} boarded at ${timeLabel(record.at)}.` : `${first} is on the bus.`
+  } else if (status === 'absent') {
+    label = 'Today'
+    big = 'Absent'
+    sub = record ? `The driver marked ${first} absent at ${timeLabel(record.at)}.` : `${first} was marked absent.`
+  } else if (status === 'reported') {
+    label = 'Today'
+    big = 'Staying home'
+    sub = `You told the driver ${first} won't ride today${todayReport ? ` (${reasonLabel(todayReport.reason).toLowerCase()})` : ''}.`
+  } else if (status === 'no-bus') {
+    label = 'Today'
+    big = 'No bus yet'
+    sub = `Your school hasn't put ${first} on a bus yet.`
+  } else if (etaMinutes !== null) {
+    big = etaMinutes <= 1 ? 'Arriving' : `${etaMinutes} min`
+    sub = stopsBefore === null || stopsBefore === 0 ? 'Your stop is next.' : `${stopsBefore} stop${stopsBefore === 1 ? '' : 's'} before yours.`
+  } else if (busLocation) {
+    sub = 'Waiting for the next GPS update.'
+  }
+
+  function confirmCancel(reportId: string, date: string) {
+    Alert.alert('Cancel this report?', `The driver will expect ${first} at the stop ${dayLabel(date, today).toLowerCase()}.`, [
+      { text: 'Keep it', style: 'cancel' },
+      {
+        text: 'Cancel report',
+        style: 'destructive',
+        onPress: async () => {
+          setCancelling(reportId)
+          const err = await cancelAbsence(reportId)
+          setCancelling(null)
+          if (err) Alert.alert('Something went wrong', err)
+        },
+      },
+    ])
+  }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['top']}>
       <ScreenHeader
-        subtitle="Good morning"
+        subtitle={parentName ? `${greeting()}, ${parentName.split(' ')[0]}` : greeting()}
         action={
-          <TouchableOpacity
-            onPress={() => router.push(routes.parentNotifications)}
-            accessibilityLabel="Open notifications"
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: 10,
-              backgroundColor: 'rgba(255,255,255,0.1)',
-              borderWidth: 1,
-              borderColor: 'rgba(255,255,255,0.08)',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Text style={{ fontSize: 17 }}>🔔</Text>
+          <TouchableOpacity onPress={() => router.push(routes.parentNotifications)} accessibilityLabel="Open alerts" style={headerButton}>
+            <Ionicons name="notifications-outline" size={19} color="#FFFFFF" />
           </TouchableOpacity>
         }
       />
 
-      {/* Child banner */}
-      <View style={{ backgroundColor: colors.dark, paddingHorizontal: 20, paddingBottom: 18 }}>
-        <View
-          style={{
-            backgroundColor: 'rgba(255,255,255,0.07)',
-            borderRadius: 16,
-            padding: 14,
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 12,
-            borderWidth: 1,
-            borderColor: 'rgba(255,255,255,0.06)',
-          }}
-        >
-          <View
-            style={{
-              width: 46,
-              height: 46,
-              borderRadius: 23,
-              backgroundColor: colors.primaryLight,
-              borderWidth: 2.5,
-              borderColor: colors.accent,
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Text style={{ color: '#FFFFFF', fontFamily: 'Inter_800ExtraBold', fontSize: 16 }}>
-              {child?.initials ?? '?'}
-            </Text>
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={{ color: '#FFFFFF', fontFamily: 'Inter_700Bold', fontSize: 15 }}>
-              {child?.name ?? (loading ? 'Loading...' : 'No child linked')}
-            </Text>
-            <Text style={{ color: 'rgba(255,255,255,0.45)', fontSize: 11, fontFamily: 'Inter_400Regular', marginTop: 1 }}>
-              {child?.busName ?? 'Unassigned'}
-            </Text>
-          </View>
-          {!loading && child && <StatusPill label={pill.label} tone={pill.tone} />}
+      {children.length > 0 && (
+        <View style={{ backgroundColor: colors.dark, paddingHorizontal: 16, paddingBottom: 16 }}>
+          <ChildSwitcher items={children} selectedId={child?.id ?? null} statusFor={statusFor} onSelect={selectChild} />
         </View>
-      </View>
+      )}
 
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ padding: 16, gap: 12 }}
+        contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 28 }}
         showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={loading && children.length > 0} onRefresh={refresh} tintColor={colors.primary} />}
       >
-        {error && (
-          <View style={{ borderColor: '#FECACA', borderWidth: 1, backgroundColor: '#FEF2F2', borderRadius: 14, padding: 14 }}>
-            <Text style={{ color: '#B91C1C', fontSize: 12, fontFamily: 'Inter_600SemiBold' }}>{error}</Text>
-          </View>
+        {error && <Banner text={error} action={<RetryLink onPress={refresh} />} />}
+
+        {loading && children.length === 0 && (
+          <Card style={{ alignItems: 'center', paddingVertical: 28, gap: 10 }}>
+            <ActivityIndicator color={colors.primary} />
+            <Text style={{ fontSize: 13, color: colors.muted, fontFamily: 'Inter_500Medium' }}>Loading your children…</Text>
+          </Card>
         )}
 
-        {/* ETA Hero Card */}
-        <View
-          style={{
-            backgroundColor: colors.primary,
-            borderRadius: 22,
-            padding: 18,
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            gap: 12,
-            shadowColor: colors.primary,
-            shadowOffset: { width: 0, height: 6 },
-            shadowOpacity: 0.35,
-            shadowRadius: 16,
-            elevation: 6,
-          }}
-        >
-          <View style={{ flex: 1 }}>
-            <Text
-              style={{
-                color: 'rgba(255,255,255,0.6)',
-                fontSize: 10,
-                fontFamily: 'Inter_700Bold',
-                textTransform: 'uppercase',
-                letterSpacing: 1.2,
-                marginBottom: 5,
-              }}
-            >
-              📍 ETA to Your Stop
-            </Text>
-            <Text style={{ color: colors.accent, fontFamily: 'Inter_800ExtraBold', fontSize: 32, letterSpacing: -1 }}>
-              {etaDisplay}
-            </Text>
-            <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12, fontFamily: 'Inter_400Regular', marginTop: 3 }}>
-              {attendanceStatus === 'boarded'
-                ? 'Your child is on the bus'
-                : attendanceStatus === 'absent'
-                  ? 'Your child is marked absent today'
-                  : etaMinutes
-                    ? 'Estimated time based on live GPS'
-                    : 'Waiting for bus GPS to start'}
-            </Text>
-          </View>
-          <TouchableOpacity
-            onPress={() => router.push(routes.parentMap)}
-            style={{
-              backgroundColor: 'rgba(255,255,255,0.14)',
-              paddingHorizontal: 16,
-              paddingVertical: 12,
-              borderRadius: 14,
-              alignItems: 'center',
-              minWidth: 80,
-              borderWidth: 1,
-              borderColor: 'rgba(255,255,255,0.1)',
-            }}
-          >
-            <Text style={{ fontSize: 22 }}>📍</Text>
-            <Text style={{ color: '#FFFFFF', fontFamily: 'Inter_700Bold', fontSize: 11, marginTop: 4, letterSpacing: 0.5 }}>LIVE</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Route Info Card */}
-        <Card>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-            <Text style={{ fontSize: 16 }}>🚌</Text>
-            <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 14, color: colors.dark }}>Route Info</Text>
-          </View>
-          <View style={{ gap: 10 }}>
-            {([
-              ['Bus', child?.busName ?? '—'],
-              ['Stop', child?.homeAddress ?? '—'],
-              ['School', child?.schoolName ?? '—'],
-            ] as [string, string][]).map(([label, value]) => (
-              <View
-                key={label}
-                style={{
-                  flexDirection: 'row',
-                  justifyContent: 'space-between',
-                  gap: 16,
-                  paddingVertical: 6,
-                  borderBottomWidth: 1,
-                  borderBottomColor: colors.borderLight,
-                }}
-              >
-                <Text style={{ fontSize: 13, color: colors.subtle, fontFamily: 'Inter_500Medium' }}>{label}</Text>
-                <Text style={{ fontSize: 13, color: colors.dark, fontFamily: 'Inter_600SemiBold', flex: 1, textAlign: 'right' }} numberOfLines={1}>
-                  {value}
+        {child && (
+          <>
+            {/* Status and ETA */}
+            <View style={heroCard}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                <Text style={heroLabel} numberOfLines={1}>
+                  {label} · {child.busName ?? 'No bus'}
                 </Text>
+                {busLocation && status === 'waiting' && (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+                    <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: colors.success }} />
+                    <Text style={{ color: '#FFFFFF', fontSize: 10.5, fontFamily: 'Inter_700Bold', letterSpacing: 0.8 }}>LIVE</Text>
+                  </View>
+                )}
               </View>
-            ))}
-          </View>
-        </Card>
-
-        {/* Today's Updates */}
-        <Card>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-            <Text style={{ fontSize: 16 }}>📋</Text>
-            <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 14, color: colors.dark }}>{"Today's Updates"}</Text>
-          </View>
-          {loading && (
-            <Text style={{ fontSize: 13, color: colors.subtle, fontFamily: 'Inter_500Medium' }}>Loading...</Text>
-          )}
-          {!loading && announcements.length === 0 && (
-            <Text style={{ fontSize: 13, color: colors.subtle, fontFamily: 'Inter_400Regular' }}>No updates yet today.</Text>
-          )}
-          <View style={{ gap: 12 }}>
-            {announcements.slice(0, 3).map(update => (
-              <View key={update.id} style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-start' }}>
-                <Text style={{ fontSize: 14, marginTop: -1 }}>{typeIcon[update.type]}</Text>
-                <Text style={{ width: 46, fontSize: 11, color: colors.subtle, fontFamily: 'Inter_500Medium' }}>{update.time}</Text>
-                <Text style={{ flex: 1, fontSize: 12, color: colors.dark, fontFamily: 'Inter_400Regular', lineHeight: 18 }}>
-                  {update.body}
-                </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12, marginTop: 6 }}>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: colors.accent, fontFamily: 'Inter_800ExtraBold', fontSize: 34, letterSpacing: -1 }} numberOfLines={1}>
+                    {big}
+                  </Text>
+                  <Text style={{ color: 'rgba(255,255,255,0.78)', fontSize: 13, fontFamily: 'Inter_500Medium', marginTop: 2, lineHeight: 18 }}>{sub}</Text>
+                </View>
+                <TouchableOpacity onPress={() => router.push(routes.parentMap)} accessibilityLabel="Open the live map" style={trackButton}>
+                  <Ionicons name="navigate" size={20} color="#FFFFFF" />
+                  <Text style={{ color: '#FFFFFF', fontFamily: 'Inter_700Bold', fontSize: 11, marginTop: 3 }}>Track</Text>
+                </TouchableOpacity>
               </View>
-            ))}
-          </View>
-        </Card>
+            </View>
 
-        {/* View all link */}
-        {announcements.length > 3 && (
-          <TouchableOpacity
-            onPress={() => router.push(routes.parentNotifications)}
-            style={{ alignItems: 'center', paddingVertical: 8 }}
-          >
-            <Text style={{ fontSize: 13, color: colors.primary, fontFamily: 'Inter_600SemiBold' }}>
-              View all {announcements.length} updates →
-            </Text>
-          </TouchableOpacity>
+            {/* Quick actions */}
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <ActionTile icon="calendar-outline" title="Report absence" caption="Tell the driver ahead" onPress={() => setSheetOpen(true)} />
+              <ActionTile icon="time-outline" title="Trip history" caption={`${first}'s past rides`} onPress={() => router.push(routes.parentHistory)} />
+            </View>
+
+            {/* Reported absences still to come */}
+            {childReports.length > 0 && (
+              <Card style={{ padding: 0, overflow: 'hidden' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingTop: 14, paddingBottom: 6 }}>
+                  <Ionicons name="home-outline" size={16} color="#B45309" />
+                  <Text style={cardTitle}>Staying home</Text>
+                </View>
+                {childReports.map((r) => (
+                  <View key={r.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 11, borderTopWidth: 1, borderTopColor: colors.borderLight }}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 13.5, color: colors.dark }}>{dayLabel(r.date, today)}</Text>
+                      <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, color: colors.muted, marginTop: 1 }} numberOfLines={1}>
+                        {reasonLabel(r.reason)}
+                        {r.note ? ` · ${r.note}` : ''}
+                      </Text>
+                    </View>
+                    <TouchableOpacity
+                      onPress={() => confirmCancel(r.id, r.date)}
+                      disabled={cancelling === r.id}
+                      style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, borderWidth: 1, borderColor: colors.border }}
+                    >
+                      <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 12, color: colors.muted }}>{cancelling === r.id ? 'Cancelling…' : 'Cancel'}</Text>
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </Card>
+            )}
+
+            {/* Route details */}
+            <Card>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                <Text style={cardTitle}>{first}&apos;s bus</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: meta.bg, paddingHorizontal: 9, paddingVertical: 4, borderRadius: 999 }}>
+                  <Ionicons name={meta.icon} size={12} color={meta.color} />
+                  <Text style={{ color: meta.color, fontSize: 11, fontFamily: 'Inter_700Bold' }}>{meta.label}</Text>
+                </View>
+              </View>
+              <DetailRow icon="bus-outline" label="Bus" value={child.busName ?? 'Not assigned'} />
+              <DetailRow icon="location-outline" label="Pickup" value={child.homeAddress} />
+              <DetailRow icon="school-outline" label="School" value={child.schoolName ?? '—'} last />
+            </Card>
+
+            {/* Updates */}
+            <Card>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                <Text style={cardTitle}>Updates</Text>
+                {announcements.length > 0 && (
+                  <TouchableOpacity onPress={() => router.push(routes.parentNotifications)}>
+                    <Text style={{ fontSize: 12.5, color: colors.primaryLight, fontFamily: 'Inter_700Bold' }}>See all</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+              {updates.length === 0 ? (
+                <Text style={{ fontSize: 13, color: colors.subtle, fontFamily: 'Inter_400Regular' }}>No updates from the driver or school yet.</Text>
+              ) : (
+                <View style={{ gap: 12 }}>
+                  {updates.map((u) => (
+                    <View key={u.id} style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-start' }}>
+                      <Ionicons
+                        name={u.type === 'warn' ? 'warning' : 'megaphone-outline'}
+                        size={16}
+                        color={u.type === 'warn' ? colors.warning : colors.info}
+                        style={{ marginTop: 1 }}
+                      />
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ fontSize: 13, color: colors.dark, fontFamily: 'Inter_500Medium', lineHeight: 19 }}>{u.body}</Text>
+                        <Text style={{ fontSize: 11, color: colors.subtle, fontFamily: 'Inter_400Regular', marginTop: 2 }}>
+                          {u.from} · {whenLabel(u.createdAt, today)}
+                        </Text>
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              )}
+            </Card>
+          </>
         )}
       </ScrollView>
+
+      <ReportAbsenceSheet
+        visible={sheetOpen}
+        onClose={() => setSheetOpen(false)}
+        items={children}
+        initialChildId={child?.id ?? null}
+        reports={reports}
+        attendance={attendance}
+        today={today}
+        onSubmit={reportAbsence}
+      />
     </SafeAreaView>
   )
 }
+
+function ActionTile({ icon, title, caption, onPress }: { icon: IconName; title: string; caption: string; onPress: () => void }) {
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={0.8}
+      accessibilityRole="button"
+      style={{
+        flex: 1,
+        backgroundColor: colors.surface,
+        borderRadius: 18,
+        borderWidth: 1,
+        borderColor: colors.border,
+        padding: 14,
+        gap: 10,
+      }}
+    >
+      <View style={{ width: 38, height: 38, borderRadius: 12, backgroundColor: colors.infoBg, alignItems: 'center', justifyContent: 'center' }}>
+        <Ionicons name={icon} size={19} color={colors.primaryLight} />
+      </View>
+      <View>
+        <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 14, color: colors.dark }}>{title}</Text>
+        <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, color: colors.muted, marginTop: 2 }} numberOfLines={1}>
+          {caption}
+        </Text>
+      </View>
+    </TouchableOpacity>
+  )
+}
+
+function DetailRow({ icon, label, value, last = false }: { icon: IconName; label: string; value: string; last?: boolean }) {
+  return (
+    <View
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+        paddingVertical: 10,
+        borderBottomWidth: last ? 0 : 1,
+        borderBottomColor: colors.borderLight,
+      }}
+    >
+      <Ionicons name={icon} size={17} color={colors.subtle} />
+      <Text style={{ fontSize: 13, color: colors.muted, fontFamily: 'Inter_500Medium', width: 58 }}>{label}</Text>
+      <Text style={{ fontSize: 13, color: colors.dark, fontFamily: 'Inter_600SemiBold', flex: 1, textAlign: 'right' }} numberOfLines={1}>
+        {value}
+      </Text>
+    </View>
+  )
+}
+
+export function RetryLink({ onPress }: { onPress: () => void }) {
+  return (
+    <TouchableOpacity onPress={onPress} hitSlop={8}>
+      <Text style={{ color: '#B91C1C', fontFamily: 'Inter_700Bold', fontSize: 12.5 }}>Retry</Text>
+    </TouchableOpacity>
+  )
+}
+
+const headerButton = {
+  width: 38,
+  height: 38,
+  borderRadius: 12,
+  backgroundColor: 'rgba(255,255,255,0.1)',
+  borderWidth: 1,
+  borderColor: 'rgba(255,255,255,0.08)',
+  alignItems: 'center' as const,
+  justifyContent: 'center' as const,
+}
+
+const heroCard = {
+  backgroundColor: colors.primary,
+  borderRadius: 22,
+  padding: 18,
+  shadowColor: colors.primary,
+  shadowOffset: { width: 0, height: 8 },
+  shadowOpacity: 0.3,
+  shadowRadius: 16,
+  elevation: 6,
+}
+
+const heroLabel = {
+  flex: 1,
+  color: 'rgba(255,255,255,0.7)',
+  fontSize: 10.5,
+  fontFamily: 'Inter_700Bold',
+  textTransform: 'uppercase' as const,
+  letterSpacing: 1.1,
+}
+
+const trackButton = {
+  backgroundColor: 'rgba(255,255,255,0.14)',
+  borderWidth: 1,
+  borderColor: 'rgba(255,255,255,0.12)',
+  borderRadius: 16,
+  width: 66,
+  height: 62,
+  alignItems: 'center' as const,
+  justifyContent: 'center' as const,
+}
+
+const cardTitle = { fontFamily: 'Inter_700Bold' as const, fontSize: 14.5, color: colors.dark }

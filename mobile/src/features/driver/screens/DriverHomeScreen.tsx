@@ -1,300 +1,326 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native'
+import { useMemo, useState, type ComponentProps } from 'react'
+import { ActivityIndicator, Alert, RefreshControl, ScrollView, Text, TouchableOpacity, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
-import * as Location from 'expo-location'
-import { MetricCard } from '@/components/primitives/MetricCard'
+import { Ionicons } from '@expo/vector-icons'
+import { Banner } from '@/components/primitives/Banner'
+import { PrimaryButton } from '@/components/primitives/PrimaryButton'
 import { ProgressBar } from '@/components/primitives/ProgressBar'
 import { ScreenHeader } from '@/components/primitives/ScreenHeader'
 import { StatusPill } from '@/components/primitives/StatusPill'
+import { DelaySheet } from '@/features/driver/components/DelaySheet'
+import { TripSummary } from '@/features/driver/components/TripSummary'
 import { useDriverContext } from '@/features/driver/context/DriverDataContext'
+import { reasonLabel } from '@/lib/absence'
 import { colors } from '@/lib/colors'
+import { timeLabel } from '@/lib/dates'
 import { routes } from '@/lib/navigation/routes'
-import { supabase } from '@/lib/supabase'
-import type { TripStatus } from '@/types/route'
+
+type IconName = ComponentProps<typeof Ionicons>['name']
 
 export function DriverHomeScreen() {
   const router = useRouter()
-  const { loading, error, profile, stops, totalStudents, boardedIds, absentIds, busCapacity } = useDriverContext()
-  const [tripStatus, setTripStatus] = useState<TripStatus>('idle')
-  const [gpsError, setGpsError] = useState<string | null>(null)
-  const locationIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const { loading, error, profile, stops, totalStudents, boardedIds, absentIds, reported, reportedIds, busCapacity, trip, refresh } = useDriverContext()
+  const [delayOpen, setDelayOpen] = useState(false)
+
   const boarded = boardedIds.size
-  const currentStop = stops.find(stop => stop.current) ?? stops[0]
-  const nextStop = stops.find(stop => !stop.done && !stop.current) ?? stops[stops.length - 1]
-  const stopsDone = stops.filter(s => s.done).length
+  const currentStop = stops.find((stop) => stop.current) ?? stops[0]
+  const nextStop = stops.find((stop) => !stop.done && !stop.current)
+  const stopsDone = stops.filter((s) => s.done).length
+  const seatsPct = busCapacity > 0 ? Math.min(100, Math.round((boarded / busCapacity) * 100)) : 0
 
-  const sendCurrentLocation = useCallback(async () => {
-    if (!profile?.busId) return
-    const position = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High })
-    const point = `SRID=4326;POINT(${position.coords.longitude} ${position.coords.latitude})`
-    const { error } = await supabase.from('bus_locations').insert({
-      bus_id: profile.busId,
-      location: point,
-      heading: position.coords.heading ?? null,
-      speed: position.coords.speed ?? null,
-    })
-    if (error) throw error
-  }, [profile?.busId])
+  // Which stop each reported student is on, for the "won't ride today" list.
+  const stopOf = useMemo(() => {
+    const map = new Map<string, { stop: string; name: string }>()
+    for (const stop of stops) for (const s of stop.students) map.set(s.id, { stop: stop.name, name: s.name })
+    return map
+  }, [stops])
+  const reportedList = [...reported.values()].filter((r) => reportedIds.has(r.studentId) && stopOf.has(r.studentId))
+  const waitingAtCurrent = currentStop?.students.filter((s) => !boardedIds.has(s.id) && !absentIds.has(s.id) && !reportedIds.has(s.id)).length ?? 0
 
-  async function startTrip() {
-    if (!profile?.busId) return
-    setGpsError(null)
-    const { status } = await Location.requestForegroundPermissionsAsync()
-    if (status !== 'granted') {
-      setGpsError('Location permission is required to start GPS broadcasting.')
-      return
-    }
-    const { error } = await supabase.from('buses').update({ is_active: true }).eq('id', profile.busId)
-    if (error) { setGpsError('Failed to start trip. Please try again.'); return }
-    setTripStatus('active')
-    try { await sendCurrentLocation() } catch { setGpsError('Unable to fetch location. GPS will retry.') }
+  function confirmEnd() {
+    const unchecked = totalStudents - boarded - absentIds.size - reportedIds.size
+    Alert.alert(
+      'End the route?',
+      unchecked > 0
+        ? `${unchecked} student${unchecked === 1 ? ' is' : 's are'} not checked in yet. Parents stop seeing the bus when you end the route.`
+        : 'Parents stop seeing the bus on the map.',
+      [
+        { text: 'Keep driving', style: 'cancel' },
+        { text: 'End route', style: 'destructive', onPress: () => trip.end() },
+      ],
+    )
   }
-
-  async function stopTrip() {
-    if (!profile?.busId) return
-    const { error } = await supabase.from('buses').update({ is_active: false }).eq('id', profile.busId)
-    if (error) { setGpsError('Failed to end trip. Please try again.'); return }
-    setTripStatus('done')
-    if (locationIntervalRef.current) { clearInterval(locationIntervalRef.current); locationIntervalRef.current = null }
-  }
-
-  useEffect(() => {
-    if (tripStatus !== 'active' || !profile?.busId) {
-      if (locationIntervalRef.current) { clearInterval(locationIntervalRef.current); locationIntervalRef.current = null }
-      return
-    }
-    locationIntervalRef.current = setInterval(async () => {
-      try { await sendCurrentLocation(); setGpsError(null) } catch { setGpsError('GPS update failed. Retrying...') }
-    }, 10000)
-    return () => { if (locationIntervalRef.current) { clearInterval(locationIntervalRef.current); locationIntervalRef.current = null } }
-  }, [tripStatus, profile?.busId, sendCurrentLocation])
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['top']}>
       <ScreenHeader
-        subtitle="Driver Portal"
+        subtitle={profile ? `${profile.driverName} · ${profile.schoolName}` : 'Driver'}
         action={
-          tripStatus === 'idle' ? (
-            <TouchableOpacity onPress={startTrip} style={actionBtn(colors.success)}>
-              <Text style={actionBtnText}>▶  Start</Text>
+          trip.status === 'active' ? (
+            <TouchableOpacity onPress={confirmEnd} disabled={trip.busy} style={headerButton(colors.danger)} accessibilityLabel="End the route">
+              <Ionicons name="stop" size={13} color="#FFFFFF" />
+              <Text style={headerButtonText}>End route</Text>
             </TouchableOpacity>
-          ) : tripStatus === 'active' ? (
-            <TouchableOpacity onPress={stopTrip} style={actionBtn(colors.danger)}>
-              <Text style={actionBtnText}>■  End Trip</Text>
-            </TouchableOpacity>
-          ) : (
-            <StatusPill label="Completed" tone="info" />
-          )
+          ) : undefined
         }
       />
 
-      {(error || gpsError) && (
-        <View style={{ paddingHorizontal: 16, paddingTop: 10, gap: 6 }}>
-          {error && <AlertBanner text={error} tone="danger" />}
-          {gpsError && <AlertBanner text={gpsError} tone="warning" />}
-        </View>
-      )}
-
-      {/* Bus/Route identity strip */}
-      <View style={{ backgroundColor: colors.dark, paddingHorizontal: 20, paddingBottom: 16 }}>
+      {/* Bus strip */}
+      <View style={{ backgroundColor: colors.dark, paddingHorizontal: 16, paddingBottom: 16 }}>
         <View style={busStrip}>
+          <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(56,189,248,0.15)', alignItems: 'center', justifyContent: 'center' }}>
+            <Ionicons name="bus" size={20} color={colors.accentMid} />
+          </View>
           <View style={{ flex: 1 }}>
-            <Text style={{ color: '#FFFFFF', fontFamily: 'Inter_800ExtraBold', fontSize: 15, letterSpacing: -0.2 }}>
-              {profile?.busName ?? 'Unassigned'}{' '}
-              <Text style={{ color: colors.accentMid, fontFamily: 'Inter_700Bold', fontSize: 13 }}>
-                {profile?.routeName ?? 'Route'}
-              </Text>
-            </Text>
-            <Text style={{ color: 'rgba(255,255,255,0.45)', fontSize: 11, fontFamily: 'Inter_400Regular', marginTop: 2 }}>
-              {profile?.driverName ?? 'Driver'} · Morning Run
+            <Text style={{ color: '#FFFFFF', fontFamily: 'Inter_800ExtraBold', fontSize: 15 }}>{profile?.busName ?? (loading ? 'Loading…' : 'No bus assigned')}</Text>
+            <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 11.5, fontFamily: 'Inter_500Medium', marginTop: 2 }}>
+              Morning run · {stops.length} stops · {totalStudents} students
             </Text>
           </View>
-          {tripStatus === 'active' && <StatusPill label="Live" />}
-          {tripStatus === 'done' && <StatusPill label="Done" tone="info" />}
+          {trip.status === 'active' && <StatusPill label="Live" />}
+          {trip.status === 'done' && <StatusPill label="Done" tone="info" />}
         </View>
       </View>
 
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 12 }} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 28 }}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={loading && stops.length > 0} onRefresh={refresh} tintColor={colors.primary} />}
+      >
+        {error && <Banner text={error} />}
+        {trip.gpsError && <Banner text={trip.gpsError} tone="warning" />}
 
-        {/* Boarding progress */}
-        <View style={sectionCard}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-            <Text style={sectionTitle}>Boarding Progress</Text>
-            <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 2 }}>
-              <Text style={{ fontFamily: 'Inter_800ExtraBold', fontSize: 20, color: colors.primary, letterSpacing: -0.5 }}>{boarded}</Text>
-              <Text style={{ fontFamily: 'Inter_500Medium', fontSize: 13, color: colors.subtle }}>/{totalStudents}</Text>
-            </View>
-          </View>
-          <ProgressBar value={boarded} total={totalStudents} height={10} />
-          <Text style={{ fontSize: 11, color: colors.subtle, marginTop: 8, fontFamily: 'Inter_400Regular' }}>
-            {totalStudents - boarded > 0
-              ? `${totalStudents - boarded} student${totalStudents - boarded === 1 ? '' : 's'} not yet boarded`
-              : 'All students boarded ✓'}
-          </Text>
+        {trip.status === 'done' && profile && (
+          <TripSummary
+            busName={profile.busName}
+            startedAt={trip.startedAt}
+            endedAt={trip.endedAt}
+            total={totalStudents}
+            boarded={boarded}
+            absent={absentIds.size}
+            reported={reportedIds.size}
+            stopsDone={stopsDone}
+            stopCount={stops.length}
+            onNewRoute={trip.reset}
+          />
+        )}
 
-          {/* Bus capacity bar */}
-          <View style={{ marginTop: 14, paddingTop: 14, borderTopWidth: 1, borderTopColor: colors.borderLight }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-              <Text style={{ fontSize: 12, color: colors.subtle, fontFamily: 'Inter_600SemiBold' }}>Bus Capacity</Text>
-              <Text style={{ fontSize: 12, fontFamily: 'Inter_700Bold', color: boarded > busCapacity * 0.9 ? colors.danger : colors.muted }}>
-                {boarded} / {busCapacity} seats
-              </Text>
+        {trip.status === 'idle' && profile && (
+          <View style={[card, { gap: 12 }]}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: colors.successBg, alignItems: 'center', justifyContent: 'center' }}>
+                <Ionicons name="play" size={20} color={colors.successMid} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontFamily: 'Inter_800ExtraBold', fontSize: 16, color: colors.dark }}>Ready for the morning run?</Text>
+                <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12.5, color: colors.muted, marginTop: 2, lineHeight: 18 }}>
+                  Parents see the bus on the map once you start.
+                </Text>
+              </View>
             </View>
-            {(() => {
-              const pct = busCapacity > 0 ? Math.min(100, Math.round((boarded / busCapacity) * 100)) : 0
-              const fillColor = boarded > busCapacity * 0.9 ? colors.danger : boarded > busCapacity * 0.75 ? colors.warning : colors.success
-              return (
-                <View style={{ height: 6, backgroundColor: colors.borderLight, borderRadius: 3, overflow: 'hidden' }}>
-                  <View style={{ height: '100%', width: `${pct}%`, backgroundColor: fillColor, borderRadius: 3 }} />
-                </View>
-              )
-            })()}
-          </View>
-        </View>
-
-        {/* Current stop hero */}
-        {loading ? (
-          <View style={{ ...sectionCard, alignItems: 'center', paddingVertical: 24 }}>
-            <Text style={{ fontSize: 13, color: colors.subtle, fontFamily: 'Inter_500Medium' }}>Loading route data...</Text>
-          </View>
-        ) : (
-          <View style={{ borderRadius: 20, overflow: 'hidden' }}>
-            <View style={{ height: 3, backgroundColor: colors.accentMid }} />
-            <View style={{ backgroundColor: colors.primary, padding: 18 }}>
-              <Text style={dimLabel}>CURRENT STOP</Text>
-              <Text style={{ color: '#FFFFFF', fontFamily: 'Inter_800ExtraBold', fontSize: 22, letterSpacing: -0.5, marginBottom: 4 }}>
-                {currentStop?.name ?? 'No stops assigned'}
-              </Text>
-              <Text style={{ color: 'rgba(255,255,255,0.5)', fontFamily: 'Inter_400Regular', fontSize: 12, marginBottom: 14 }}>
-                {currentStop?.students.length ?? 0} students waiting · ETA {currentStop?.eta ?? '--:--'}
-              </Text>
-              <TouchableOpacity onPress={() => router.push(routes.driverRoute)} style={checkInBtn}>
-                <Text style={{ color: colors.primary, fontFamily: 'Inter_700Bold', fontSize: 13 }}>Check In Students  →</Text>
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity
+              onPress={trip.start}
+              disabled={trip.busy}
+              activeOpacity={0.85}
+              style={{ height: 54, borderRadius: 16, backgroundColor: colors.success, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+            >
+              {trip.busy ? <ActivityIndicator color="#FFFFFF" /> : <Ionicons name="navigate" size={18} color="#FFFFFF" />}
+              <Text style={{ color: '#FFFFFF', fontFamily: 'Inter_800ExtraBold', fontSize: 16 }}>Start route</Text>
+            </TouchableOpacity>
           </View>
         )}
 
-        {/* Next stop */}
-        <View style={{ ...sectionCard, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <View>
-            <Text style={{ ...dimLabel, color: colors.subtle }}>NEXT STOP</Text>
-            <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 16, color: colors.dark, marginTop: 2 }}>
-              {nextStop?.name ?? '—'}
+        {trip.status === 'active' && (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 4 }}>
+            <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.success }} />
+            <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 12.5, color: colors.muted }}>
+              Sharing location with parents{trip.lastFixAt ? ` · last update ${timeLabel(trip.lastFixAt)}` : ''}
             </Text>
           </View>
-          <View style={{ alignItems: 'flex-end' }}>
-            <Text style={{ ...dimLabel, color: colors.subtle }}>ETA</Text>
-            <Text style={{ fontFamily: 'Inter_800ExtraBold', fontSize: 20, color: colors.info, marginTop: 2, letterSpacing: -0.5 }}>
-              {nextStop?.eta ?? '--:--'}
-            </Text>
+        )}
+
+        {/* Reported absences */}
+        {reportedList.length > 0 && trip.status !== 'done' && (
+          <View style={[card, { padding: 0, overflow: 'hidden', borderColor: '#FDE68A' }]}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.warningBg, paddingHorizontal: 16, paddingVertical: 12 }}>
+              <Ionicons name="home" size={16} color="#B45309" />
+              <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 13.5, color: '#92400E', flex: 1 }}>
+                {reportedList.length} student{reportedList.length === 1 ? '' : 's'} won&apos;t ride today
+              </Text>
+            </View>
+            {reportedList.map((r) => {
+              const info = stopOf.get(r.studentId)
+              return (
+                <View key={r.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 11, borderTopWidth: 1, borderTopColor: colors.borderLight }}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 13.5, color: colors.dark }}>{info?.name}</Text>
+                    <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, color: colors.muted }} numberOfLines={1}>
+                      {info?.stop} · {reasonLabel(r.reason)}
+                      {r.note ? ` · ${r.note}` : ''}
+                    </Text>
+                  </View>
+                  <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 11, color: colors.subtle }}>Parent</Text>
+                </View>
+              )
+            })}
           </View>
-        </View>
+        )}
 
-        {/* Metrics row */}
-        <View style={{ flexDirection: 'row', gap: 10 }}>
-          <MetricCard label="Stops Done" value={`${stopsDone}/${stops.length}`} color={colors.success} icon="✓" />
-          <MetricCard label="Absent" value={String(absentIds.size)} color={colors.danger} icon="✕" />
-          <MetricCard label="ETA School" value={stops[stops.length - 1]?.eta ?? '--:--'} color={colors.primary} icon="🏫" />
-        </View>
+        {trip.status !== 'done' && (
+          <>
+            {/* Boarding progress */}
+            <View style={card}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                <Text style={sectionTitle}>Boarding</Text>
+                <Text style={{ fontFamily: 'Inter_500Medium', fontSize: 13, color: colors.subtle }}>
+                  <Text style={{ fontFamily: 'Inter_800ExtraBold', fontSize: 20, color: colors.primary }}>{boarded}</Text>/{totalStudents}
+                </Text>
+              </View>
+              <ProgressBar value={boarded} total={totalStudents} height={10} />
+              <View style={{ flexDirection: 'row', gap: 14, marginTop: 12 }}>
+                <Legend color={colors.danger} label={`${absentIds.size} absent`} />
+                <Legend color={colors.warning} label={`${reportedIds.size} reported`} />
+                <Legend color={seatsPct > 90 ? colors.danger : colors.subtle} label={`${boarded}/${busCapacity} seats`} />
+              </View>
+            </View>
 
-        {/* Full route CTA */}
-        <TouchableOpacity onPress={() => router.push(routes.driverRoute)} style={fullRouteBtn}>
-          <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 14, color: colors.dark }}>View Full Route & Students</Text>
-          <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ color: '#FFFFFF', fontSize: 16, fontFamily: 'Inter_700Bold', lineHeight: 18 }}>›</Text>
-          </View>
-        </TouchableOpacity>
+            {/* Current stop */}
+            {loading && stops.length === 0 ? (
+              <View style={[card, { alignItems: 'center', paddingVertical: 24 }]}>
+                <ActivityIndicator color={colors.primary} />
+              </View>
+            ) : (
+              <View style={{ borderRadius: 22, overflow: 'hidden', backgroundColor: colors.primary }}>
+                <View style={{ height: 3, backgroundColor: colors.accentMid }} />
+                <View style={{ padding: 18 }}>
+                  <Text style={dimLabel}>{stopsDone === stops.length && stops.length > 0 ? 'Last stop' : 'Current stop'}</Text>
+                  <Text style={{ color: '#FFFFFF', fontFamily: 'Inter_800ExtraBold', fontSize: 21, letterSpacing: -0.4, marginTop: 2 }} numberOfLines={2}>
+                    {currentStop?.name ?? 'No stops assigned'}
+                  </Text>
+                  <Text style={{ color: 'rgba(255,255,255,0.7)', fontFamily: 'Inter_500Medium', fontSize: 12.5, marginTop: 4 }}>
+                    {waitingAtCurrent > 0 ? `${waitingAtCurrent} to check in` : currentStop ? 'Everyone here is checked in' : 'Ask your school to set up the route'}
+                    {nextStop ? ` · then ${nextStop.name}` : ''}
+                  </Text>
+                  <TouchableOpacity onPress={() => router.push(routes.driverRoute)} style={checkInBtn}>
+                    <Ionicons name="checkbox-outline" size={16} color={colors.primary} />
+                    <Text style={{ color: colors.primary, fontFamily: 'Inter_700Bold', fontSize: 13.5 }}>Check in students</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
 
+            {/* Actions */}
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <ActionTile icon="time-outline" title="Running late?" caption="Tell all parents" tint={colors.warning} onPress={() => setDelayOpen(true)} disabled={!profile} />
+              <ActionTile icon="chatbubbles-outline" title="Messages" caption="School and parents" tint={colors.primaryLight} onPress={() => router.push(routes.driverMessages)} />
+            </View>
+
+            <TouchableOpacity onPress={() => router.push(routes.driverRoute)} style={[card, { flexDirection: 'row', alignItems: 'center', gap: 12 }]} activeOpacity={0.8}>
+              <Ionicons name="list" size={20} color={colors.primary} />
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 14, color: colors.dark }}>Full route and students</Text>
+                <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, color: colors.muted, marginTop: 1 }}>
+                  {stopsDone} of {stops.length} stops done
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={colors.subtle} />
+            </TouchableOpacity>
+          </>
+        )}
+
+        {trip.status === 'active' && <PrimaryButton label="End route" icon="flag-outline" tone="danger" onPress={confirmEnd} disabled={trip.busy} />}
       </ScrollView>
+
+      {profile && (
+        <DelaySheet
+          visible={delayOpen}
+          onClose={() => setDelayOpen(false)}
+          busId={profile.busId}
+          busName={profile.busName}
+          schoolId={profile.schoolId}
+          onSent={refresh}
+        />
+      )}
     </SafeAreaView>
   )
 }
 
-function AlertBanner({ text, tone }: { text: string; tone: 'danger' | 'warning' }) {
-  const isDanger = tone === 'danger'
+function ActionTile({ icon, title, caption, tint, onPress, disabled = false }: { icon: IconName; title: string; caption: string; tint: string; onPress: () => void; disabled?: boolean }) {
   return (
-    <View style={{
-      borderColor: isDanger ? '#FECACA' : '#FDE68A',
-      borderWidth: 1,
-      backgroundColor: isDanger ? '#FEF2F2' : '#FFFBEB',
-      borderRadius: 12,
-      padding: 12,
-      flexDirection: 'row',
-      gap: 8,
-      alignItems: 'flex-start',
-    }}>
-      <Text style={{ fontSize: 13 }}>{isDanger ? '⚠️' : '⚡'}</Text>
-      <Text style={{ color: isDanger ? '#B91C1C' : '#92400E', fontSize: 12, fontFamily: 'Inter_600SemiBold', flex: 1 }}>{text}</Text>
+    <TouchableOpacity onPress={onPress} disabled={disabled} activeOpacity={0.8} accessibilityRole="button" style={[card, { flex: 1, gap: 10, padding: 14 }]}>
+      <View style={{ width: 38, height: 38, borderRadius: 12, backgroundColor: `${tint}1F`, alignItems: 'center', justifyContent: 'center' }}>
+        <Ionicons name={icon} size={19} color={tint} />
+      </View>
+      <View>
+        <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 14, color: colors.dark }}>{title}</Text>
+        <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, color: colors.muted, marginTop: 2 }}>{caption}</Text>
+      </View>
+    </TouchableOpacity>
+  )
+}
+
+function Legend({ color, label }: { color: string; label: string }) {
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+      <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: color }} />
+      <Text style={{ fontFamily: 'Inter_500Medium', fontSize: 12, color: colors.muted }}>{label}</Text>
     </View>
   )
 }
 
-function actionBtn(bg: string) {
+function headerButton(bg: string) {
   return {
     backgroundColor: bg,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 10,
+    paddingHorizontal: 12,
+    height: 36,
+    borderRadius: 12,
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
+    gap: 6,
   }
 }
 
-const actionBtnText = { color: '#FFFFFF', fontFamily: 'Inter_700Bold', fontSize: 13 }
+const headerButtonText = { color: '#FFFFFF', fontFamily: 'Inter_700Bold', fontSize: 13 }
 
 const busStrip = {
   backgroundColor: 'rgba(255,255,255,0.07)',
-  borderRadius: 14,
-  padding: 14,
+  borderRadius: 16,
+  padding: 12,
   flexDirection: 'row' as const,
   alignItems: 'center' as const,
-  justifyContent: 'space-between' as const,
   gap: 12,
   borderWidth: 1,
   borderColor: 'rgba(255,255,255,0.06)',
 }
 
-const sectionCard = {
+const card = {
   backgroundColor: colors.surface,
   borderRadius: 20,
   borderWidth: 1,
   borderColor: colors.border,
   padding: 16,
-  shadowColor: colors.dark,
-  shadowOffset: { width: 0, height: 2 },
-  shadowOpacity: 0.05,
-  shadowRadius: 8,
-  elevation: 2,
 }
 
-const sectionTitle = { fontFamily: 'Inter_700Bold' as const, fontSize: 13, color: colors.dark }
+const sectionTitle = { fontFamily: 'Inter_700Bold' as const, fontSize: 14.5, color: colors.dark }
 
 const dimLabel = {
-  fontSize: 10 as const,
-  fontFamily: 'Inter_600SemiBold' as const,
+  fontSize: 10.5,
+  fontFamily: 'Inter_700Bold' as const,
   textTransform: 'uppercase' as const,
-  letterSpacing: 0.8 as const,
-  color: 'rgba(255,255,255,0.5)' as string,
-  marginBottom: 2,
+  letterSpacing: 1,
+  color: 'rgba(255,255,255,0.6)',
 }
 
 const checkInBtn = {
   backgroundColor: '#FFFFFF',
-  borderRadius: 12,
+  borderRadius: 14,
   paddingHorizontal: 16,
-  paddingVertical: 10,
+  height: 44,
   alignSelf: 'flex-start' as const,
-}
-
-const fullRouteBtn = {
-  backgroundColor: colors.surface,
-  borderRadius: 20,
-  padding: 16,
-  borderWidth: 1,
-  borderColor: colors.border,
   flexDirection: 'row' as const,
-  justifyContent: 'space-between' as const,
   alignItems: 'center' as const,
+  gap: 7,
+  marginTop: 14,
 }

@@ -1,49 +1,34 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import Mapbox from '@rnmapbox/maps'
+import { Ionicons } from '@expo/vector-icons'
+import { Banner } from '@/components/primitives/Banner'
 import { ScreenHeader } from '@/components/primitives/ScreenHeader'
 import { useDriverContext } from '@/features/driver/context/DriverDataContext'
+import { reasonLabel } from '@/lib/absence'
 import { colors } from '@/lib/colors'
+import { localDateKey } from '@/lib/dates'
+import { boundsOf, decodePolyline } from '@/lib/geo'
 import { supabase } from '@/lib/supabase'
 
 Mapbox.setAccessToken(process.env.EXPO_PUBLIC_MAPBOX_TOKEN ?? '')
 
-function decodePolyline(encoded: string): Array<[number, number]> {
-  let index = 0
-  let lat = 0
-  let lng = 0
-  const coordinates: Array<[number, number]> = []
-  while (index < encoded.length) {
-    let shift = 0; let result = 0; let byte: number
-    do { byte = encoded.charCodeAt(index++) - 63; result |= (byte & 0x1f) << shift; shift += 5 } while (byte >= 0x20)
-    const dLat = (result & 1) ? ~(result >> 1) : (result >> 1); lat += dLat
-    shift = 0; result = 0
-    do { byte = encoded.charCodeAt(index++) - 63; result |= (byte & 0x1f) << shift; shift += 5 } while (byte >= 0x20)
-    const dLng = (result & 1) ? ~(result >> 1) : (result >> 1); lng += dLng
-    coordinates.push([lng / 1e5, lat / 1e5])
-  }
-  return coordinates
-}
-
-function getLocalDateKey() {
-  const now = new Date()
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
-}
-
 export function DriverRouteScreen() {
-  const { loading, error, profile, stops, boardedIds, setBoardedIds, absentIds, setAbsentIds, routePoints, encodedPolyline } = useDriverContext()
+  const { loading, error, profile, stops, boardedIds, setBoardedIds, absentIds, setAbsentIds, reported, reportedIds, routePoints, encodedPolyline, trip } = useDriverContext()
   const [savingId, setSavingId] = useState<string | null>(null)
-  const mapCoordinates = encodedPolyline
-    ? decodePolyline(encodedPolyline)
-    : routePoints.map((point) => [point.lng, point.lat] as [number, number])
+  const mapCoordinates = useMemo(
+    () => (encodedPolyline ? decodePolyline(encodedPolyline) : routePoints.map((point) => [point.lng, point.lat] as [number, number])),
+    [encodedPolyline, routePoints],
+  )
   const mapCenter = mapCoordinates[0] ?? [51.531, 25.2854]
+  const mapBounds = useMemo(() => boundsOf(mapCoordinates), [mapCoordinates])
   const totalStudents = stops.reduce((sum, s) => sum + s.students.length, 0)
   const boardedCount = boardedIds.size
 
   async function markStudent(id: string, status: 'boarded' | 'absent') {
     if (!profile || savingId) return
-    const today = getLocalDateKey()
+    const today = localDateKey()
     const wasBoarded = boardedIds.has(id)
     const wasAbsent = absentIds.has(id)
     const isUnmarking = (status === 'boarded' && wasBoarded) || (status === 'absent' && wasAbsent)
@@ -76,15 +61,12 @@ export function DriverRouteScreen() {
       <ScreenHeader
         back
         title={profile?.routeName ?? 'Route'}
-        subtitle={`${profile?.busName ?? 'Unassigned Bus'} · Tap to check in`}
+        subtitle={`${profile?.busName ?? 'No bus assigned'} · Tap Board or Absent at each stop`}
       />
 
       {error && (
         <View style={{ paddingHorizontal: 16, paddingTop: 10 }}>
-          <View style={{ borderColor: '#FECACA', borderWidth: 1, backgroundColor: '#FEF2F2', borderRadius: 12, padding: 12, flexDirection: 'row', gap: 8, alignItems: 'flex-start' }}>
-            <Text style={{ fontSize: 15 }}>❌</Text>
-            <Text style={{ color: '#B91C1C', fontSize: 12, fontFamily: 'Inter_600SemiBold', flex: 1 }}>{error}</Text>
-          </View>
+          <Banner text={error} />
         </View>
       )}
 
@@ -94,7 +76,11 @@ export function DriverRouteScreen() {
         {!loading && mapCoordinates.length > 0 && (
           <View style={{ height: 240, borderBottomWidth: 1, borderBottomColor: colors.border }}>
             <Mapbox.MapView style={{ flex: 1 }} styleURL={Mapbox.StyleURL.Street}>
-              <Mapbox.Camera centerCoordinate={mapCenter} zoomLevel={11} />
+              {mapBounds ? (
+                <Mapbox.Camera bounds={{ ...mapBounds, paddingTop: 30, paddingBottom: 70, paddingLeft: 30, paddingRight: 30 }} animationDuration={0} />
+              ) : (
+                <Mapbox.Camera centerCoordinate={mapCenter} zoomLevel={11} />
+              )}
               <Mapbox.ShapeSource id="route-line" shape={{ type: 'Feature', geometry: { type: 'LineString', coordinates: mapCoordinates }, properties: {} }}>
                 <Mapbox.LineLayer id="route-line-layer" style={{ lineColor: colors.primary, lineWidth: 4, lineOpacity: 0.9 }} />
               </Mapbox.ShapeSource>
@@ -123,14 +109,16 @@ export function DriverRouteScreen() {
               }}
             >
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <Text style={{ fontSize: 16 }}>🗺️</Text>
+                <Ionicons name="map" size={16} color="#FFFFFF" />
                 <Text style={{ color: '#FFFFFF', fontFamily: 'Inter_700Bold', fontSize: 13 }}>
                   {profile?.routeName ?? 'Route'} · {stops.length} stops
                 </Text>
               </View>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-                <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.success }} />
-                <Text style={{ color: 'rgba(255,255,255,0.65)', fontFamily: 'Inter_500Medium', fontSize: 12 }}>Active</Text>
+                <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: trip.status === 'active' ? colors.success : colors.subtle }} />
+                <Text style={{ color: 'rgba(255,255,255,0.75)', fontFamily: 'Inter_500Medium', fontSize: 12 }}>
+                  {trip.status === 'active' ? 'Live' : trip.status === 'done' ? 'Finished' : 'Not started'}
+                </Text>
               </View>
             </View>
           </View>
@@ -153,7 +141,7 @@ export function DriverRouteScreen() {
             }}
           >
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <Text style={{ fontSize: 16 }}>👥</Text>
+              <Ionicons name="people" size={17} color={colors.muted} />
               <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 13, color: colors.dark }}>
                 {boardedCount}/{totalStudents}
               </Text>
@@ -207,7 +195,7 @@ export function DriverRouteScreen() {
                 gap: 10,
               }}
             >
-              <Text style={{ fontSize: 18 }}>⏳</Text>
+              <Ionicons name="hourglass-outline" size={18} color={colors.subtle} />
               <Text style={{ fontSize: 13, color: colors.subtle, fontFamily: 'Inter_500Medium' }}>Loading route data...</Text>
             </View>
           )}
@@ -224,7 +212,7 @@ export function DriverRouteScreen() {
                 gap: 8,
               }}
             >
-              <Text style={{ fontSize: 32 }}>🗺️</Text>
+              <Ionicons name="map-outline" size={32} color={colors.subtle} />
               <Text style={{ fontSize: 14, color: colors.dark, fontFamily: 'Inter_700Bold' }}>No stops assigned</Text>
               <Text style={{ fontSize: 12, color: colors.subtle, fontFamily: 'Inter_400Regular', textAlign: 'center' }}>
                 Contact your school admin to set up your route.
@@ -233,9 +221,10 @@ export function DriverRouteScreen() {
           )}
 
           {stops.map((stop, index) => {
-            const stopDone = stop.students.length > 0 && stop.students.every((s) => boardedIds.has(s.id) || absentIds.has(s.id))
-            const hasActiveStopBefore = stops.slice(0, index).some((ps) => ps.students.length > 0 && !ps.students.every((s) => boardedIds.has(s.id) || absentIds.has(s.id)))
-            const isCurrent = !stopDone && stop.students.length > 0 && !hasActiveStopBefore
+            // Students reported absent by a parent count as done, so the driver can skip a stop where nobody is waiting.
+            const stopDone = Boolean(stop.done)
+            const isCurrent = Boolean(stop.current) && !stopDone
+            const staying = stop.students.filter((s) => reportedIds.has(s.id)).length
 
             return (
               <View
@@ -275,7 +264,7 @@ export function DriverRouteScreen() {
                       borderColor: colors.border,
                     }}>
                       {stopDone
-                        ? <Text style={{ color: '#FFFFFF', fontSize: 12, fontFamily: 'Inter_800ExtraBold' }}>✓</Text>
+                        ? <Ionicons name="checkmark" size={16} color="#FFFFFF" />
                         : isCurrent
                           ? <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#FFFFFF' }} />
                           : <Text style={{ color: colors.muted, fontSize: 11, fontFamily: 'Inter_700Bold' }}>{index + 1}</Text>
@@ -288,30 +277,27 @@ export function DriverRouteScreen() {
                       {stop.students.length > 0 && (
                         <Text style={{ fontSize: 11, color: isCurrent ? colors.info : colors.subtle, fontFamily: 'Inter_400Regular', marginTop: 1 }}>
                           {stop.students.filter(s => boardedIds.has(s.id)).length}/{stop.students.length} boarded
+                          {staying > 0 ? ` · ${staying} staying home` : ''}
                         </Text>
                       )}
                     </View>
                   </View>
-                  <View style={{ alignItems: 'flex-end' }}>
-                    <Text style={{ fontSize: 13, fontFamily: 'Inter_700Bold', color: isCurrent ? colors.info : stopDone ? colors.success : colors.subtle }}>
-                      {stop.eta}
-                    </Text>
-                    <Text style={{ fontSize: 10, fontFamily: 'Inter_600SemiBold', color: stopDone ? colors.success : isCurrent ? colors.info : colors.subtle, marginTop: 1 }}>
-                      {stopDone ? 'Done ✓' : isCurrent ? 'Now' : 'Upcoming'}
-                    </Text>
-                  </View>
+                  <Text style={{ fontSize: 11.5, fontFamily: 'Inter_700Bold', color: stopDone ? colors.successMid : isCurrent ? colors.info : colors.subtle }}>
+                    {stopDone ? 'Done' : isCurrent ? 'Now' : `Stop ${index + 1}`}
+                  </Text>
                 </View>
 
                 {/* Student rows */}
                 {stop.students.map((student) => {
                   const isBoarded = boardedIds.has(student.id)
                   const isAbsent = absentIds.has(student.id)
+                  const report = !isBoarded && !isAbsent ? reported.get(student.id) : undefined
                   const isSaving = savingId === student.id
-                  const rowBg = isBoarded ? 'rgba(16,185,129,0.04)' : isAbsent ? 'rgba(239,68,68,0.04)' : 'transparent'
+                  const rowBg = isBoarded ? 'rgba(16,185,129,0.04)' : isAbsent ? 'rgba(239,68,68,0.04)' : report ? 'rgba(245,158,11,0.06)' : 'transparent'
                   const avatarBg = isBoarded ? colors.successBg : isAbsent ? colors.dangerBg : colors.infoBg
                   const avatarBorder = isBoarded ? 'rgba(16,185,129,0.3)' : isAbsent ? 'rgba(239,68,68,0.3)' : '#BFDBFE'
                   const avatarColor = isBoarded ? colors.success : isAbsent ? colors.danger : colors.primary
-                  const nameColor = (isBoarded || isAbsent) ? colors.muted : colors.dark
+                  const nameColor = (isBoarded || isAbsent || report) ? colors.muted : colors.dark
                   return (
                     <View
                       key={student.id}
@@ -347,7 +333,14 @@ export function DriverRouteScreen() {
                         <Text style={{ fontSize: 13, fontFamily: 'Inter_600SemiBold', color: nameColor }}>
                           {student.name}
                         </Text>
-                        <Text style={{ fontSize: 11, color: colors.subtle, fontFamily: 'Inter_400Regular' }}>{student.grade}</Text>
+                        {report && (
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 }}>
+                            <Ionicons name="home" size={11} color="#B45309" />
+                            <Text style={{ fontSize: 11, color: '#B45309', fontFamily: 'Inter_600SemiBold' }} numberOfLines={1}>
+                              Staying home · {reasonLabel(report.reason)}
+                            </Text>
+                          </View>
+                        )}
                       </View>
 
                       {/* Action buttons */}

@@ -10,6 +10,8 @@ import { useInView, useReducedMotion } from 'framer-motion'
 export function useStepLoop(durations: readonly number[], stillStep = 0) {
   const ref = useRef<HTMLDivElement>(null)
   const inView = useInView(ref, { margin: '-10% 0px' })
+  /** True once the element is within ~800px of the screen, for loading images late. */
+  const near = useInView(ref, { margin: '800px 0px', once: true })
   const reduceMotion = useReducedMotion()
   const [step, setStep] = useState(0)
 
@@ -19,5 +21,5 @@ export function useStepLoop(durations: readonly number[], stillStep = 0) {
     return () => window.clearTimeout(id)
   }, [inView, reduceMotion, step, durations])
 
-  return { ref, step: reduceMotion ? stillStep : step, reduceMotion: Boolean(reduceMotion) }
+  return { ref, step: reduceMotion ? stillStep : step, reduceMotion: Boolean(reduceMotion), near }
 }

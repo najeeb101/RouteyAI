@@ -21,12 +21,12 @@ export const FAQS = [
   {
     question: 'How do drivers use RouteyAI?',
     answer:
-      'Drivers use the RouteyAI app. It shows the next pickup in route order, lets them mark each student boarded or absent with one tap, and shares the bus location every 10 seconds while the route is running.',
+      'Drivers use the RouteyAI app. It shows the next pickup in route order, lets them mark each student boarded or absent with one tap, and shares the bus location every 10 seconds while the route is running. It also shows which students their parents reported absent, sends parents a running-late notice in one tap, and gives a summary when the route ends.',
   },
   {
     question: 'What do parents see?',
     answer:
-      'Parents see their child’s bus on a map, the arrival time for their stop, and school announcements. They get a notification when their child boards or is marked absent, and when the bus is getting close.',
+      'Parents see their child’s bus on a map, the arrival time for their stop, and school announcements. They get a notification when their child boards or is marked absent, and when the bus is getting close. Parents with more than one child switch between them in the app, can report an absence ahead of time, and can look back at each child’s past rides.',
   },
   {
     question: 'How is student data protected?',

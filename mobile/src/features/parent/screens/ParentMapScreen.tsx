@@ -1,208 +1,238 @@
-import { ScrollView, Text, View } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { useEffect, useMemo, useRef, useState, type ElementRef } from 'react'
+import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import Mapbox from '@rnmapbox/maps'
-import { ScreenHeader } from '@/components/primitives/ScreenHeader'
-import { StatusPill } from '@/components/primitives/StatusPill'
-import { colors } from '@/lib/colors'
+import { Ionicons } from '@expo/vector-icons'
+import { Banner } from '@/components/primitives/Banner'
+import { ChildSwitcher } from '@/features/parent/components/ChildSwitcher'
+import { CHILD_STATUS } from '@/features/parent/components/childStatus'
 import { useParentContext } from '@/features/parent/context/ParentDataContext'
+import { colors } from '@/lib/colors'
+import { timeLabel } from '@/lib/dates'
+import { boundsOf, decodePolyline } from '@/lib/geo'
 
 Mapbox.setAccessToken(process.env.EXPO_PUBLIC_MAPBOX_TOKEN ?? '')
 
-function decodePolyline(encoded: string): Array<[number, number]> {
-  let index = 0; let lat = 0; let lng = 0
-  const coordinates: Array<[number, number]> = []
-  while (index < encoded.length) {
-    let shift = 0; let result = 0; let byte: number
-    do { byte = encoded.charCodeAt(index++) - 63; result |= (byte & 0x1f) << shift; shift += 5 } while (byte >= 0x20)
-    const dLat = (result & 1) ? ~(result >> 1) : (result >> 1); lat += dLat
-    shift = 0; result = 0
-    do { byte = encoded.charCodeAt(index++) - 63; result |= (byte & 0x1f) << shift; shift += 5 } while (byte >= 0x20)
-    const dLng = (result & 1) ? ~(result >> 1) : (result >> 1); lng += dLng
-    coordinates.push([lng / 1e5, lat / 1e5])
-  }
-  return coordinates
-}
+const DOHA: [number, number] = [51.531, 25.2854]
+/** Space the card at the bottom and the chips at the top take up, so the camera frames the route between them. */
+const CARD_SPACE = 250
 
-const attendanceTone: Record<string, { label: string; color: string; bg: string }> = {
-  boarded:  { label: 'On Bus',   color: colors.success, bg: colors.successBg },
-  absent:   { label: 'Absent',   color: colors.danger,  bg: colors.dangerBg },
-  pending:  { label: 'Waiting',  color: colors.warning, bg: colors.warningBg },
-}
-
+/**
+ * Full-screen live map: the bus follows GPS updates, the child's stop is marked, and the card at the bottom
+ * shows the arrival time and how many stops are left. Other children's stops are deliberately not drawn.
+ */
 export function ParentMapScreen() {
-  const { loading, error, child, routePoints, encodedPolyline, busLocation, attendanceStatus, etaMinutes } = useParentContext()
-  const mapCoordinates = encodedPolyline
-    ? decodePolyline(encodedPolyline)
-    : routePoints.map((p) => [p.lng, p.lat] as [number, number])
-  const mapCenter = busLocation ? [busLocation.lng, busLocation.lat] as [number, number] : (mapCoordinates[0] ?? [51.531, 25.2854])
-  const childPoint = child ? routePoints.find((p) => p.studentId === child.id) : undefined
-  const statusInfo = attendanceTone[attendanceStatus ?? 'pending'] ?? attendanceTone.pending
+  const insets = useSafeAreaInsets()
+  const { loading, error, children, child, selectChild, statusFor, status, attendance, routePoints, childPoint, encodedPolyline, busLocation, etaMinutes, stopsBefore } =
+    useParentContext()
+  const camera = useRef<ElementRef<typeof Mapbox.Camera>>(null)
+  const [following, setFollowing] = useState(true)
+
+  const line = useMemo<Array<[number, number]>>(
+    () => (encodedPolyline ? decodePolyline(encodedPolyline) : routePoints.map((p) => [p.lng, p.lat])),
+    [encodedPolyline, routePoints],
+  )
+  const bounds = useMemo(
+    () => boundsOf(childPoint ? [...line, [childPoint.lng, childPoint.lat]] : line),
+    [line, childPoint],
+  )
+  const topSpace = insets.top + (children.length > 1 ? 76 : 64)
+
+  // Switching child frames their route again.
+  useEffect(() => setFollowing(true), [child?.id])
+
+  // Follow the bus while GPS is live; otherwise frame the whole route.
+  useEffect(() => {
+    if (!following) return
+    if (busLocation) {
+      camera.current?.setCamera({ centerCoordinate: [busLocation.lng, busLocation.lat], zoomLevel: 15, animationDuration: 900, animationMode: 'easeTo', padding: { paddingTop: topSpace, paddingBottom: CARD_SPACE, paddingLeft: 0, paddingRight: 0 } })
+    } else if (bounds) {
+      camera.current?.fitBounds(bounds.ne, bounds.sw, [topSpace + 20, 40, CARD_SPACE + 20, 40], 900)
+    }
+  }, [busLocation, bounds, following, topSpace])
+
+  const meta = CHILD_STATUS[status]
+  const record = child ? attendance[child.id] : undefined
+  const first = child?.firstName ?? 'Your child'
+  let headline = 'Not started'
+  let detail = `${child?.busName ?? 'The bus'} hasn't started the route yet`
+  if (status === 'boarded') {
+    headline = 'On the bus'
+    detail = record ? `Boarded at ${timeLabel(record.at)}` : `${first} is on the bus`
+  } else if (status === 'absent') {
+    headline = 'Absent today'
+    detail = 'Marked absent by the driver'
+  } else if (status === 'reported') {
+    headline = 'Staying home'
+    detail = 'You reported this absence'
+  } else if (status === 'no-bus') {
+    headline = 'No bus yet'
+    detail = 'Your school hasn’t assigned a bus'
+  } else if (etaMinutes !== null) {
+    headline = etaMinutes <= 1 ? 'Arriving now' : `${etaMinutes} min away`
+    detail = stopsBefore === null || stopsBefore === 0 ? 'Your stop is next' : `${stopsBefore} stop${stopsBefore === 1 ? '' : 's'} before yours`
+  } else if (busLocation) {
+    headline = 'On the way'
+    detail = 'Waiting for the next GPS update'
+  }
+
+  const lineColor = child?.busColor ?? colors.primary
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
-      <ScreenHeader
-        back
-        title="Live Tracking"
-        subtitle={`${child?.busName ?? 'Bus'} · Morning Route`}
-        action={<StatusPill label={busLocation ? 'Live' : 'Waiting'} tone={busLocation ? 'success' : 'warning'} />}
-      />
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <Mapbox.MapView
+        style={{ flex: 1 }}
+        styleURL={Mapbox.StyleURL.Street}
+        scaleBarEnabled={false}
+        logoPosition={{ bottom: CARD_SPACE - 30, left: 12 }}
+        attributionPosition={{ bottom: CARD_SPACE - 30, right: 12 }}
+        onCameraChanged={(state) => {
+          if (state.gestures.isGestureActive) setFollowing(false)
+        }}
+      >
+        <Mapbox.Camera ref={camera} defaultSettings={{ centerCoordinate: DOHA, zoomLevel: 11 }} />
 
-      {/* Map — with floating overlay */}
-      <View style={{ height: 300, borderBottomWidth: 1, borderBottomColor: colors.border }}>
-        <Mapbox.MapView style={{ flex: 1 }} styleURL={Mapbox.StyleURL.Street}>
-          <Mapbox.Camera centerCoordinate={mapCenter} zoomLevel={11} animationMode="flyTo" animationDuration={800} />
+        {line.length > 1 && (
+          <Mapbox.ShapeSource id="route" shape={{ type: 'Feature', geometry: { type: 'LineString', coordinates: line }, properties: {} }}>
+            <Mapbox.LineLayer id="route-casing" style={{ lineColor: '#FFFFFF', lineWidth: 9, lineCap: 'round', lineJoin: 'round' }} />
+            <Mapbox.LineLayer id="route-line" aboveLayerID="route-casing" style={{ lineColor, lineWidth: 5, lineCap: 'round', lineJoin: 'round' }} />
+          </Mapbox.ShapeSource>
+        )}
 
-          {mapCoordinates.length > 0 && (
-            <Mapbox.ShapeSource id="parent-route-line" shape={{ type: 'Feature', geometry: { type: 'LineString', coordinates: mapCoordinates }, properties: {} }}>
-              <Mapbox.LineLayer id="parent-route-line-layer" style={{ lineColor: colors.primary, lineWidth: 4, lineOpacity: 0.85, lineCap: 'round', lineJoin: 'round' }} />
-            </Mapbox.ShapeSource>
-          )}
-
-          {routePoints.length > 0 && (
-            <Mapbox.ShapeSource
-              id="parent-route-stops"
-              shape={{ type: 'FeatureCollection', features: routePoints.map((p) => ({ type: 'Feature', geometry: { type: 'Point', coordinates: [p.lng, p.lat] }, properties: {} })) }}
-            >
-              <Mapbox.CircleLayer id="parent-route-stops-layer" style={{ circleRadius: 5, circleColor: colors.primaryLight, circleStrokeColor: '#FFFFFF', circleStrokeWidth: 2 }} />
-            </Mapbox.ShapeSource>
-          )}
-
-          {childPoint && (
-            <Mapbox.PointAnnotation id="child-stop" coordinate={[childPoint.lng, childPoint.lat]}>
-              <View style={{ width: 18, height: 18, borderRadius: 9, backgroundColor: colors.warning, borderWidth: 2.5, borderColor: '#FFFFFF', shadowColor: colors.warning, shadowOpacity: 0.5, shadowRadius: 4, shadowOffset: { width: 0, height: 0 } }} />
-            </Mapbox.PointAnnotation>
-          )}
-
-          {busLocation && (
-            <Mapbox.PointAnnotation id="bus-live" coordinate={[busLocation.lng, busLocation.lat]}>
-              <View style={{ paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10, backgroundColor: child?.busColor ?? colors.primary, shadowColor: '#000', shadowOpacity: 0.25, shadowRadius: 4, shadowOffset: { width: 0, height: 2 } }}>
-                <Text style={{ color: '#FFFFFF', fontSize: 11, fontFamily: 'Inter_800ExtraBold' }}>{child?.busName ?? 'BUS'}</Text>
+        {childPoint && (
+          <Mapbox.MarkerView id="child-stop" coordinate={[childPoint.lng, childPoint.lat]} anchor={{ x: 0.5, y: 1 }} allowOverlap>
+            <View style={{ alignItems: 'center' }}>
+              <View style={{ backgroundColor: colors.dark, borderRadius: 10, paddingHorizontal: 8, paddingVertical: 4, marginBottom: 4 }}>
+                <Text style={{ color: '#FFFFFF', fontFamily: 'Inter_700Bold', fontSize: 11 }}>{first}&apos;s stop</Text>
               </View>
-            </Mapbox.PointAnnotation>
-          )}
-        </Mapbox.MapView>
+              <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: colors.warning, borderWidth: 3, borderColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', ...markerShadow }}>
+                <Ionicons name="home" size={14} color="#FFFFFF" />
+              </View>
+            </View>
+          </Mapbox.MarkerView>
+        )}
 
-        {/* Floating info strip at bottom of map */}
-        <View
-          style={{
-            position: 'absolute',
-            bottom: 10,
-            left: 12,
-            right: 12,
-            backgroundColor: 'rgba(15,23,42,0.82)',
-            borderRadius: 14,
-            paddingHorizontal: 14,
-            paddingVertical: 10,
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 10,
-          }}
-        >
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <Text style={{ fontSize: 16 }}>🚌</Text>
-            <Text style={{ color: '#FFFFFF', fontFamily: 'Inter_700Bold', fontSize: 13 }}>
-              {child?.busName ?? 'Bus'}
-            </Text>
-          </View>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: busLocation ? colors.success : colors.warning }} />
-            <Text style={{ color: 'rgba(255,255,255,0.7)', fontFamily: 'Inter_500Medium', fontSize: 12 }}>
-              {busLocation ? 'GPS Live' : 'Locating...'}
-            </Text>
-          </View>
+        {busLocation && (
+          <Mapbox.MarkerView id="bus" coordinate={[busLocation.lng, busLocation.lat]} allowOverlap>
+            <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: `${lineColor}33`, alignItems: 'center', justifyContent: 'center' }}>
+              <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: lineColor, borderWidth: 3, borderColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', ...markerShadow }}>
+                <Ionicons name="bus" size={14} color="#FFFFFF" />
+              </View>
+            </View>
+          </Mapbox.MarkerView>
+        )}
+      </Mapbox.MapView>
+
+      {/* Top: child chips and GPS state */}
+      <View style={{ position: 'absolute', top: insets.top + 10, left: 12, right: 12, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        <View style={{ flex: 1 }}>
+          {children.length > 1 ? (
+            <ChildSwitcher items={children} selectedId={child?.id ?? null} statusFor={statusFor} onSelect={selectChild} variant="light" />
+          ) : (
+            <View style={floatingPill}>
+              <Ionicons name="navigate" size={15} color={colors.primary} />
+              <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 14, color: colors.dark }}>Live map</Text>
+            </View>
+          )}
+        </View>
+        <View style={floatingPill}>
+          <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: busLocation ? colors.success : colors.subtle }} />
+          <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 12, color: colors.dark }}>{busLocation ? 'GPS live' : 'No GPS'}</Text>
         </View>
       </View>
 
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 12 }} showsVerticalScrollIndicator={false}>
-        {error && (
-          <View style={{ borderColor: '#FECACA', borderWidth: 1, backgroundColor: '#FEF2F2', borderRadius: 14, padding: 14, flexDirection: 'row', gap: 8, alignItems: 'flex-start' }}>
-            <Text style={{ fontSize: 16 }}>❌</Text>
-            <Text style={{ color: '#B91C1C', fontSize: 12, fontFamily: 'Inter_600SemiBold', flex: 1 }}>{error}</Text>
-          </View>
-        )}
+      {/* Recenter */}
+      {!following && (
+        <TouchableOpacity
+          onPress={() => setFollowing(true)}
+          accessibilityLabel={busLocation ? 'Follow the bus' : 'Show the whole route'}
+          style={{ position: 'absolute', right: 16, bottom: CARD_SPACE - 4, width: 48, height: 48, borderRadius: 24, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', ...markerShadow }}
+        >
+          <Ionicons name="locate" size={22} color={colors.primary} />
+        </TouchableOpacity>
+      )}
 
-        {loading && (
-          <View style={{ backgroundColor: colors.surface, borderRadius: 16, borderWidth: 1, borderColor: colors.border, padding: 16 }}>
-            <Text style={{ fontFamily: 'Inter_500Medium', color: colors.subtle }}>Loading live data...</Text>
+      {/* Bottom card */}
+      <View
+        style={{
+          position: 'absolute',
+          left: 12,
+          right: 12,
+          bottom: 12,
+          backgroundColor: colors.surface,
+          borderRadius: 24,
+          padding: 18,
+          gap: 14,
+          shadowColor: colors.dark,
+          shadowOpacity: 0.18,
+          shadowRadius: 18,
+          shadowOffset: { width: 0, height: 8 },
+          elevation: 10,
+        }}
+      >
+        {error && <Banner text={error} />}
+        {loading && !child ? (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8 }}>
+            <ActivityIndicator color={colors.primary} />
+            <Text style={{ fontFamily: 'Inter_500Medium', color: colors.muted }}>Loading the route…</Text>
           </View>
-        )}
-
-        {!loading && (
+        ) : child ? (
           <>
-            {/* Child status card */}
-            <View style={infoCard}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-                <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 15, color: colors.dark }}>{child?.name ?? 'Your Child'}</Text>
-                <View style={{ paddingHorizontal: 12, paddingVertical: 5, borderRadius: 20, backgroundColor: statusInfo.bg }}>
-                  <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 12, color: statusInfo.color }}>{statusInfo.label}</Text>
-                </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontFamily: 'Inter_800ExtraBold', fontSize: 24, color: colors.dark, letterSpacing: -0.6 }}>{headline}</Text>
+                <Text style={{ fontFamily: 'Inter_500Medium', fontSize: 13, color: colors.muted, marginTop: 2 }}>{detail}</Text>
               </View>
-
-              <View style={{ gap: 10 }}>
-                <InfoRow icon="🚌" label="Bus" value={child?.busName ?? 'Unassigned'} />
-                <InfoRow icon="📍" label="GPS" value={busLocation ? 'Live tracking active' : 'Waiting for GPS updates'} valueColor={busLocation ? colors.success : colors.subtle} />
-                <InfoRow
-                  icon="⏱️"
-                  label="ETA"
-                  value={
-                    attendanceStatus === 'boarded'
-                      ? 'On bus'
-                      : attendanceStatus === 'absent'
-                        ? 'Absent today'
-                        : etaMinutes === null
-                          ? 'Not yet active'
-                          : etaMinutes <= 1
-                            ? 'Arriving now'
-                            : `~${etaMinutes} min away`
-                  }
-                  valueColor={etaMinutes !== null && etaMinutes <= 3 ? colors.warning : colors.dark}
-                />
-                <InfoRow icon="🛑" label="Stops" value={`${routePoints.length} on this route`} />
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: meta.bg, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999 }}>
+                <Ionicons name={meta.icon} size={13} color={meta.color} />
+                <Text style={{ color: meta.color, fontSize: 12, fontFamily: 'Inter_700Bold' }}>{meta.label}</Text>
               </View>
             </View>
-
-            {/* Legend */}
-            <View style={{ ...infoCard, flexDirection: 'row', gap: 16, flexWrap: 'wrap' }}>
-              <LegendItem color={colors.primary} label="Route" />
-              <LegendItem color={colors.warning} label="Your stop" />
-              <LegendItem color={child?.busColor ?? colors.primary} label="Bus" />
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <InfoTile icon="bus-outline" label="Bus" value={child.busName ?? 'Not assigned'} />
+              <InfoTile icon="home-outline" label="Stop" value={child.homeAddress} />
             </View>
           </>
-        )}
-      </ScrollView>
-    </SafeAreaView>
-  )
-}
-
-function InfoRow({ icon, label, value, valueColor }: { icon: string; label: string; value: string; valueColor?: string }) {
-  return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-      <Text style={{ fontSize: 15, width: 22, textAlign: 'center' }}>{icon}</Text>
-      <Text style={{ fontSize: 12, color: colors.subtle, fontFamily: 'Inter_500Medium', width: 52 }}>{label}</Text>
-      <Text style={{ fontSize: 13, color: valueColor ?? colors.dark, fontFamily: 'Inter_600SemiBold', flex: 1 }}>{value}</Text>
+        ) : null}
+      </View>
     </View>
   )
 }
 
-function LegendItem({ color, label }: { color: string; label: string }) {
+function InfoTile({ icon, label, value }: { icon: 'bus-outline' | 'home-outline'; label: string; value: string }) {
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-      <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: color }} />
-      <Text style={{ fontSize: 12, color: colors.muted, fontFamily: 'Inter_500Medium' }}>{label}</Text>
+    <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.background, borderRadius: 14, padding: 10 }}>
+      <Ionicons name={icon} size={18} color={colors.primaryLight} />
+      <View style={{ flex: 1 }}>
+        <Text style={{ fontSize: 10.5, color: colors.subtle, fontFamily: 'Inter_600SemiBold', textTransform: 'uppercase', letterSpacing: 0.6 }}>{label}</Text>
+        <Text style={{ fontSize: 13, color: colors.dark, fontFamily: 'Inter_700Bold' }} numberOfLines={1}>
+          {value}
+        </Text>
+      </View>
     </View>
   )
 }
 
-const infoCard = {
-  backgroundColor: colors.surface,
-  borderRadius: 18,
-  borderWidth: 1,
-  borderColor: colors.border,
-  padding: 16,
-  shadowColor: colors.dark,
+const markerShadow = {
+  shadowColor: '#000000',
+  shadowOpacity: 0.25,
+  shadowRadius: 4,
   shadowOffset: { width: 0, height: 2 },
-  shadowOpacity: 0.05,
+  elevation: 4,
+}
+
+const floatingPill = {
+  flexDirection: 'row' as const,
+  alignItems: 'center' as const,
+  alignSelf: 'flex-start' as const,
+  gap: 7,
+  backgroundColor: '#FFFFFF',
+  paddingHorizontal: 14,
+  height: 40,
+  borderRadius: 20,
+  shadowColor: colors.dark,
+  shadowOpacity: 0.12,
   shadowRadius: 8,
-  elevation: 2,
+  shadowOffset: { width: 0, height: 3 },
+  elevation: 3,
 }

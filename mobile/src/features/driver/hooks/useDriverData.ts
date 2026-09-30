@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { toAbsenceReport, type AbsenceReport, type AbsenceReportRow } from '@/lib/absence'
+import { localDateKey, timeLabel } from '@/lib/dates'
 
 export type DriverStudent = {
   id: string
   name: string
-  grade: string
   initials: string
   stopOrder: number | null
 }
@@ -25,10 +26,14 @@ export type DriverBusProfile = {
   schoolId: string
   schoolName: string
   driverName: string
+  email: string | null
+  capacity: number
 }
 
 export type DriverMessage = {
   id: string
+  /** True for messages this driver sent (e.g. delay notices). */
+  mine: boolean
   from: string
   body: string
   time: string
@@ -69,6 +74,7 @@ type AnnouncementRow = {
   id: string
   message: string
   created_at: string
+  sender_id: string | null
 }
 
 type WaypointRow = {
@@ -88,17 +94,10 @@ function initialsFromName(name: string) {
   return ((parts[0]?.[0] ?? 'S') + (parts[1]?.[0] ?? '')).toUpperCase()
 }
 
-function getLocalDateKey() {
-  const now = new Date()
-  const year = now.getFullYear()
-  const month = String(now.getMonth() + 1).padStart(2, '0')
-  const day = String(now.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
-
-function deriveStopProgress(stops: DriverStop[], boardedIds: Set<string>, absentIds: Set<string>) {
+/** A stop is done once every student on it is boarded, marked absent, or reported absent by a parent. */
+function deriveStopProgress(stops: DriverStop[], boardedIds: Set<string>, absentIds: Set<string>, reportedIds: Set<string>) {
   let activeStopAssigned = false
-  const accountedIds = new Set([...boardedIds, ...absentIds])
+  const accountedIds = new Set([...boardedIds, ...absentIds, ...reportedIds])
   const nextStops = stops.map((stop) => {
     const done = stop.students.length > 0 && stop.students.every((student) => accountedIds.has(student.id))
     const current = !done && !activeStopAssigned
@@ -125,6 +124,19 @@ export function useDriverData() {
   const [busCapacity, setBusCapacity] = useState<number>(40)
   const [routePoints, setRoutePoints] = useState<DriverRoutePoint[]>([])
   const [encodedPolyline, setEncodedPolyline] = useState<string | null>(null)
+  /** Parents' absence reports for today, by student. */
+  const [reported, setReported] = useState<Map<string, AbsenceReport>>(new Map())
+
+  const loadReports = useCallback(async (studentIds: string[]) => {
+    if (studentIds.length === 0) return setReported(new Map())
+    const { data, error: err } = await supabase
+      .from('absence_reports')
+      .select('id, student_id, date, reason, note, created_at')
+      .in('student_id', studentIds)
+      .eq('date', localDateKey())
+    if (err) return
+    setReported(new Map(((data ?? []) as AbsenceReportRow[]).map((row) => [row.student_id, toAbsenceReport(row)])))
+  }, [])
 
   const refresh = useCallback(async () => {
     setLoading(true)
@@ -164,6 +176,8 @@ export function useDriverData() {
         schoolId: bus.school_id,
         schoolName: school?.name ?? 'School',
         driverName: rawName,
+        email: user.email ?? null,
+        capacity: bus.capacity ?? 40,
       })
       setBusCapacity(bus.capacity ?? 40)
 
@@ -182,7 +196,6 @@ export function useDriverData() {
         list.push({
           id: s.id,
           name: s.name,
-          grade: 'N/A',
           initials: initialsFromName(s.name),
           stopOrder: s.stop_order,
         })
@@ -219,7 +232,7 @@ export function useDriverData() {
       setRoutePoints(points)
       setEncodedPolyline(latestRoute?.encoded_polyline ?? null)
 
-      const today = getLocalDateKey()
+      const today = localDateKey()
       const { data: attendanceData } = await supabase
         .from('attendance')
         .select('student_id, status')
@@ -228,22 +241,27 @@ export function useDriverData() {
       const rows = (attendanceData as AttendanceRow[] | null) ?? []
       setBoardedIds(new Set(rows.filter((a) => a.status === 'boarded').map((a) => a.student_id)))
       setAbsentIds(new Set(rows.filter((a) => a.status === 'absent').map((a) => a.student_id)))
+      await loadReports(students.map((s) => s.id))
 
       const { data: announcementsData } = await supabase
         .from('announcements')
-        .select('id, message, created_at')
+        .select('id, message, created_at, sender_id')
         .or(`bus_id.eq.${bus.id},bus_id.is.null`)
         .order('created_at', { ascending: false })
         .limit(25)
       const messageRows = (announcementsData ?? []) as AnnouncementRow[]
       setMessages(
-        messageRows.map((m) => ({
-          id: m.id,
-          from: `${school?.name ?? 'School'} Admin`,
-          body: m.message,
-          time: new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          type: 'info',
-        })),
+        messageRows.map((m) => {
+          const mine = m.sender_id === user.id
+          return {
+            id: m.id,
+            mine,
+            from: mine ? 'You' : `${school?.name ?? 'School'}`,
+            body: m.message,
+            time: timeLabel(m.created_at),
+            type: /running .*late|delay/i.test(m.message) ? ('warn' as const) : ('info' as const),
+          }
+        }),
       )
     } catch (e) {
       const message = e instanceof Error ? e.message : 'Failed to load driver data'
@@ -251,7 +269,7 @@ export function useDriverData() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [loadReports])
 
   useEffect(() => {
     refresh()
@@ -266,9 +284,29 @@ export function useDriverData() {
     return () => { supabase.removeChannel(channel) }
   }, [profile?.busId, refresh])
 
+  // Parents can report an absence while the route is running; RLS only sends this driver's students.
+  const studentKey = baseStops.flatMap((stop) => stop.students.map((s) => s.id)).join(',')
+  useEffect(() => {
+    if (!profile?.busId || !studentKey) return
+    const ids = studentKey.split(',')
+    const channel = supabase
+      .channel(`driver-absence-reports-${profile.busId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'absence_reports' }, () => loadReports(ids))
+      .subscribe()
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [profile?.busId, studentKey, loadReports])
+
+  /** Reported absent by a parent and not boarded after all. */
+  const reportedIds = useMemo(
+    () => new Set([...reported.keys()].filter((id) => !boardedIds.has(id))),
+    [reported, boardedIds],
+  )
+
   const stops = useMemo(
-    () => deriveStopProgress(baseStops, boardedIds, absentIds),
-    [baseStops, boardedIds, absentIds],
+    () => deriveStopProgress(baseStops, boardedIds, absentIds, reportedIds),
+    [baseStops, boardedIds, absentIds, reportedIds],
   )
   const totalStudents = useMemo(
     () => stops.reduce((total, stop) => total + stop.students.length, 0),
@@ -285,6 +323,8 @@ export function useDriverData() {
     setBoardedIds,
     absentIds,
     setAbsentIds,
+    reported,
+    reportedIds,
     busCapacity,
     messages,
     routePoints,

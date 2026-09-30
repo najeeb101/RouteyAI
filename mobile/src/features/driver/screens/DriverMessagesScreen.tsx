@@ -1,16 +1,17 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { ScrollView, Text, TextInput, TouchableOpacity, View, KeyboardAvoidingView, Platform } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { Ionicons } from '@expo/vector-icons'
 import { ScreenHeader } from '@/components/primitives/ScreenHeader'
 import { useDriverContext } from '@/features/driver/context/DriverDataContext'
 import { colors } from '@/lib/colors'
 import { supabase } from '@/lib/supabase'
 import type { RouteUpdateType } from '@/types/route'
 
-const typeMeta: Record<RouteUpdateType, { color: string; bg: string; border: string; icon: string }> = {
-  warn:  { color: colors.warning, bg: '#FFFBEB', border: 'rgba(245,158,11,0.2)',  icon: '⚠️' },
-  info:  { color: colors.info,    bg: '#EFF6FF', border: 'rgba(59,130,246,0.2)',  icon: 'ℹ️' },
-  ok:    { color: colors.success, bg: '#F0FDF4', border: 'rgba(16,185,129,0.2)', icon: '✅' },
+const typeMeta: Record<RouteUpdateType, { color: string; bg: string; border: string; icon: 'time' | 'megaphone-outline' | 'checkmark-circle' }> = {
+  warn:  { color: colors.warning, bg: '#FFFBEB', border: 'rgba(245,158,11,0.2)',  icon: 'time' },
+  info:  { color: colors.info,    bg: '#EFF6FF', border: 'rgba(59,130,246,0.2)',  icon: 'megaphone-outline' },
+  ok:    { color: colors.success, bg: '#F0FDF4', border: 'rgba(16,185,129,0.2)', icon: 'checkmark-circle' },
 }
 
 export function DriverMessagesScreen() {
@@ -42,18 +43,9 @@ export function DriverMessagesScreen() {
     }
   }
 
-  useEffect(() => {
-    if (!profile?.busId) return
-    const channel = supabase
-      .channel(`driver-announcements-${profile.busId}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'announcements' }, () => refresh())
-      .subscribe()
-    return () => { supabase.removeChannel(channel) }
-  }, [profile?.busId, refresh])
-
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
-      <ScreenHeader title="Messages" subtitle={`From ${profile?.schoolName ?? 'School'} Admin`} />
+      <ScreenHeader title="Messages" subtitle={`${profile?.schoolName ?? 'School'} and parents on ${profile?.busName ?? 'your bus'}`} />
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 10 }} showsVerticalScrollIndicator={false}>
@@ -100,7 +92,7 @@ export function DriverMessagesScreen() {
                   justifyContent: 'center',
                   flexShrink: 0,
                 }}>
-                  <Text style={{ fontSize: 16 }}>{meta.icon}</Text>
+                  <Ionicons name={meta.icon} size={17} color={meta.color} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 5, gap: 8 }}>
@@ -170,7 +162,7 @@ export function DriverMessagesScreen() {
               justifyContent: 'center',
             }}
           >
-            <Text style={{ fontSize: 18 }}>{sending ? '…' : '▶'}</Text>
+            <Ionicons name={sending ? 'ellipsis-horizontal' : 'send'} size={18} color={compose.trim() && !sending ? '#FFFFFF' : colors.subtle} />
           </TouchableOpacity>
         </View>
       </View>

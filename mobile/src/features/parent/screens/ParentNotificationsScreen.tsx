@@ -1,124 +1,100 @@
-import { ScrollView, Text, View } from 'react-native'
+import { RefreshControl, ScrollView, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { Card } from '@/components/primitives/Card'
+import { Ionicons } from '@expo/vector-icons'
+import { Banner } from '@/components/primitives/Banner'
 import { ScreenHeader } from '@/components/primitives/ScreenHeader'
 import { useParentContext } from '@/features/parent/context/ParentDataContext'
+import type { ParentAnnouncement } from '@/features/parent/screens/useParentData'
 import { colors } from '@/lib/colors'
-import type { RouteUpdateType } from '@/types/route'
+import { localDateKey, whenLabel } from '@/lib/dates'
 
-const typeColor: Record<RouteUpdateType, string> = {
-  ok: colors.success,
-  info: colors.info,
-  warn: colors.warning,
-}
-
-const typeBg: Record<RouteUpdateType, string> = {
-  ok: colors.successBg,
-  info: colors.infoBg,
-  warn: colors.warningBg,
-}
-
-const typeIcon: Record<RouteUpdateType, string> = {
-  ok: '✅',
-  info: 'ℹ️',
-  warn: '⚠️',
-}
-
-const typeLabel: Record<RouteUpdateType, string> = {
-  ok: 'All good',
-  info: 'Info',
-  warn: 'Warning',
-}
-
+/** Updates from drivers and the school for all of the parent's children, newest first. */
 export function ParentNotificationsScreen() {
-  const { loading, error, child, announcements } = useParentContext()
+  const { loading, error, children, announcements, today, refresh } = useParentContext()
+  const todays = announcements.filter((a) => localDateKey(new Date(a.createdAt)) === today)
+  const earlier = announcements.filter((a) => localDateKey(new Date(a.createdAt)) !== today)
+  const names = children.length > 1 ? children.map((c) => c.firstName).join(' and ') : children[0]?.firstName
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
-      <ScreenHeader
-        title="Notifications"
-        subtitle={child ? `Updates about ${child.name.split(' ')[0]}` : 'Updates'}
-      />
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['top']}>
+      <ScreenHeader title="Alerts" subtitle={names ? `Updates about ${names}` : 'Updates'} />
 
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ padding: 16, gap: 12 }}
+        contentContainerStyle={{ padding: 16, gap: 10, paddingBottom: 28 }}
         showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={loading && announcements.length > 0} onRefresh={refresh} tintColor={colors.primary} />}
       >
-        {error && (
-          <View style={{ borderColor: '#FECACA', borderWidth: 1, backgroundColor: '#FEF2F2', borderRadius: 14, padding: 14 }}>
-            <Text style={{ color: '#B91C1C', fontSize: 12, fontFamily: 'Inter_600SemiBold' }}>{error}</Text>
-          </View>
-        )}
-
-        {loading && (
-          <View style={{ backgroundColor: colors.surface, borderRadius: 14, borderWidth: 1, borderColor: colors.border, padding: 16 }}>
-            <Text style={{ fontSize: 13, color: colors.subtle, fontFamily: 'Inter_500Medium' }}>Loading notifications...</Text>
-          </View>
-        )}
+        {error && <Banner text={error} />}
 
         {!loading && announcements.length === 0 && (
-          <View style={{ alignItems: 'center', paddingTop: 40, gap: 10 }}>
-            <Text style={{ fontSize: 32 }}>🔔</Text>
-            <Text style={{ fontSize: 14, color: colors.dark, fontFamily: 'Inter_700Bold' }}>No notifications yet</Text>
-            <Text style={{ fontSize: 13, color: colors.subtle, fontFamily: 'Inter_400Regular', textAlign: 'center' }}>
-              {"You'll see updates from the driver and school here."}
+          <View style={{ alignItems: 'center', paddingTop: 48, gap: 10, paddingHorizontal: 24 }}>
+            <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: colors.infoBg, alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name="notifications-outline" size={28} color={colors.primaryLight} />
+            </View>
+            <Text style={{ fontSize: 15, color: colors.dark, fontFamily: 'Inter_700Bold' }}>No updates yet</Text>
+            <Text style={{ fontSize: 13, color: colors.muted, fontFamily: 'Inter_400Regular', textAlign: 'center', lineHeight: 19 }}>
+              Messages from the driver and the school show up here, for example if the bus is running late.
             </Text>
           </View>
         )}
 
-        {announcements.map(notification => (
-          <Card key={notification.id} style={{ flexDirection: 'row', gap: 14, padding: 14, alignItems: 'flex-start' }}>
-            <View
-              style={{
-                width: 42,
-                height: 42,
-                borderRadius: 13,
-                backgroundColor: typeBg[notification.type],
-                alignItems: 'center',
-                justifyContent: 'center',
-                borderWidth: 1,
-                borderColor: typeColor[notification.type] + '33',
-              }}
-            >
-              <Text style={{ fontSize: 20 }}>{typeIcon[notification.type]}</Text>
-            </View>
-            <View style={{ flex: 1 }}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4, gap: 10, alignItems: 'flex-start' }}>
-                <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 13, color: colors.dark, flex: 1, lineHeight: 18 }}>
-                  {notification.from}
-                </Text>
-                <Text style={{ fontSize: 11, color: colors.subtle, fontFamily: 'Inter_400Regular', marginTop: 1 }}>
-                  {notification.time}
-                </Text>
-              </View>
-              <Text style={{ fontSize: 12, color: colors.muted, fontFamily: 'Inter_400Regular', lineHeight: 18 }}>
-                {notification.body}
-              </Text>
-              <View
-                style={{
-                  marginTop: 8,
-                  alignSelf: 'flex-start',
-                  backgroundColor: typeBg[notification.type],
-                  borderRadius: 6,
-                  paddingHorizontal: 7,
-                  paddingVertical: 3,
-                }}
-              >
-                <Text style={{ fontSize: 10, fontFamily: 'Inter_600SemiBold', color: typeColor[notification.type] }}>
-                  {typeLabel[notification.type]}
-                </Text>
-              </View>
-            </View>
-          </Card>
+        {todays.length > 0 && <GroupLabel>Today</GroupLabel>}
+        {todays.map((a) => (
+          <AlertCard key={a.id} item={a} today={today} />
         ))}
-
-        {!loading && announcements.length > 0 && (
-          <View style={{ alignItems: 'center', paddingTop: 8, paddingBottom: 16 }}>
-            <Text style={{ fontSize: 12, color: colors.subtle, fontFamily: 'Inter_400Regular' }}>{"You're all caught up 🎉"}</Text>
-          </View>
-        )}
+        {earlier.length > 0 && <GroupLabel>Earlier</GroupLabel>}
+        {earlier.map((a) => (
+          <AlertCard key={a.id} item={a} today={today} />
+        ))}
       </ScrollView>
     </SafeAreaView>
+  )
+}
+
+function GroupLabel({ children }: { children: string }) {
+  return (
+    <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 12, color: colors.subtle, textTransform: 'uppercase', letterSpacing: 0.8, marginTop: 6, marginLeft: 4 }}>
+      {children}
+    </Text>
+  )
+}
+
+function AlertCard({ item, today }: { item: ParentAnnouncement; today: string }) {
+  const warn = item.type === 'warn'
+  return (
+    <View
+      style={{
+        flexDirection: 'row',
+        gap: 12,
+        padding: 14,
+        backgroundColor: colors.surface,
+        borderRadius: 18,
+        borderWidth: 1,
+        borderColor: warn ? '#FDE68A' : colors.border,
+      }}
+    >
+      <View
+        style={{
+          width: 40,
+          height: 40,
+          borderRadius: 12,
+          backgroundColor: warn ? colors.warningBg : colors.infoBg,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <Ionicons name={warn ? 'time' : item.busId ? 'bus' : 'school'} size={19} color={warn ? '#B45309' : colors.primaryLight} />
+      </View>
+      <View style={{ flex: 1 }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 10 }}>
+          <Text style={{ flex: 1, fontFamily: 'Inter_700Bold', fontSize: 13.5, color: colors.dark }} numberOfLines={1}>
+            {item.from}
+          </Text>
+          <Text style={{ fontSize: 11.5, color: colors.subtle, fontFamily: 'Inter_500Medium' }}>{whenLabel(item.createdAt, today)}</Text>
+        </View>
+        <Text style={{ fontSize: 13, color: colors.muted, fontFamily: 'Inter_400Regular', lineHeight: 19, marginTop: 3 }}>{item.body}</Text>
+      </View>
+    </View>
   )
 }

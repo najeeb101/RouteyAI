@@ -26,6 +26,7 @@ export default function PrivacyPage() {
           <li><strong>Account details</strong> — name, email address, and role (school admin, driver or parent).</li>
           <li><strong>Student details</strong> — student name, home address or pickup location, assigned bus and stop order, entered by the school.</li>
           <li><strong>Attendance</strong> — whether a student was marked Boarded or Absent, and when.</li>
+          <li><strong>Absence reports</strong> — days a parent says their child won&apos;t ride, with a reason (for example sick or travelling) and an optional note. The child&apos;s driver and school can see them.</li>
           <li><strong>Bus location</strong> — the driver&apos;s phone location, collected only while the driver has started a route, about every 10 seconds.</li>
           <li><strong>Announcements</strong> — messages sent by school admins and drivers.</li>
           <li><strong>Device push tokens</strong> — used to send notifications to the mobile app.</li>

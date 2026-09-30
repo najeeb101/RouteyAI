@@ -1,13 +1,15 @@
 import { createContext, useContext, type ReactNode } from 'react'
 import { useDriverData } from '@/features/driver/hooks/useDriverData'
+import { useTrip } from '@/features/driver/hooks/useTrip'
 
-type DriverContextValue = ReturnType<typeof useDriverData>
+type DriverContextValue = ReturnType<typeof useDriverData> & { trip: ReturnType<typeof useTrip> }
 
 const DriverDataContext = createContext<DriverContextValue | null>(null)
 
 export function DriverDataProvider({ children }: { children: ReactNode }) {
-  const value = useDriverData()
-  return <DriverDataContext.Provider value={value}>{children}</DriverDataContext.Provider>
+  const data = useDriverData()
+  const trip = useTrip(data.profile?.busId ?? null)
+  return <DriverDataContext.Provider value={{ ...data, trip }}>{children}</DriverDataContext.Provider>
 }
 
 export function useDriverContext(): DriverContextValue {

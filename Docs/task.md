@@ -11,6 +11,7 @@ Mobile: Expo (React Native) | React Native styles | Mapbox RN | EAS
 - Nearly done: Phase 11 (custom domain left).
 - Landing page redesign on branch `landing-redesign` (not deployed yet): photo hero with live cards, scroll-story "How it works", light and dark mode, coded app screens. Merge to `main` to deploy.
 - In progress: Phase 13 — landing page live at https://routeyai.vercel.app; Supabase project paused; launch placeholders in `src/lib/siteConfig.ts`.
+- Phase 14 (parent and driver app upgrade) built on `landing-redesign`; migration `0013` not yet applied to Supabase.
 - Not started: Phase 12 (store submission).
 - Loose end: `mobile/src/components/route/LiveMapPreview.tsx` still reads `mobile/src/data/demoRoute.ts`.
 
@@ -171,3 +172,22 @@ Full plan: [plans/2026-09-29-landing-page-launch.md](plans/2026-09-29-landing-pa
 - [x] Set `NEXT_PUBLIC_APP_URL=https://routeyai.vercel.app` on Vercel (production)
 - [ ] Launch placeholders in `src/lib/siteConfig.ts`: set `NEXT_PUBLIC_CONTACT_EMAIL` (routeyai.com has no DNS/MX yet), legal review then `LEGAL_REVIEWED = true`, fill `PLAN_SUPPORT`
 - [ ] Lighthouse ≥ 90 on mobile: re-check on the live site after deploying. Local runs of the 2026-10-01 redesign: accessibility, best practices and SEO 100; performance 56–85, swinging with load on the dev laptop (layout cost cut from ~3.8 s to ~1.2 s at 4x CPU throttle)
+
+## Phase 14: Parent and Driver App Upgrade
+
+Full plan: [plans/2026-10-01-parent-driver-apps.md](plans/2026-10-01-parent-driver-apps.md)
+
+- [x] Migration `0013_absence_reports.sql`: `absence_reports` table, trigger, RLS, realtime; `set_push_token()` so parents and drivers can save push tokens
+- [x] Parent: all children on one account, child switcher on Home, History and the map
+- [x] Parent: report an absence (one or more school days, reason, note) and cancel it
+- [x] Parent: History tab (last 30 days, upcoming reports)
+- [x] Parent: full-screen live map that follows the bus, stops before yours, only the child's own stop drawn
+- [x] Parent and driver: Account tab (profile, push switch, privacy and terms, sign out)
+- [x] Fix: read bus locations as hex EWKB (the live bus never showed before)
+- [x] Driver: running-late notice to all parents on the bus
+- [x] Driver: students staying home on Home and Route; they count as done for the stop
+- [x] Driver: trip state in context, End route confirmation, end-of-route summary
+- [x] Landing page phones redrawn from the new screens on real OpenStreetMap close-ups (`build.mjs` → `phone-*.webp`, `appMapData.ts`)
+- [ ] Apply `0013` to Supabase (`pnpm db:push`) after the project is restored
+- [ ] Test on a real phone: parent reports an absence → driver sees it; delay notice push; end-of-route summary
+- [ ] School admin dashboard: list absence reports

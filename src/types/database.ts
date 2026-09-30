@@ -9,6 +9,7 @@ export type Json =
 export type Role = 'platform_admin' | 'school_admin' | 'driver' | 'parent'
 export type AttendanceStatus = 'boarded' | 'absent'
 export type InviteRole = 'school_admin' | 'driver' | 'parent'
+export type AbsenceReason = 'sick' | 'appointment' | 'travel' | 'other'
 
 /** JSONB returned by the redeem_invite RPC (supabase/migrations/0002_invites.sql). */
 export type RedeemInviteResult =
@@ -308,6 +309,38 @@ export interface Database {
         }
         Relationships: []
       }
+      absence_reports: {
+        Row: {
+          id: string
+          student_id: string
+          school_id: string
+          date: string
+          reason: AbsenceReason
+          note: string | null
+          reported_by: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          student_id: string
+          /** Set by a trigger from the student; any value sent is replaced. */
+          school_id?: string
+          date: string
+          reason?: AbsenceReason
+          note?: string | null
+          reported_by?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          student_id?: string
+          school_id?: string
+          date?: string
+          reason?: AbsenceReason
+          note?: string | null
+        }
+        Relationships: []
+      }
       demo_requests: {
         Row: {
           id: string
@@ -343,6 +376,8 @@ export interface Database {
       get_user_role: { Args: Record<PropertyKey, never>; Returns: Role }
       get_user_school_id: { Args: Record<PropertyKey, never>; Returns: string }
       redeem_invite: { Args: { p_code: string; p_user_id: string }; Returns: Json }
+      // 0013_absence_reports.sql
+      set_push_token: { Args: { p_token: string | null }; Returns: undefined }
       // 0005_admin_helpers.sql
       get_platform_stats: { Args: Record<PropertyKey, never>; Returns: Json }
       get_schools_with_admins: {

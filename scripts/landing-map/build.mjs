@@ -2,7 +2,7 @@
  * Builds the route-planner map on the landing page ("How it works") from real OpenStreetMap data
  * around Aspire Park, Doha. Map data © OpenStreetMap contributors, available under the ODbL; the page credits it.
  *
- *   node scripts/landing-map/build.mjs [--osm cached.json] [--preview preview.png]
+ *   node scripts/landing-map/build.mjs [--osm cached.json] [--preview preview.png] [--plan-only]
  *
  * What it does:
  *  1. Downloads roads, parks, water and buildings from the Overpass API (or reads a cached download).
@@ -12,6 +12,8 @@
  *  4. Draws the base map as light and dark SVGs and renders them to WebP with headless Chrome
  *     (public/assets/maps/aspire-{light,dark}.webp).
  *  5. Writes the overlay data to src/components/landing/optimizeDemoData.ts.
+ *  6. Renders close-up maps of Bus 3 for the phone mockups (public/assets/maps/phone-{driver,parent}.webp) and
+ *     writes their data to src/components/landing/appMapData.ts.
  *
  * Needs Node 22+ and Chrome (set CHROME_PATH if it is not in the default Windows location).
  */
@@ -47,6 +49,20 @@ const INITIAL_CENTROIDS = [
   { x: 330, y: 290 },
 ]
 const LABELLED_ROADS = ['Al Furousiya Street', 'Al Waab Street', 'Khaleeji 23 Street', 'Asiad 2006 Street', 'Baaya Street']
+/**
+ * Close-up maps for the landing-page phones. `route` is the planner route (0 = Bus 1), stops are indexes into its
+ * stop order, width/height the CSS size of the map in the mockup, and focusY where the stretch sits vertically
+ * (the mockups cover the bottom of the map with a card).
+ */
+const PHONE_VIEWS = [
+  // Driver app route screen (Bus 1, Khalid): the stop behind, the current stop and the next two.
+  { name: 'driver', route: 0, fromStop: 3, toStop: 5, width: 252, height: 132, focusY: 0.42, pad: 8 },
+  // Parent app live map (Bus 3): the bus coming from the stop before up to the child's stop.
+  { name: 'parent', route: 2, fromStop: 6, toStop: 7, width: 252, height: 476, focusY: 0.36, pad: 16 },
+]
+/** Street names on the phone maps, in CSS pixels. */
+const PHONE_LABEL_PX = 8.5
+
 /** Rough driving speeds (km/h) per road class, so routes prefer main roads like a real drive-time matrix would. */
 const SPEED = { trunk: 80, primary: 60, secondary: 50, tertiary: 40, unclassified: 30, residential: 25, living_street: 15 }
 
@@ -174,6 +190,29 @@ async function loadOsm() {
 
 // ---------------------------------------------------------------- 2. road graph
 
+/** English street name, if OSM has one (name:en, or a name already in Latin letters). */
+function englishName(tags = {}) {
+  if (tags['name:en']) return tags['name:en']
+  return tags.name && /^[ -~]+$/.test(tags.name) ? tags.name : null
+}
+
+/** The street a stop is on, or the nearest named street (drivers and parents know stops by street). */
+function streetName(nodes, n) {
+  const own = [...n.names][0]
+  if (own) return own
+  let best = null
+  let bestD = 30
+  for (const m of nodes.values()) {
+    if (!m.names.size) continue
+    const d = dist(n, m)
+    if (d < bestD) {
+      bestD = d
+      best = [...m.names][0]
+    }
+  }
+  return best
+}
+
 function roadClass(highway) {
   const base = highway.replace(/_link$/, '')
   if (base === 'motorway') return 'trunk'
@@ -184,7 +223,7 @@ function buildGraph(ways) {
   const nodes = new Map() // id -> { x, y, out: [[to, seconds]], in: [[from, seconds]], residential, degree }
   const node = (id, p) => {
     let n = nodes.get(id)
-    if (!n) nodes.set(id, (n = { id, x: px(p.lon), y: py(p.lat), out: [], in: [], residential: false, neighbours: new Set() }))
+    if (!n) nodes.set(id, (n = { id, x: px(p.lon), y: py(p.lat), out: [], in: [], residential: false, neighbours: new Set(), names: new Set() }))
     return n
   }
   const inside = n => n.x > 1 && n.x < W - 1 && n.y > 1 && n.y < H - 1
@@ -194,9 +233,11 @@ function buildGraph(ways) {
     const oneway = way.tags.oneway === 'yes' || way.tags.oneway === '1' || way.tags.junction === 'roundabout' || way.tags.highway.startsWith('motorway')
     const reverse = way.tags.oneway === '-1'
     const speed = (SPEED[cls] * 1000) / 3600
+    const name = englishName(way.tags)
     for (let i = 0; i < way.nodes.length - 1; i++) {
       const a = node(way.nodes[i], way.geometry[i])
       const b = node(way.nodes[i + 1], way.geometry[i + 1])
+      if (name) a.names.add(name), b.names.add(name)
       if (cls === 'residential' || cls === 'living_street') a.residential = b.residential = true
       if (!inside(a) || !inside(b)) continue
       a.neighbours.add(b.id)
@@ -311,20 +352,37 @@ function plan(nodes) {
     // Start at the stop furthest (by drive time) from school, then always drive to the nearest remaining stop.
     const remaining = [...members].sort((a, b) => toSchool.get(b.id) - toSchool.get(a.id))
     const order = [remaining.shift()]
-    let ids = []
+    const legs = []
     while (remaining.length) {
       const from = order[order.length - 1]
       const { time, prev } = dijkstra(nodes, from.id)
       remaining.sort((a, b) => (time.get(a.id) ?? Infinity) - (time.get(b.id) ?? Infinity))
       const next = remaining.shift()
-      ids = ids.concat(pathBetween(prev, from.id, next.id).slice(ids.length ? 1 : 0))
+      legs.push(pathBetween(prev, from.id, next.id))
       order.push(next)
     }
     const last = order[order.length - 1]
-    const { prev } = dijkstra(nodes, last.id)
-    ids = ids.length ? ids.concat(pathBetween(prev, last.id, school.id).slice(1)) : pathBetween(prev, last.id, school.id)
-    const line = simplify(ids.map(id => nodes.get(id)), 0.35)
-    return { path: toPath(line), stops: order.length, start: { x: round1(order[0].x), y: round1(order[0].y) } }
+    legs.push(pathBetween(dijkstra(nodes, last.id).prev, last.id, school.id))
+    // Simplify leg by leg so every stop stays an exact vertex, and record how far along the line each stop is.
+    const line = []
+    const stopDistances = [0]
+    let length = 0
+    for (const leg of legs) {
+      const pts = simplify(leg.map(id => nodes.get(id)), 0.35)
+      for (let i = line.length ? 1 : 0; i < pts.length; i++) {
+        if (line.length) length += dist(line[line.length - 1], pts[i])
+        line.push(pts[i])
+      }
+      stopDistances.push(round1(length))
+    }
+    stopDistances.pop() // the last entry is the school
+    return {
+      path: toPath(line),
+      points: line.map(p => [round1(p.x), round1(p.y)]),
+      length: round1(length),
+      stops: order.map((n, i) => ({ x: round1(n.x), y: round1(n.y), at: stopDistances[i], street: streetName(nodes, n) })),
+      start: { x: round1(order[0].x), y: round1(order[0].y) },
+    }
   })
 
   return { school: { x: round1(school.x), y: round1(school.y) }, points, history, routes }
@@ -332,7 +390,86 @@ function plan(nodes) {
 
 // ---------------------------------------------------------------- 4. base map
 
-function baseMapSvg(osm, style, scale) {
+/** Street labels for a zoomed-in phone map: each named street's longest stretch inside the box that fits its name. */
+function localStreetLabels(osm, box, fontSize) {
+  const inset = fontSize * 1.2
+  const inside = p => p.x > box.x + inset && p.x < box.x + box.w - inset && p.y > box.y + inset && p.y < box.y + box.h - inset
+  const best = new Map() // name -> { pts, length, tier }
+  for (const e of osm.elements) {
+    const name = e.tags?.highway && e.geometry && englishName(e.tags)
+    const cls = name && roadClass(e.tags.highway)
+    if (!cls) continue
+    const tier = cls === 'trunk' || cls === 'primary' ? 2 : cls === 'secondary' || cls === 'tertiary' ? 1 : 0
+    // Densify so long straight segments that cross the box still count.
+    const pts = []
+    e.geometry.forEach((g, i) => {
+      const p = { x: px(g.lon), y: py(g.lat) }
+      const prev = pts[pts.length - 1]
+      if (prev) {
+        const steps = Math.floor(dist(prev, p) / fontSize)
+        for (let k = 1; k < steps; k++) pts.push({ x: prev.x + ((p.x - prev.x) * k) / steps, y: prev.y + ((p.y - prev.y) * k) / steps })
+      }
+      pts.push(p)
+    })
+    // Stretches inside the box, split wherever the street turns more than 40 degrees, so text never bends round a corner.
+    let run = []
+    const runs = []
+    let heading = null
+    const close = () => {
+      if (run.length > 1) runs.push(run)
+      run = []
+      heading = null
+    }
+    for (const p of pts) {
+      if (!inside(p)) {
+        close()
+        continue
+      }
+      const prev = run[run.length - 1]
+      if (prev && dist(prev, p) > 0.01) {
+        const h = Math.atan2(p.y - prev.y, p.x - prev.x)
+        if (heading === null) heading = h
+        const turn = Math.abs(((h - heading + 3 * Math.PI) % (2 * Math.PI)) - Math.PI)
+        if (turn > (40 * Math.PI) / 180) {
+          close()
+          run.push(prev)
+          heading = h
+        }
+      }
+      run.push(p)
+    }
+    close()
+    for (const r of runs) {
+      const length = r.reduce((sum, p, i) => sum + (i ? dist(p, r[i - 1]) : 0), 0)
+      const current = best.get(name)
+      if (!current || length > current.length) best.set(name, { pts: r, length, tier })
+    }
+  }
+  const placed = []
+  const labels = []
+  const candidates = [...best.entries()].sort((a, b) => b[1].tier - a[1].tier || b[1].length - a[1].length)
+  for (const [name, { pts, length }] of candidates) {
+    if (length < name.length * fontSize * 0.55 * 1.15) continue
+    // Keep only the middle stretch the text needs, so a bent street doesn't wrap the text around a corner.
+    const mid = pts[Math.floor(pts.length / 2)]
+    if (placed.some(q => dist(q, mid) < fontSize * 5)) continue
+    placed.push(mid)
+    // Text reads left to right; a street close to vertical reads bottom to top.
+    let ordered = pts[0].x > pts[pts.length - 1].x ? [...pts].reverse() : pts
+    const dx = ordered[ordered.length - 1].x - ordered[0].x
+    const dy = ordered[ordered.length - 1].y - ordered[0].y
+    if (Math.abs(dx) < Math.abs(dy) * 0.3 && dy > 0) ordered = [...ordered].reverse()
+    labels.push({ name, d: toPath(ordered) })
+    if (labels.length >= 7) break
+  }
+  return labels
+}
+
+/**
+ * Draws the base map. By default the whole 540 x 400 planner map with its fixed road labels. For the phone maps,
+ * `box` picks the part to draw and every named street with room for its name inside the box gets a label.
+ */
+function baseMapSvg(osm, style, { box = { x: 0, y: 0, w: W, h: H }, width, height, fontSize = 6.4, localLabels = false } = {}) {
   const layers = { green: [], pitch: [], water: [], building: [], service: [], roads: [[], [], []] }
   const labelPaths = []
   const shape = g => g.map((p, i) => `${i ? 'L' : 'M'}${round1(px(p.lon))} ${round1(py(p.lat))}`).join('')
@@ -358,7 +495,7 @@ function baseMapSvg(osm, style, scale) {
   ]
 
   // Label each chosen road along its longest piece, drawn left to right so the text is upright.
-  for (const name of LABELLED_ROADS) {
+  for (const name of localLabels ? [] : LABELLED_ROADS) {
     const pieces = osm.elements.filter(e => e.tags?.highway && (e.tags['name:en'] || e.tags.name) === name && e.geometry)
     const longest = pieces
       .map(e => e.geometry.map(p => ({ x: px(p.lon), y: py(p.lat) })).filter(p => p.x > 20 && p.x < W - 20 && p.y > 14 && p.y < H - 14))
@@ -368,16 +505,17 @@ function baseMapSvg(osm, style, scale) {
     const vertical = Math.abs(pts[0].x - pts[pts.length - 1].x) < Math.abs(pts[0].y - pts[pts.length - 1].y)
     labelPaths.push({ name, d: toPath(vertical && pts[0].y < pts[pts.length - 1].y ? [...pts].reverse() : pts) })
   }
-  const park = osm.elements.find(e => e.tags?.leisure === 'park' && /Aspire/.test(e.tags.name || e.tags['name:en'] || ''))
+  if (localLabels) labelPaths.push(...localStreetLabels(osm, box, fontSize))
+  const park = !localLabels && osm.elements.find(e => e.tags?.leisure === 'park' && /Aspire/.test(e.tags.name || e.tags['name:en'] || ''))
   const parkCentre = park && {
     x: park.geometry.reduce((s, p) => s + px(p.lon), 0) / park.geometry.length,
     y: park.geometry.reduce((s, p) => s + py(p.lat), 0) / park.geometry.length,
   }
 
   const s = style
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W * scale}" height="${H * scale}">
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${box.x} ${box.y} ${box.w} ${box.h}" width="${width}" height="${height}">
 <defs>${labelPaths.map((l, i) => `<path id="road-${i}" d="${l.d}"/>`).join('')}</defs>
-<rect width="${W}" height="${H}" fill="${s.land}"/>
+<rect x="${box.x}" y="${box.y}" width="${box.w}" height="${box.h}" fill="${s.land}"/>
 <path d="${layers.green.join('')}" fill="${s.green}"/>
 <path d="${layers.pitch.join('')}" fill="${s.pitch}"/>
 <path d="${layers.water.join('')}" fill="${s.water}"/>
@@ -387,11 +525,54 @@ function baseMapSvg(osm, style, scale) {
 ${[0, 1, 2].map(t => `<path d="${layers.roads[t].join('')}" stroke="${s.casing[t]}" stroke-width="${widths[t][0]}"/>`).join('\n')}
 ${[0, 1, 2].map(t => `<path d="${layers.roads[t].join('')}" stroke="${s.fill[t]}" stroke-width="${widths[t][1]}"/>`).join('\n')}
 </g>
-<g font-family="Inter, 'Segoe UI', Arial, sans-serif" font-size="6.4" font-weight="500" fill="${s.label}" stroke="${s.halo}" stroke-width="2.2" paint-order="stroke" stroke-linejoin="round">
-${labelPaths.map((l, i) => `<text dy="2.2"><textPath href="#road-${i}" startOffset="50%" text-anchor="middle">${l.name}</textPath></text>`).join('\n')}
+<g font-family="Inter, 'Segoe UI', Arial, sans-serif" font-size="${fontSize}" font-weight="500" fill="${s.label}" stroke="${s.halo}" stroke-width="${round1(fontSize * 0.34)}" paint-order="stroke" stroke-linejoin="round">
+${labelPaths.map((l, i) => `<text dy="${round1(fontSize * 0.34)}"><textPath href="#road-${i}" startOffset="50%" text-anchor="middle">${l.name}</textPath></text>`).join('\n')}
 ${parkCentre ? `<text x="${round1(parkCentre.x)}" y="${round1(parkCentre.y + 40)}" text-anchor="middle" font-size="8" font-style="italic" font-weight="600" fill="${s.parkLabel}">Aspire Park</text>` : ''}
 </g>
 </svg>`
+}
+
+// ---------------------------------------------------------------- phone maps
+
+/** The route line between two distances along it, with the cut points interpolated. */
+function pointsBetween(points, from, to) {
+  const out = []
+  let d = 0
+  for (let i = 0; i < points.length; i++) {
+    const p = { x: points[i][0], y: points[i][1] }
+    if (i) {
+      const q = { x: points[i - 1][0], y: points[i - 1][1] }
+      const seg = dist(q, p)
+      for (const cut of [from, to]) {
+        if (cut > d && cut < d + seg) out.push({ x: q.x + ((p.x - q.x) * (cut - d)) / seg, y: q.y + ((p.y - q.y) * (cut - d)) / seg })
+      }
+      d += seg
+    }
+    if (d >= from && d <= to) out.push(p)
+  }
+  return out
+}
+
+/** The map box for a phone view: the stretch of route it shows, padded, stretched to the screen's shape, kept on the map. */
+function phoneBox(route, view) {
+  const pts = pointsBetween(route.points, route.stops[view.fromStop].at, route.stops[view.toStop].at)
+  const xs = pts.map(p => p.x)
+  const ys = pts.map(p => p.y)
+  const pad = view.pad
+  const aspect = view.width / view.height
+  let w = Math.max(...xs) - Math.min(...xs) + pad * 2
+  let h = Math.max(...ys) - Math.min(...ys) + pad * 2
+  if (w / h < aspect) w = h * aspect
+  else h = w / aspect
+  const cx = (Math.max(...xs) + Math.min(...xs)) / 2
+  const cy = (Math.max(...ys) + Math.min(...ys)) / 2
+  // Leave room for the card over the bottom of the map; never go past the edge of the downloaded data.
+  h = Math.max(h, (Math.max(...ys) - Math.min(...ys) + pad * 2) / (2 * Math.min(view.focusY, 1 - view.focusY)))
+  w = Math.max(w, h * aspect)
+  h = w / aspect
+  const x = Math.min(Math.max(cx - w / 2, 0), W - w)
+  const y = Math.min(Math.max(cy - h * view.focusY, 0), H - h)
+  return { x: round1(x), y: round1(y), w: round1(w), h: round1(h) }
 }
 
 // ---------------------------------------------------------------- rendering with headless Chrome
@@ -435,6 +616,10 @@ async function renderWebp(svgPath, outPath, width, height) {
 const osm = await loadOsm()
 const nodes = buildGraph(osm.elements.filter(e => e.tags?.highway && e.nodes && e.geometry))
 const result = plan(nodes)
+if ('plan-only' in args) {
+  result.routes.forEach((r, k) => console.log('route', k, 'length', r.length, JSON.stringify(r.stops)))
+  process.exit(0)
+}
 
 const work = join(tmpdir(), 'routeyai-landing-map')
 mkdirSync(work, { recursive: true })
@@ -442,9 +627,53 @@ mkdirSync(join(ROOT, 'public/assets/maps'), { recursive: true })
 const SCALE = 4
 for (const theme of ['light', 'dark']) {
   const svgPath = join(work, `aspire-${theme}.svg`)
-  writeFileSync(svgPath, baseMapSvg(osm, STYLES[theme], SCALE))
+  writeFileSync(svgPath, baseMapSvg(osm, STYLES[theme], { width: W * SCALE, height: H * SCALE }))
   await renderWebp(svgPath, join(ROOT, `public/assets/maps/aspire-${theme}.webp`), W * SCALE, H * SCALE)
 }
+
+const phoneMaps = {}
+for (const view of PHONE_VIEWS) {
+  const route = result.routes[view.route]
+  const box = phoneBox(route, view)
+  const fontSize = round1((PHONE_LABEL_PX * box.w) / view.width)
+  const svgPath = join(work, `phone-${view.name}.svg`)
+  writeFileSync(svgPath, baseMapSvg(osm, STYLES.light, { box, width: view.width * 2, height: view.height * 2, fontSize, localLabels: true }))
+  await renderWebp(svgPath, join(ROOT, `public/assets/maps/phone-${view.name}.webp`), view.width * 2, view.height * 2)
+  phoneMaps[view.name] = {
+    src: `/assets/maps/phone-${view.name}.webp`,
+    box,
+    bus: `Bus ${view.route + 1}`,
+    route: { points: route.points, length: route.length, stops: route.stops },
+  }
+}
+writeFileSync(
+  join(ROOT, 'src/components/landing/appMapData.ts'),
+  `/**
+ * Street maps for the phone mockups on the landing page. Generated by scripts/landing-map/build.mjs; do not edit by hand.
+ * The routes are the "How it works" planner's routes: same homes, same roads (map data © OpenStreetMap contributors, ODbL).
+ * Stop street names come from OpenStreetMap.
+ */
+
+export interface RouteStop {
+  x: number
+  y: number
+  /** Distance along the route line, in map units. */
+  at: number
+  street: string | null
+}
+
+export interface PhoneMap {
+  /** Base map image of the part of the 540 x 400 planner frame in box. */
+  src: string
+  box: { x: number; y: number; w: number; h: number }
+  bus: string
+  /** Route line ([x, y] in the planner frame), its length and its stops in driving order. */
+  route: { points: [number, number][]; length: number; stops: RouteStop[] }
+}
+
+export const PHONE_MAPS: Record<'driver' | 'parent', PhoneMap> = ${JSON.stringify(phoneMaps)}
+`,
+)
 
 const last = result.history[result.history.length - 1]
 const data = `/**
@@ -489,7 +718,7 @@ export const ROUTE_STARTS: Point[] = ${JSON.stringify(result.routes.map(r => r.s
 writeFileSync(join(ROOT, 'src/components/landing/optimizeDemoData.ts'), data)
 
 console.log('school', result.school)
-console.log('k-means iterations', result.history.length, 'stops per route', result.routes.map(r => r.stops))
+console.log('k-means iterations', result.history.length, 'stops per route', result.routes.map(r => r.stops.length))
 console.log('route path lengths (chars)', result.routes.map(r => r.path.length))
 
 // Optional: a quick composite of the light map with homes, routes and school, for checking the layout.

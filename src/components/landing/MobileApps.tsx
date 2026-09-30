@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { BellRing, Clock, ListOrdered, MapPin, Megaphone, MessageSquare, Radio, UserCheck, type LucideIcon } from 'lucide-react'
+import { BellRing, CalendarX, ClipboardCheck, Clock, History, House, ListOrdered, MapPin, Radio, Timer, UserCheck, Users, type LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { AppDownloadButton } from '@/components/landing/AppDownloadButton'
 import { AppShowcase } from '@/components/landing/AppShowcase'
@@ -19,24 +19,28 @@ const APPS: {
   {
     role: 'For drivers',
     title: 'The route in order, and a record of who got on',
-    desc: 'Drivers see each stop in the planned order and check students in as they board.',
+    desc: 'Drivers see each stop in the planned order, check students in as they board, and can tell every parent at once when the bus is late.',
     features: [
       { icon: ListOrdered, text: 'Stops in the planned order, next pickup first' },
       { icon: UserCheck, text: 'One tap to mark a student boarded or absent' },
+      { icon: House, text: 'Students staying home, as reported by their parents' },
+      { icon: Timer, text: 'A running-late notice to every parent on the bus' },
       { icon: Radio, text: 'Shares the bus location every 10 seconds' },
-      { icon: MessageSquare, text: 'Messages from the school office' },
+      { icon: ClipboardCheck, text: 'A summary of who rode when the route ends' },
     ],
     showcase: { photo: PHOTOS.driver, objectPosition: '60% 50%', phone: <DriverAppScreen />, phoneSide: 'left' },
   },
   {
     role: 'For parents',
     title: 'Where the bus is, and when it will arrive',
-    desc: 'Parents follow their child’s bus and hear straight away when their child gets on.',
+    desc: 'Parents follow their child’s bus, hear straight away when their child gets on, and can tell the driver when their child is staying home.',
     features: [
-      { icon: MapPin, text: 'The bus on a map while the route is running' },
+      { icon: MapPin, text: 'The bus on a live street map while the route is running' },
       { icon: Clock, text: 'Arrival time for their stop, and an alert when the bus is close' },
       { icon: BellRing, text: 'A notification when their child boards or is marked absent' },
-      { icon: Megaphone, text: 'Announcements from the school and the driver' },
+      { icon: Users, text: 'Every child on one account, one tap to switch' },
+      { icon: CalendarX, text: 'Report an absence ahead of time, so the bus doesn’t wait' },
+      { icon: History, text: 'Each child’s past rides and absences' },
     ],
     showcase: { photo: PHOTOS.parent, objectPosition: '55% 62%', phone: <ParentAppScreen />, phoneSide: 'left' },
   },

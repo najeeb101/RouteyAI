@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { Text, TouchableOpacity, View } from 'react-native'
 import { useRouter } from 'expo-router'
+import { Ionicons } from '@expo/vector-icons'
 import { colors } from '@/lib/colors'
 
 type ScreenHeaderProps = {
@@ -41,7 +42,7 @@ export function ScreenHeader({ title = 'RouteyAI', subtitle, action, back = fals
               justifyContent: 'center',
             }}
           >
-            <Text style={{ color: '#FFFFFF', fontSize: 18, fontFamily: 'Inter_700Bold', marginTop: -2 }}>←</Text>
+            <Ionicons name="chevron-back" size={20} color="#FFFFFF" />
           </TouchableOpacity>
         )}
 
