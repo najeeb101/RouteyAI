@@ -65,6 +65,7 @@ The visual identity is inspired by **Karwa** (Qatar) and **Metro Link** — prem
 
 ### 3.2 Typography
 - **Font Family**: `Inter` (Google Fonts) — clean, modern, excellent readability
+- **Marketing pages** (`/`, `/privacy`, `/terms`): headings use `Schibsted Grotesk` bold (`font-display`); body text stays Inter
 - **Headings**: `font-bold`, sizes: `text-3xl` → `text-lg`
 - **Body**: `text-sm` / `text-base`, `font-normal`
 - **Monospace** (data/numbers): `font-mono`

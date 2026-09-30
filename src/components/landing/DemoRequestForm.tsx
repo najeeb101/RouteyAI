@@ -113,7 +113,7 @@ export function DemoRequestForm() {
       <button
         type="submit"
         disabled={isSubmitting}
-        className="w-full flex items-center justify-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-60"
+        className="w-full flex items-center justify-center gap-2 rounded-full bg-primary px-6 py-3.5 text-[15px] font-semibold text-primary-foreground hover:bg-primary/90 active:scale-[0.98] transition-[transform,background-color] disabled:opacity-60"
       >
         {isSubmitting && <Loader2 size={16} className="animate-spin" />}
         {isSubmitting ? 'Sending…' : 'Book my demo'}

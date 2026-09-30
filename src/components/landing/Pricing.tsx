@@ -21,41 +21,43 @@ const INCLUDED = [
 
 export function Pricing() {
   return (
-    <section id="pricing" className="mx-auto max-w-6xl scroll-mt-16 px-4 py-16 sm:px-6 md:py-24">
+    <section id="pricing" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-20 sm:px-6 md:py-28">
       <SectionHeading
-        title="Pricing"
-        intro="Priced by the number of buses you run. Every plan includes the full product. Tell us about your fleet and we’ll send you a quote."
+        title="One product, priced by fleet size"
+        intro="Every plan includes everything. Tell us how many buses you run and we’ll send you a quote."
       />
 
-      <div className="grid overflow-hidden rounded-lg border border-border bg-card lg:grid-cols-[1.1fr_1fr]">
+      <div className="grid overflow-hidden rounded-[1.25rem] border border-border bg-card lg:grid-cols-[1.1fr_1fr]">
         <div className="flex flex-col divide-y divide-border">
           {PLANS.map(plan => (
-            <div key={plan.name} className="flex flex-1 flex-wrap items-center justify-between gap-x-6 gap-y-1 px-6 py-5">
+            <div key={plan.name} className="flex flex-1 flex-wrap items-center justify-between gap-x-6 gap-y-2 px-6 py-6 md:px-8">
               <div>
                 <h3 className="text-base font-semibold text-foreground">{plan.name}</h3>
                 <p className="mt-0.5 text-[15px] text-muted-foreground">{plan.blurb}</p>
                 {PLAN_SUPPORT[plan.name].length > 0 && (
-                  <p className="mt-1 text-[13px] text-muted-foreground">{PLAN_SUPPORT[plan.name].join(' · ')}</p>
+                  <p className="mt-1 text-[13px] text-muted-foreground">{PLAN_SUPPORT[plan.name].join(', ')}</p>
                 )}
               </div>
-              <p className="text-lg font-bold text-primary">{plan.fleet}</p>
+              <p className="font-display text-2xl font-bold tracking-tight text-primary">{plan.fleet}</p>
             </div>
           ))}
         </div>
 
-        <div className="flex flex-col border-t border-border bg-muted/50 px-6 py-6 lg:border-l lg:border-t-0">
+        <div className="flex flex-col border-t border-border bg-muted/60 px-6 py-7 md:px-8 lg:border-l lg:border-t-0">
           <h3 className="text-base font-semibold text-foreground">Included in every plan</h3>
-          <ul className="mt-4 space-y-2.5">
+          <ul className="mt-5 space-y-3">
             {INCLUDED.map(item => (
-              <li key={item} className="flex items-start gap-2.5 text-[15px] leading-snug text-foreground">
-                <Check size={16} className="mt-0.5 shrink-0 text-primary" />
+              <li key={item} className="flex items-start gap-3 text-[15px] leading-snug text-foreground">
+                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <Check size={12} strokeWidth={3} />
+                </span>
                 {item}
               </li>
             ))}
           </ul>
           <a
             href="#demo"
-            className="mt-7 rounded-md bg-primary px-5 py-3 text-center text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+            className="mt-8 rounded-full bg-primary px-5 py-3.5 text-center text-[15px] font-semibold text-primary-foreground transition-[transform,background-color] duration-200 hover:bg-primary/90 active:scale-[0.98]"
           >
             Get a quote
           </a>

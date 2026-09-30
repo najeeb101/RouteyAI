@@ -10,9 +10,10 @@ import { Faq, FAQS } from '@/components/landing/Faq'
 import { FinalCta } from '@/components/landing/FinalCta'
 import { Footer } from '@/components/landing/Footer'
 import { Reveal } from '@/components/landing/Reveal'
+import { displayFont } from '@/components/landing/fonts'
 
 export const metadata: Metadata = {
-  title: { absolute: 'RouteyAI — School Bus Route Planning and Live Tracking in Qatar' },
+  title: { absolute: 'RouteyAI: School Bus Route Planning and Live Tracking in Qatar' },
   description:
     'RouteyAI plans your school bus routes, shows every bus on a live map, and notifies parents when their child boards. Built for schools in Qatar.',
   alternates: { canonical: '/' },
@@ -20,12 +21,12 @@ export const metadata: Metadata = {
     type: 'website',
     url: '/',
     siteName: 'RouteyAI',
-    title: 'RouteyAI — School Bus Route Planning and Live Tracking',
+    title: 'RouteyAI: School Bus Route Planning and Live Tracking',
     description: 'Route planning, live bus tracking and parent notifications for schools in Qatar.',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'RouteyAI — School Bus Route Planning and Live Tracking',
+    title: 'RouteyAI: School Bus Route Planning and Live Tracking',
     description: 'Route planning, live bus tracking and parent notifications for schools in Qatar.',
   },
 }
@@ -53,21 +54,23 @@ const jsonLd = [
 
 export default function HomePage() {
   return (
-    <AppModalProvider>
+    <div className={`landing ${displayFont.variable} bg-background text-foreground`}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <LandingNav />
-      <main className="bg-background font-sans">
-        <Hero />
-        <HowItWorks />
-        <MobileAppsSection />
-        <SafetyPrivacy />
-        <Reveal>
-          <Pricing />
-        </Reveal>
-        <Faq />
-        <FinalCta />
-      </main>
-      <Footer />
-    </AppModalProvider>
+      <AppModalProvider>
+        <LandingNav overlay />
+        <main className="overflow-x-clip bg-background font-sans">
+          <Hero />
+          <HowItWorks />
+          <MobileAppsSection />
+          <SafetyPrivacy />
+          <Reveal>
+            <Pricing />
+          </Reveal>
+          <Faq />
+          <FinalCta />
+        </main>
+        <Footer />
+      </AppModalProvider>
+    </div>
   )
 }

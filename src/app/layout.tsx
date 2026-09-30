@@ -7,7 +7,7 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "sw
 
 export const metadata: Metadata = {
   title: {
-    default: "RouteyAI — School Bus Route Planning",
+    default: "RouteyAI: School Bus Route Planning",
     template: "%s · RouteyAI",
   },
   description:
@@ -16,7 +16,10 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: "#1E3A8A",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#FFFFFF" },
+    { media: "(prefers-color-scheme: dark)", color: "#070D1E" },
+  ],
   width: "device-width",
   initialScale: 1,
 }

@@ -9,7 +9,7 @@ Mobile: Expo (React Native) | React Native styles | Mapbox RN | EAS
 
 - Completed: Phases 1–10.
 - Nearly done: Phase 11 (custom domain left).
-- Landing page redesign on branch `landing-redesign` (not deployed yet): plainer copy, light brand theme, real photos, coded app screens. Merge to `main` to deploy.
+- Landing page redesign on branch `landing-redesign` (not deployed yet): photo hero with live cards, scroll-story "How it works", light and dark mode, coded app screens. Merge to `main` to deploy.
 - In progress: Phase 13 — landing page live at https://routeyai.vercel.app; Supabase project paused; launch placeholders in `src/lib/siteConfig.ts`.
 - Not started: Phase 12 (store submission).
 - Loose end: `mobile/src/components/route/LiveMapPreview.tsx` still reads `mobile/src/data/demoRoute.ts`.
@@ -170,4 +170,4 @@ Full plan: [plans/2026-09-29-landing-page-launch.md](plans/2026-09-29-landing-pa
 - [ ] Add real `NEXT_PUBLIC_MAPBOX_TOKEN` (`.env.local` has the placeholder) locally and on Vercel
 - [x] Set `NEXT_PUBLIC_APP_URL=https://routeyai.vercel.app` on Vercel (production)
 - [ ] Launch placeholders in `src/lib/siteConfig.ts`: set `NEXT_PUBLIC_CONTACT_EMAIL` (routeyai.com has no DNS/MX yet), legal review then `LEGAL_REVIEWED = true`, fill `PLAN_SUPPORT`
-- [x] Lighthouse ≥ 90 on mobile (local production build of `landing-redesign`; re-check on the live site after deploying)
+- [ ] Lighthouse ≥ 90 on mobile: re-check on the live site after deploying. Local runs of the 2026-10-01 redesign: accessibility, best practices and SEO 100; performance 56–85, swinging with load on the dev laptop (layout cost cut from ~3.8 s to ~1.2 s at 4x CPU throttle)

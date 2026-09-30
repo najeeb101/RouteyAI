@@ -6,7 +6,7 @@ import { AppShowcase } from '@/components/landing/AppShowcase'
 import { DriverAppScreen } from '@/components/landing/DriverAppScreen'
 import { ParentAppScreen } from '@/components/landing/ParentAppScreen'
 import { Reveal } from '@/components/landing/Reveal'
-import { SectionHeading } from '@/components/landing/SectionHeading'
+import { SectionHeading, noOrphan } from '@/components/landing/SectionHeading'
 import { PHOTOS } from '@/components/landing/photos'
 
 const APPS: {
@@ -44,31 +44,33 @@ const APPS: {
 
 export function MobileAppsSection() {
   return (
-    <section id="apps" className="mx-auto max-w-6xl scroll-mt-16 px-4 py-16 sm:px-6 md:py-24">
+    <section id="apps" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-20 sm:px-6 md:py-28">
       <Reveal>
         <SectionHeading
-          title="Apps for drivers and parents"
+          title="An app for every driver and every parent"
           intro="Free for drivers and parents. Coming soon to the App Store and Google Play."
         />
       </Reveal>
 
-      <div className="space-y-20 md:space-y-16">
+      <div className="space-y-24 md:space-y-28">
         {APPS.map((app, i) => (
-          <div key={app.role} className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
+          <div key={app.role} className="grid items-center gap-12 lg:grid-cols-2 lg:gap-20">
             <div className={cn(i % 2 === 1 && 'lg:order-2')}>
               <AppShowcase {...app.showcase} />
             </div>
             <Reveal delay={0.1} className={cn(i % 2 === 1 && 'lg:order-1')}>
               <p className="text-sm font-semibold text-primary">{app.role}</p>
-              <h3 className="mt-2 text-balance text-2xl font-bold tracking-tight text-primary md:text-3xl">{app.title}</h3>
-              <p className="mt-3 text-base leading-relaxed text-muted-foreground">{app.desc}</p>
-              <ul className="mt-7 space-y-4">
+              <h3 className="mt-3 max-w-md font-display text-[1.75rem] font-bold leading-[1.12] tracking-[-0.02em] text-foreground md:text-4xl">
+                {noOrphan(app.title)}
+              </h3>
+              <p className="mt-4 max-w-md text-base leading-relaxed text-muted-foreground md:text-lg">{app.desc}</p>
+              <ul className="mt-8 grid gap-x-6 gap-y-5 sm:grid-cols-2">
                 {app.features.map(({ icon: Icon, text }) => (
-                  <li key={text} className="flex items-center gap-4 text-[15px] font-medium text-foreground">
-                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                  <li key={text} className="flex gap-3.5 text-[15px] leading-snug text-foreground">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
                       <Icon size={19} />
                     </span>
-                    {text}
+                    <span className="pt-2.5">{text}</span>
                   </li>
                 ))}
               </ul>
@@ -77,24 +79,24 @@ export function MobileAppsSection() {
         ))}
       </div>
 
-      <Reveal className="mt-16">
-      <div className="flex flex-col gap-4 rounded-2xl bg-muted/50 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-[15px] text-foreground">
-          <span className="font-semibold">Parent or driver?</span>{' '}
-          <span className="text-muted-foreground">Your school will send you a personal invite link.</span>
-        </p>
-        <div className="flex shrink-0 gap-3">
-          <Link
-            href="/login"
-            className="rounded-md border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
-          >
-            Log in
-          </Link>
-          <AppDownloadButton className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90">
-            Get the app
-          </AppDownloadButton>
+      <Reveal className="mt-20">
+        <div className="flex flex-col gap-4 rounded-2xl border border-border bg-card px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-[15px] text-foreground">
+            <span className="font-semibold">Parent or driver?</span>{' '}
+            <span className="text-muted-foreground">Your school will send you a personal invite link.</span>
+          </p>
+          <div className="flex shrink-0 gap-3">
+            <Link
+              href="/login"
+              className="rounded-full border border-border bg-background px-5 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
+            >
+              Log in
+            </Link>
+            <AppDownloadButton className="rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90">
+              Get the app
+            </AppDownloadButton>
+          </div>
         </div>
-      </div>
       </Reveal>
     </section>
   )

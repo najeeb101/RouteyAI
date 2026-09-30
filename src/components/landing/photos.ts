@@ -3,6 +3,10 @@
  * in Qatar; the people in them are not real. Replace them with real photos of pilot schools when available.
  */
 export const PHOTOS = {
+  hero: {
+    src: '/assets/photos/hero-corniche.jpg',
+    alt: 'A yellow school bus driving along the Corniche in Doha in the early morning, with the West Bay towers behind it',
+  },
   driver: {
     src: '/assets/photos/driver-doha.jpg',
     alt: 'A school bus driver in Doha checking the phone mounted on his dashboard, with students on board',

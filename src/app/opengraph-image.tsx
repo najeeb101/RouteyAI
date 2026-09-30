@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og"
 
 export const runtime = "edge"
-export const alt = "RouteyAI — School bus route planning and live tracking"
+export const alt = "RouteyAI: school bus route planning and live tracking"
 export const size = { width: 1200, height: 630 }
 export const contentType = "image/png"
 

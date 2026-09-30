@@ -75,6 +75,57 @@
   }
 }
 
+@layer base {
+  /*
+   * Landing and legal pages: navy-tinted neutrals, with the brand navy as the primary in light mode
+   * and a light blue primary (navy text) in dark mode so buttons and links stay readable.
+   * `.force-light` keeps product mockups (the phone screens) in their light app colours in either mode.
+   */
+  .landing,
+  .landing .force-light,
+  .dark .landing .force-light {
+    --background: 0 0% 100%;
+    --foreground: 224 60% 13%;
+    --card: 0 0% 100%;
+    --card-foreground: 224 60% 13%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 224 60% 13%;
+    --primary: 224 76% 32%;
+    --primary-foreground: 0 0% 100%;
+    --primary-light: 217 91% 60%;
+    --accent: 199 89% 60%;
+    --muted: 220 45% 97%;
+    --muted-foreground: 222 18% 40%;
+    --border: 220 30% 90%;
+    --input: 220 30% 86%;
+    --ring: 224 76% 32%;
+  }
+
+  .dark .landing {
+    --background: 225 55% 6%;
+    --foreground: 220 45% 96%;
+    --card: 224 45% 10%;
+    --card-foreground: 220 45% 96%;
+    --popover: 224 45% 10%;
+    --popover-foreground: 220 45% 96%;
+    --primary: 213 94% 72%;
+    --primary-foreground: 225 62% 9%;
+    --primary-light: 213 94% 78%;
+    --accent: 199 89% 64%;
+    --muted: 224 45% 9%;
+    --muted-foreground: 220 20% 70%;
+    --border: 224 35% 18%;
+    --input: 224 35% 22%;
+    --ring: 213 94% 72%;
+  }
+
+  /* Brand colours that stay the same in both modes: the navy band and the deep ink behind photos. */
+  :root {
+    --brand: 224 76% 32%;
+    --brand-ink: 225 62% 9%;
+  }
+}
+
 @layer utilities {
   /* Faint street-grid texture used behind map-like visuals on the landing page. */
   .bg-map-grid {

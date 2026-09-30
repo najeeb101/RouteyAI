@@ -55,6 +55,10 @@ const config: Config = {
   			popover: {
   				DEFAULT: 'hsl(var(--popover))',
   				foreground: 'hsl(var(--popover-foreground))'
+  			},
+  			brand: {
+  				DEFAULT: 'hsl(var(--brand))',
+  				ink: 'hsl(var(--brand-ink))'
   			}
   		},
   		borderRadius: {
@@ -66,6 +70,13 @@ const config: Config = {
   			sans: [
   				'var(--font-inter)',
   				'Inter',
+  				'ui-sans-serif',
+  				'system-ui',
+  				'sans-serif'
+  			],
+  			display: [
+  				'var(--font-display)',
+  				'var(--font-inter)',
   				'ui-sans-serif',
   				'system-ui',
   				'sans-serif'
@@ -110,6 +121,10 @@ const config: Config = {
   			'fade-up': {
   				from: { opacity: '0', transform: 'translateY(16px)' },
   				to: { opacity: '1', transform: 'translateY(0)' }
+  			},
+  			'hero-zoom': {
+  				from: { transform: 'scale(1.06)' },
+  				to: { transform: 'scale(1)' }
   			}
   		},
   		animation: {
@@ -118,6 +133,7 @@ const config: Config = {
   			'pulse-ring': 'pulse-ring 1.6s cubic-bezier(0.215, 0.61, 0.355, 1) infinite',
   			'word-up': 'word-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) both',
   			'fade-up': 'fade-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) both',
+  			'hero-zoom': 'hero-zoom 2.4s cubic-bezier(0.22, 1, 0.36, 1) both',
   		}
   	}
   },

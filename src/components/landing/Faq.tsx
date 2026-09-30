@@ -52,11 +52,13 @@ export const FAQS = [
 
 export function Faq() {
   return (
-    <section id="faqs" className="scroll-mt-16 border-t border-border bg-muted/50">
-      <Reveal className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-16 sm:px-6 md:flex-row md:gap-16 md:py-24">
-        <div className="shrink-0 md:w-[36%]">
-          <h2 className="text-3xl font-bold tracking-tight text-primary md:text-4xl">Frequently asked questions</h2>
-          <p className="mt-3 text-base leading-relaxed text-muted-foreground">
+    <section id="faqs" className="scroll-mt-20 border-t border-border bg-muted/60">
+      <Reveal className="mx-auto flex max-w-6xl flex-col gap-10 px-4 py-20 sm:px-6 md:flex-row md:gap-16 md:py-28">
+        <div className="shrink-0 md:sticky md:top-28 md:w-[36%] md:self-start">
+          <h2 className="font-display text-[2rem] font-bold leading-[1.08] tracking-[-0.025em] text-foreground md:text-5xl">
+            Common questions
+          </h2>
+          <p className="mt-4 text-base leading-relaxed text-muted-foreground">
             Something else you want to know? Ask us through{' '}
             <ContactLink className="font-semibold text-primary hover:underline" />.
           </p>
