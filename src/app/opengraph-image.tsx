@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og"
 
 export const runtime = "edge"
-export const alt = "RouteyAI — Smart school bus routing and live tracking"
+export const alt = "RouteyAI — School bus route planning and live tracking"
 export const size = { width: 1200, height: 630 }
 export const contentType = "image/png"
 
@@ -16,7 +16,7 @@ export default function OpengraphImage() {
           flexDirection: "column",
           justifyContent: "space-between",
           padding: 72,
-          background: "linear-gradient(135deg, #0F172A 0%, #1E3A8A 100%)",
+          background: "#1E3A8A",
           color: "white",
           fontFamily: "sans-serif",
         }}
@@ -25,14 +25,13 @@ export default function OpengraphImage() {
           Routey<span style={{ color: "#60A5FA" }}>AI</span>
         </div>
         <div style={{ display: "flex", flexDirection: "column" }}>
-          <div style={{ fontSize: 72, fontWeight: 800, lineHeight: 1.1, letterSpacing: -2 }}>Smart routing.</div>
-          <div style={{ fontSize: 72, fontWeight: 800, lineHeight: 1.1, letterSpacing: -2, color: "#93C5FD" }}>
-            Real-time tracking.
+          <div style={{ fontSize: 68, fontWeight: 800, lineHeight: 1.1, letterSpacing: -1.5 }}>Plan your school bus routes</div>
+          <div style={{ fontSize: 68, fontWeight: 800, lineHeight: 1.1, letterSpacing: -1.5, color: "#93C5FD" }}>
+            and track every bus live
           </div>
-          <div style={{ fontSize: 72, fontWeight: 800, lineHeight: 1.1, letterSpacing: -2 }}>Peace of mind.</div>
         </div>
         <div style={{ display: "flex", fontSize: 28, color: "#CBD5E1" }}>
-          AI-powered school bus management for Qatar’s schools
+          Route planning and live tracking for schools in Qatar
         </div>
       </div>
     ),

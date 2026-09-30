@@ -7,7 +7,7 @@ import { CONTACT_EMAIL } from '@/lib/siteConfig'
 
 const PRODUCT_LINKS = [
   { label: 'How it works', href: '/#how-it-works' },
-  { label: 'Features', href: '/#features' },
+  { label: 'Drivers & parents', href: '/#apps' },
   { label: 'Pricing', href: '/#pricing' },
   { label: 'FAQ', href: '/#faqs' },
   { label: 'Book a demo', href: '/#demo' },
@@ -26,7 +26,7 @@ export function Footer() {
               <span className="text-xl font-semibold text-white">Routey<span className="text-accent">AI</span></span>
             </div>
             <p className="text-slate-400 text-sm leading-relaxed mb-5">
-              AI-powered school bus routing and real-time tracking for Qatar&apos;s schools.
+              School bus route planning and live tracking for schools in Qatar.
             </p>
             {CONTACT_EMAIL && (
               <a href={`mailto:${CONTACT_EMAIL}`} className="inline-flex items-center gap-2 text-sm text-slate-300 hover:text-accent transition-colors">

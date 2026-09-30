@@ -7,11 +7,11 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "sw
 
 export const metadata: Metadata = {
   title: {
-    default: "RouteyAI — Smart School Bus Routing",
+    default: "RouteyAI — School Bus Route Planning",
     template: "%s · RouteyAI",
   },
   description:
-    "AI-powered school bus routing and real-time parent tracking for Qatari private schools.",
+    "School bus route planning, live bus tracking and parent notifications for schools in Qatar.",
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"),
   icons: {
     icon: "/favicon.ico",

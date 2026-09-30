@@ -39,7 +39,7 @@ export function AppDownloadModal({ onClose }: { onClose: () => void }) {
               <span className="font-semibold text-foreground">Routey<span className="text-primary">AI</span></span>
             </div>
             <h2 id="app-modal-title" className="text-xl font-semibold tracking-tight text-foreground">Get the mobile app</h2>
-            <p className="mt-1 text-sm text-muted-foreground">For drivers and parents — coming soon to iOS & Android.</p>
+            <p className="mt-1 text-sm text-muted-foreground">For drivers and parents. Coming soon to iOS and Android.</p>
           </div>
           <button
             type="button"

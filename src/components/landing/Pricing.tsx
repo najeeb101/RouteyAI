@@ -1,62 +1,65 @@
 import { Check } from 'lucide-react'
-import { cn } from '@/lib/utils'
 import { SectionHeading } from '@/components/landing/SectionHeading'
 import { PLAN_SUPPORT, type PlanName } from '@/lib/siteConfig'
 
-const BASE_POINTS = ['Every RouteyAI feature', 'Web dashboard for school admins', 'Driver and parent apps']
+const PLANS: { name: PlanName; fleet: string; blurb: string }[] = [
+  { name: 'Starter', fleet: 'Up to 5 buses', blurb: 'For small schools with a few buses.' },
+  { name: 'Growth', fleet: '6 to 50 buses', blurb: 'For schools running a full fleet.' },
+  { name: 'Enterprise', fleet: 'More than 50 buses', blurb: 'For large fleets.' },
+]
 
-const PLANS: { name: PlanName; fleet: string; blurb: string; featured: boolean }[] = [
-  { name: 'Starter', fleet: 'Up to 5 buses', blurb: 'For small schools running their first digital routes.', featured: false },
-  { name: 'Growth', fleet: '6–50 buses', blurb: 'For schools with a full fleet and hundreds of families.', featured: true },
-  { name: 'Enterprise', fleet: '50+ buses', blurb: 'For large fleets.', featured: false },
+const INCLUDED = [
+  'Route planning for your whole fleet',
+  'New students placed on the nearest bus with space',
+  'Live map of every bus',
+  'Seat capacity for every bus',
+  'Announcements to one bus or all of them',
+  'Web dashboard for school staff',
+  'Driver app with pickup list and attendance',
+  'Parent app with bus tracking and notifications',
 ]
 
 export function Pricing() {
   return (
-    <section id="pricing" className="mx-auto mb-24 max-w-6xl scroll-mt-24 px-4 sm:px-6 md:mb-32">
+    <section id="pricing" className="mx-auto max-w-6xl scroll-mt-16 px-4 py-16 sm:px-6 md:py-24">
       <SectionHeading
-        index="07"
-        label="Pricing"
-        title="Priced by fleet size"
-        subtitle="Every plan includes every feature. Tell us about your fleet and we’ll send you a quote."
+        title="Pricing"
+        intro="Priced by the number of buses you run. Every plan includes the full product. Tell us about your fleet and we’ll send you a quote."
       />
-      <div className="grid overflow-hidden rounded-lg border border-border bg-card md:grid-cols-3 md:divide-x md:divide-border">
-        {PLANS.map(plan => (
-          <div
-            key={plan.name}
-            className={cn(
-              'relative flex flex-col border-b border-border p-7 last:border-b-0 md:border-b-0',
-              plan.featured && 'bg-primary/[0.03]'
-            )}
-          >
-            {plan.featured && <span aria-hidden="true" className="absolute inset-x-0 top-0 h-1 bg-primary" />}
-            <div className="flex items-baseline justify-between gap-3">
-              <h3 className="text-lg font-semibold text-foreground">{plan.name}</h3>
-              {plan.featured && <span className="text-xs font-medium text-primary">Most schools</span>}
+
+      <div className="grid overflow-hidden rounded-lg border border-border bg-card lg:grid-cols-[1.1fr_1fr]">
+        <div className="flex flex-col divide-y divide-border">
+          {PLANS.map(plan => (
+            <div key={plan.name} className="flex flex-1 flex-wrap items-center justify-between gap-x-6 gap-y-1 px-6 py-5">
+              <div>
+                <h3 className="text-base font-semibold text-foreground">{plan.name}</h3>
+                <p className="mt-0.5 text-[15px] text-muted-foreground">{plan.blurb}</p>
+                {PLAN_SUPPORT[plan.name].length > 0 && (
+                  <p className="mt-1 text-[13px] text-muted-foreground">{PLAN_SUPPORT[plan.name].join(' · ')}</p>
+                )}
+              </div>
+              <p className="text-lg font-bold text-primary">{plan.fleet}</p>
             </div>
-            <p className="mt-1 text-2xl font-semibold tracking-tight text-foreground">{plan.fleet}</p>
-            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{plan.blurb}</p>
-            <ul className="mb-8 mt-6 space-y-2.5">
-              {[...BASE_POINTS, ...PLAN_SUPPORT[plan.name]].map(point => (
-                <li key={point} className="flex items-start gap-2.5 text-sm text-foreground">
-                  <Check size={15} className="mt-0.5 shrink-0 text-primary" />
-                  {point}
-                </li>
-              ))}
-            </ul>
-            <a
-              href="#demo"
-              className={cn(
-                'mt-auto rounded-md px-4 py-2.5 text-center text-sm font-semibold transition-colors',
-                plan.featured
-                  ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-                  : 'border border-border text-foreground hover:bg-muted'
-              )}
-            >
-              Contact us
-            </a>
-          </div>
-        ))}
+          ))}
+        </div>
+
+        <div className="flex flex-col border-t border-border bg-muted/50 px-6 py-6 lg:border-l lg:border-t-0">
+          <h3 className="text-base font-semibold text-foreground">Included in every plan</h3>
+          <ul className="mt-4 space-y-2.5">
+            {INCLUDED.map(item => (
+              <li key={item} className="flex items-start gap-2.5 text-[15px] leading-snug text-foreground">
+                <Check size={16} className="mt-0.5 shrink-0 text-primary" />
+                {item}
+              </li>
+            ))}
+          </ul>
+          <a
+            href="#demo"
+            className="mt-7 rounded-md bg-primary px-5 py-3 text-center text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+          >
+            Get a quote
+          </a>
+        </div>
       </div>
     </section>
   )

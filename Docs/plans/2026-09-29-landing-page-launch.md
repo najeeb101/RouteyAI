@@ -37,23 +37,28 @@ Assets: `public/assets/dashboard-screenshot.png`, `public/assets/mockups/{driver
 
 ---
 
-## Target Page Structure
+## Page Structure (redesign, 2026-09-30)
 
-| # | Section | Status | Notes |
+The first rebuild had 12 sections and read as a generic AI-generated template (numbered section labels, slogan headlines, four simulated "live" widgets, dark tech styling). The redesign cuts it to seven sections with plain, specific copy.
+
+| # | Section | Component | Notes |
 |---|---|---|---|
-| 1 | Nav | Update | Features, How it works, Pricing, FAQ · Log in · primary **Book a demo** · mobile menu |
-| 2 | Hero | Update | Keep headline + screenshot; CTAs → "Book a demo" / "See how it works" |
-| 3 | Trust strip | New | "Built for Qatar's schools"; pilot school logos or real stats when available |
-| 4 | Problem → outcome | New | Manual route planning and "where's the bus?" calls vs. what RouteyAI changes |
-| 5 | How it works | New | 3 steps: add students → AI builds routes → drivers & parents go live |
-| 6 | Intelligent Orchestrator | Keep | `AdminOrchestrator` |
-| 7 | Driver & parent apps | Keep | `MobileAppsSection` |
-| 8 | Features grid | Update | Corrected copy (10s GPS, no invented features) |
-| 9 | Safety & privacy | New | Per-school data isolation (RLS), boarded/absent alerts, parents see only their child |
-| 10 | Pricing | New | Per-bus tiers or "Contact us" (see open decisions) |
-| 11 | FAQ | Update | Placed after the demo section on the page; Rewrite so every answer describes shipped features |
-| 12 | Final CTA + demo form | Update | Real demo-request form; replaces `FeedbackSection` |
-| 13 | Footer | Update | Real links, `/privacy`, `/terms`, real contact details |
+| 1 | Nav | `LandingNav` | How it works, Drivers & parents, Pricing, FAQ · Log in · **Book a demo** · mobile menu |
+| 2 | Hero | `Hero`, `HeroRouteMap` | Says what the product does; animated sample route map labelled "Sample data" |
+| 3 | How it works | `HowItWorks`, `OptimizeDemo` | Four steps beside the route-planner demo (sample addresses) |
+| 4 | Drivers & parents | `MobileAppsSection`, `PhoneFrame` | App features, plus a "Parent or driver?" row with Log in / Get the app |
+| 5 | Student data and privacy | `SafetyPrivacy` | Per-school isolation (RLS), role-scoped access; links to `/privacy` |
+| 6 | Pricing | `Pricing` | Plan sizes plus one "Included in every plan" list |
+| 7 | FAQ | `Faq` | Every answer describes shipped features |
+| 8 | Book a demo | `FinalCta`, `DemoRequestForm` | Navy band with the demo request form |
+| 9 | Footer | `Footer` | Real links, `/privacy`, `/terms` |
+
+Rules for this page:
+- `/`, `/privacy` and `/terms` always render in the light brand theme (`forcedTheme` in `src/components/theme-provider.tsx`).
+- Plain section headings ("How it works", "Pricing"). No eyebrow labels, slogans or em dashes in copy.
+- Lead with what schools get; don't pitch "AI".
+- Removed: `LiveBoard`, `ProblemOutcome`, `ProductShot` (its screenshot showed an empty dashboard), `Features` and its animated visuals, `WordReveal`, `Reveal`.
+- Next: replace the phone mockups with real app screenshots. The driver mockup shows a "Start Navigation" button, but the app has no turn-by-turn navigation.
 
 ---
 

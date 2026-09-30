@@ -99,22 +99,16 @@ export function HeroRouteMap() {
   return (
     <div ref={wrapRef} className="relative">
       <div className="relative overflow-hidden rounded-lg border border-border bg-card shadow-[0_1px_2px_rgb(15_23_42/0.04),0_24px_48px_-24px_rgb(15_23_42/0.18)]">
-        <div className="flex items-center justify-between border-b border-border px-4 py-2.5 text-xs">
-          <span className="font-medium text-foreground">Morning run · 4 buses</span>
-          <span className="flex items-center gap-1.5 text-muted-foreground">
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-secondary opacity-60 motion-reduce:animate-none" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-secondary" />
-            </span>
-            Live demo
-          </span>
+        <div className="flex items-center justify-between border-b border-border px-4 py-3 text-[13px]">
+          <span className="font-semibold text-foreground">Morning run · 4 buses</span>
+          <span className="text-muted-foreground">Sample data</span>
         </div>
 
         <div className="relative bg-map-grid">
           <svg viewBox="0 0 560 460" className="block h-auto w-full" role="img" aria-label="Illustration: four bus routes converging on a school, with buses moving along them">
             {/* Coastline */}
             <path d="M 492 0 C 452 90, 540 160, 470 232 C 420 292, 502 360, 462 460 L 560 460 L 560 0 Z" className="fill-accent/10" />
-            <text x="520" y="300" className="fill-accent text-[11px] italic" textAnchor="middle" transform="rotate(90 520 300)">
+            <text x="520" y="300" className="hidden fill-accent text-[12px] italic sm:block" textAnchor="middle" transform="rotate(90 520 300)">
               Arabian Gulf
             </text>
 
@@ -171,7 +165,7 @@ export function HeroRouteMap() {
                 x={route.label.x}
                 y={route.label.y}
                 textAnchor={route.label.anchor}
-                className="fill-muted-foreground text-[11px] font-medium"
+                className="hidden fill-muted-foreground text-[13px] font-medium sm:block"
               >
                 {route.area}
               </text>
@@ -189,7 +183,7 @@ export function HeroRouteMap() {
             <g transform="translate(300 252)">
               <rect x="-16" y="-16" width="32" height="32" rx="7" className="fill-primary stroke-background" strokeWidth="3" />
               <path d="M -7 3 V -2 L 0 -7 L 7 -2 V 3 Z M -3 3 V -1 H 3 V 3" className="fill-none stroke-primary-foreground" strokeWidth="1.8" strokeLinejoin="round" />
-              <text y="32" textAnchor="middle" className="fill-foreground text-[11px] font-semibold">School</text>
+              <text y="34" textAnchor="middle" className="fill-foreground text-[13px] font-semibold">School</text>
             </g>
           </svg>
 
@@ -207,7 +201,7 @@ export function HeroRouteMap() {
                 <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-secondary/15 text-secondary">
                   <Check size={13} strokeWidth={3} />
                 </span>
-                <span className="min-w-0 text-[11px] leading-tight">
+                <span className="min-w-0 text-xs leading-tight">
                   <span className="block truncate font-semibold text-foreground">{current.text}</span>
                   <span className="text-muted-foreground">{current.bus} · {current.time}</span>
                 </span>
@@ -217,24 +211,25 @@ export function HeroRouteMap() {
 
           {/* ETA card for Bus 1 */}
           <div className="absolute bottom-3 left-3 w-[min(200px,46%)] rounded-md border border-border bg-card/95 px-3 py-2.5 shadow-sm backdrop-blur">
-            <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <span className="h-2 w-2 rounded-full" style={{ backgroundColor: routeColor(0) }} />
               Bus 1 · West Bay
             </div>
             <div className="mt-1 flex items-baseline gap-1.5">
               <span className="text-2xl font-semibold tracking-tight text-foreground">{eta} min</span>
-              <span className="text-[11px] text-muted-foreground">to school</span>
+              <span className="text-xs text-muted-foreground">to school</span>
             </div>
           </div>
         </div>
 
         {/* Legend */}
-        <ul className="grid grid-cols-2 gap-x-4 gap-y-1.5 border-t border-border px-4 py-3 text-[12px] sm:grid-cols-4">
+        <ul className="grid grid-cols-2 gap-x-4 gap-y-2 border-t border-border px-4 py-3 text-[13px]">
           {ROUTES.map((route, i) => (
             <li key={route.bus} className="flex items-center gap-2 text-muted-foreground">
-              <span className="h-[3px] w-4 rounded-full" style={{ backgroundColor: routeColor(i) }} />
-              <span className="text-foreground">{route.bus}</span>
-              <span className="truncate">{route.area}</span>
+              <span className="h-[3px] w-4 shrink-0 rounded-full" style={{ backgroundColor: routeColor(i) }} />
+              <span className="truncate">
+                <span className="font-medium text-foreground">{route.bus}</span> · {route.area}
+              </span>
             </li>
           ))}
         </ul>
