@@ -13,24 +13,24 @@ const PRODUCT_LINKS = [
   { label: 'Book a demo', href: '/#demo' },
 ]
 
-const linkClass = 'text-slate-400 hover:text-blue-400 text-sm transition-colors'
+const linkClass = 'text-slate-400 hover:text-accent text-sm transition-colors'
 
 export function Footer() {
   return (
-    <footer className="bg-[#0F172A] dark:bg-slate-950 pt-16 md:pt-20 pb-10 border-t border-slate-800/40 dark:border-slate-800">
+    <footer className="bg-slate-950 pt-16 md:pt-20 pb-10 border-t border-slate-800">
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-10 mb-14">
           <div className="col-span-2 lg:col-span-1">
             <div className="flex items-center gap-2 mb-4">
               <RouteyLogo size={28} variant="gradient" />
-              <span className="text-xl font-extrabold text-white">Routey<span className="text-blue-500">AI</span></span>
+              <span className="text-xl font-semibold text-white">Routey<span className="text-accent">AI</span></span>
             </div>
             <p className="text-slate-400 text-sm leading-relaxed mb-5">
               AI-powered school bus routing and real-time tracking for Qatar&apos;s schools.
             </p>
             {CONTACT_EMAIL && (
-              <a href={`mailto:${CONTACT_EMAIL}`} className="inline-flex items-center gap-2 text-sm text-slate-300 hover:text-blue-400 transition-colors">
-                <Mail size={16} className="text-blue-500" />
+              <a href={`mailto:${CONTACT_EMAIL}`} className="inline-flex items-center gap-2 text-sm text-slate-300 hover:text-accent transition-colors">
+                <Mail size={16} className="text-accent" />
                 {CONTACT_EMAIL}
               </a>
             )}
@@ -66,12 +66,12 @@ export function Footer() {
               ].map(store => (
                 <AppDownloadButton
                   key={store.big}
-                  className="flex items-center gap-3 bg-slate-900 border border-slate-800 hover:border-blue-500/50 hover:bg-slate-800/50 transition-all px-4 py-2.5 rounded-xl text-white group"
+                  className="flex items-center gap-3 bg-slate-900 border border-slate-800 hover:border-accent/50 hover:bg-slate-800/50 transition-all px-4 py-2.5 rounded-md text-white group"
                 >
                   {store.icon}
                   <span className="text-left">
                     <span className="block text-[10px] text-slate-500 leading-none mb-1">{store.small}</span>
-                    <span className="block text-sm font-bold group-hover:text-blue-400 transition-colors">{store.big}</span>
+                    <span className="block text-sm font-bold group-hover:text-accent transition-colors">{store.big}</span>
                   </span>
                 </AppDownloadButton>
               ))}

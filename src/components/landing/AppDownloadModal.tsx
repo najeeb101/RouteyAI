@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react'
 import Link from 'next/link'
+import { motion } from 'framer-motion'
 import { Smartphone, X } from 'lucide-react'
 import { RouteyLogo } from '@/components/RouteyLogo'
 import { AppleIcon, GooglePlayIcon } from '@/components/landing/StoreIcons'
@@ -14,46 +15,50 @@ export function AppDownloadModal({ onClose }: { onClose: () => void }) {
   }, [onClose])
 
   return (
-    <div
-      className="fixed inset-0 bg-[#0F172A]/40 dark:bg-slate-900/80 backdrop-blur-md flex items-center justify-center z-50 px-4 animate-in fade-in duration-300"
+    <motion.div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4 backdrop-blur-sm"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.2 }}
       onClick={onClose}
     >
-      <div
+      <motion.div
         role="dialog"
         aria-modal="true"
         aria-labelledby="app-modal-title"
-        className="bg-white dark:bg-slate-900 rounded-3xl p-8 w-full max-w-md shadow-[0_20px_60px_-15px_rgb(0_0_0/0.35)] dark:shadow-[0_20px_60px_-15px_rgb(0_0_0/0.7)] animate-in zoom-in-95 duration-300 border border-transparent dark:border-slate-800"
+        initial={{ opacity: 0, y: 16, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+        className="w-full max-w-md rounded-lg border border-border bg-card p-7 shadow-[0_24px_60px_-20px_rgb(15_23_42/0.45)]"
         onClick={e => e.stopPropagation()}
       >
-        <div className="flex justify-between items-start mb-6">
+        <div className="mb-6 flex items-start justify-between">
           <div>
-            <div className="flex items-center gap-2 mb-1">
-              <RouteyLogo size={24} variant="gradient" />
-              <span className="font-extrabold text-[#0F172A] dark:text-white">Routey<span className="text-[#1E3A8A] dark:text-blue-400">AI</span></span>
+            <div className="mb-2 flex items-center gap-2">
+              <RouteyLogo size={22} variant="gradient" />
+              <span className="font-semibold text-foreground">Routey<span className="text-primary">AI</span></span>
             </div>
-            <h2 id="app-modal-title" className="text-xl font-bold text-[#0F172A] dark:text-white">Get the Mobile App</h2>
-            <p className="text-sm text-[#64748B] dark:text-slate-400 mt-1">For drivers and parents — coming soon to iOS & Android.</p>
+            <h2 id="app-modal-title" className="text-xl font-semibold tracking-tight text-foreground">Get the mobile app</h2>
+            <p className="mt-1 text-sm text-muted-foreground">For drivers and parents — coming soon to iOS & Android.</p>
           </div>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="w-8 h-8 bg-[#F1F5F9] dark:bg-slate-800 rounded-xl flex items-center justify-center text-[#64748B] dark:text-slate-400 shrink-0 hover:bg-[#E2E8F0] dark:hover:bg-slate-700 transition-colors"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
-            <X size={14} strokeWidth={2.5} />
+            <X size={16} />
           </button>
         </div>
 
-        <div className="flex items-center gap-4 bg-[#F8FAFC] dark:bg-slate-800/50 border border-[#E2E8F0] dark:border-slate-700 rounded-2xl p-5 mb-6">
-          <div className="w-12 h-12 rounded-2xl bg-[#EFF6FF] dark:bg-slate-800 flex items-center justify-center text-[#1E3A8A] dark:text-blue-400 shrink-0">
-            <Smartphone size={22} />
-          </div>
-          <p className="text-sm text-[#475569] dark:text-slate-300 leading-relaxed">
+        <div className="mb-6 flex items-center gap-4 rounded-md border border-border bg-muted/50 p-4">
+          <Smartphone size={22} className="shrink-0 text-primary" />
+          <p className="text-sm leading-relaxed text-muted-foreground">
             The apps are in final testing. Your school will send you an invite link as soon as they&apos;re live in the stores.
           </p>
         </div>
 
-        <div className="flex gap-3 mb-5">
+        <div className="mb-5 flex gap-3">
           {[
             { icon: <AppleIcon />, small: 'Coming soon to the', big: 'App Store' },
             { icon: <GooglePlayIcon />, small: 'Coming soon on', big: 'Google Play' },
@@ -61,23 +66,25 @@ export function AppDownloadModal({ onClose }: { onClose: () => void }) {
             <div
               key={store.big}
               aria-disabled="true"
-              className="flex-1 bg-[#0F172A] text-white rounded-xl px-4 py-3 flex items-center gap-2.5 opacity-60 cursor-not-allowed"
+              className="flex flex-1 cursor-not-allowed items-center gap-2.5 rounded-md bg-slate-950 px-4 py-3 text-white opacity-60"
             >
               {store.icon}
               <div className="text-left">
-                <div className="text-[9px] text-white/60 leading-none">{store.small}</div>
-                <div className="text-[13px] font-bold leading-tight">{store.big}</div>
+                <div className="text-[9px] leading-none text-white/60">{store.small}</div>
+                <div className="text-[13px] font-semibold leading-tight">{store.big}</div>
               </div>
             </div>
           ))}
         </div>
 
-        <div className="flex items-center gap-2 bg-[#EFF6FF] dark:bg-blue-950/40 border border-[#BFDBFE] dark:border-blue-900/60 rounded-xl px-3.5 py-2.5">
-          <p className="text-[12px] text-[#1E3A8A] dark:text-blue-300">
-            School admins use the <Link href="/login" className="font-bold underline">web dashboard</Link> instead.
-          </p>
-        </div>
-      </div>
-    </div>
+        <p className="text-[13px] text-muted-foreground">
+          School admins use the{' '}
+          <Link href="/login" className="font-semibold text-primary hover:underline">
+            web dashboard
+          </Link>{' '}
+          instead.
+        </p>
+      </motion.div>
+    </motion.div>
   )
 }

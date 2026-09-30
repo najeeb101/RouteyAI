@@ -51,24 +51,24 @@ export const FAQS = [
 
 export function Faq() {
   return (
-    <section id="faqs" className="py-20 md:py-24 bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800/40 scroll-mt-10">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6">
-        <div className="flex flex-col md:flex-row gap-10 lg:gap-32">
+    <section id="faqs" className="mx-auto mb-24 max-w-6xl scroll-mt-24 px-4 sm:px-6 md:mb-32">
+      <div>
+        <div className="flex flex-col gap-10 border-t border-border pt-14 md:flex-row lg:gap-24">
           <div className="md:w-[40%] shrink-0">
-            <h2 className="text-3xl md:text-[40px] font-medium text-[#334155] dark:text-slate-200 tracking-tight mb-4">Frequently Asked Questions</h2>
-            <p className="text-[#64748B] dark:text-slate-400 text-lg">
+            <h2 className="mb-4 text-3xl font-semibold tracking-[-0.02em] text-foreground md:text-[2.75rem] md:leading-[1.1]">Questions, answered</h2>
+            <p className="text-base text-muted-foreground md:text-lg">
               Can’t find your answer? Reach us through{' '}
-              <ContactLink className="font-semibold text-[#1E3A8A] dark:text-blue-400 hover:underline" />.
+              <ContactLink className="font-semibold text-primary hover:underline" />.
             </p>
           </div>
           <div className="md:w-[60%] pt-1">
             <Accordion type="single" collapsible className="w-full">
               {FAQS.map((faq, i) => (
-                <AccordionItem key={faq.question} value={`item-${i}`} className="border-b border-[#E2E8F0] dark:border-slate-800/60">
-                  <AccordionTrigger className="text-left font-medium text-[#334155] dark:text-slate-200 hover:no-underline hover:text-blue-600 dark:hover:text-blue-400 text-[15px] py-5 transition-colors">
+                <AccordionItem key={faq.question} value={`item-${i}`} className="border-b border-border">
+                  <AccordionTrigger className="py-5 text-left text-[15px] font-medium text-foreground transition-colors hover:text-primary hover:no-underline">
                     {faq.question}
                   </AccordionTrigger>
-                  <AccordionContent className="text-[#64748B] dark:text-slate-400 leading-relaxed text-[14px] pb-6">
+                  <AccordionContent className="pb-6 text-[14px] leading-relaxed text-muted-foreground">
                     {faq.answer}
                   </AccordionContent>
                 </AccordionItem>

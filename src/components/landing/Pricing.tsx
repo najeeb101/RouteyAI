@@ -13,35 +13,33 @@ const PLANS: { name: PlanName; fleet: string; blurb: string; featured: boolean }
 
 export function Pricing() {
   return (
-    <section id="pricing" className="max-w-6xl mx-auto px-4 sm:px-6 mb-24 scroll-mt-24">
+    <section id="pricing" className="mx-auto mb-24 max-w-6xl scroll-mt-24 px-4 sm:px-6 md:mb-32">
       <SectionHeading
-        eyebrow="Pricing"
+        index="07"
+        label="Pricing"
         title="Priced by fleet size"
         subtitle="Every plan includes every feature. Tell us about your fleet and we’ll send you a quote."
       />
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid overflow-hidden rounded-lg border border-border bg-card md:grid-cols-3 md:divide-x md:divide-border">
         {PLANS.map(plan => (
           <div
             key={plan.name}
             className={cn(
-              'relative flex flex-col rounded-3xl border p-7 bg-white dark:bg-slate-900',
-              plan.featured
-                ? 'border-[#1E3A8A] dark:border-blue-500 shadow-[0_20px_50px_-25px_rgba(30,58,138,0.45)]'
-                : 'border-[#E2E8F0] dark:border-slate-800 shadow-sm'
+              'relative flex flex-col border-b border-border p-7 last:border-b-0 md:border-b-0',
+              plan.featured && 'bg-primary/[0.03]'
             )}
           >
-            {plan.featured && (
-              <span className="absolute -top-3 left-7 rounded-full bg-[#1E3A8A] dark:bg-blue-600 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-white">
-                Most schools
-              </span>
-            )}
-            <h3 className="text-lg font-bold text-[#0F172A] dark:text-white">{plan.name}</h3>
-            <p className="mt-1 text-sm font-semibold text-[#1E3A8A] dark:text-blue-400">{plan.fleet}</p>
-            <p className="mt-3 text-sm text-[#64748B] dark:text-slate-400 leading-relaxed">{plan.blurb}</p>
-            <ul className="mt-6 mb-8 space-y-3">
+            {plan.featured && <span aria-hidden="true" className="absolute inset-x-0 top-0 h-1 bg-primary" />}
+            <div className="flex items-baseline justify-between gap-3">
+              <h3 className="text-lg font-semibold text-foreground">{plan.name}</h3>
+              {plan.featured && <span className="text-xs font-medium text-primary">Most schools</span>}
+            </div>
+            <p className="mt-1 text-2xl font-semibold tracking-tight text-foreground">{plan.fleet}</p>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{plan.blurb}</p>
+            <ul className="mb-8 mt-6 space-y-2.5">
               {[...BASE_POINTS, ...PLAN_SUPPORT[plan.name]].map(point => (
-                <li key={point} className="flex items-start gap-2.5 text-sm text-[#334155] dark:text-slate-300">
-                  <Check size={16} className="mt-0.5 shrink-0 text-emerald-500" />
+                <li key={point} className="flex items-start gap-2.5 text-sm text-foreground">
+                  <Check size={15} className="mt-0.5 shrink-0 text-primary" />
                   {point}
                 </li>
               ))}
@@ -49,10 +47,10 @@ export function Pricing() {
             <a
               href="#demo"
               className={cn(
-                'mt-auto rounded-xl px-5 py-3 text-center text-sm font-bold transition-colors',
+                'mt-auto rounded-md px-4 py-2.5 text-center text-sm font-semibold transition-colors',
                 plan.featured
-                  ? 'bg-[#1E3A8A] text-white hover:bg-[#1e40af] dark:bg-blue-600 dark:hover:bg-blue-500'
-                  : 'border border-[#E2E8F0] dark:border-slate-700 text-[#0F172A] dark:text-white hover:bg-[#F8FAFC] dark:hover:bg-slate-800'
+                  ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                  : 'border border-border text-foreground hover:bg-muted'
               )}
             >
               Contact us

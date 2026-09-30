@@ -1,55 +1,63 @@
-import { BarChart3, Bell, ClipboardCheck, MapPin, Route, Zap } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { SectionHeading } from '@/components/landing/SectionHeading'
+import { AlertsVisual } from '@/components/landing/visuals/AlertsVisual'
+import { AttendanceVisual } from '@/components/landing/visuals/AttendanceVisual'
+import { CapacityVisual } from '@/components/landing/visuals/CapacityVisual'
+import { PlacementVisual } from '@/components/landing/visuals/PlacementVisual'
+import { TrackingVisual } from '@/components/landing/visuals/TrackingVisual'
 
-const FEATURES = [
+const TILES = [
   {
-    icon: Route,
-    title: 'AI Route Optimization',
-    desc: 'K-Means clustering and nearest-neighbor ordering, built on real road travel times, keep every route short and every bus within capacity.',
+    title: 'Real-time tracking',
+    desc: 'The driver’s phone shares the bus location every 10 seconds. Parents and admins watch it move on the map.',
+    visual: <TrackingVisual />,
+    wide: true,
   },
   {
-    icon: MapPin,
-    title: 'Real-Time Tracking',
-    desc: 'The driver’s phone shares the bus location every 10 seconds. Parents and admins see it move live on the map.',
-  },
-  {
-    icon: ClipboardCheck,
-    title: 'Digital Attendance',
+    title: 'Digital attendance',
     desc: 'Drivers mark each student Boarded or Absent with one tap. Parents are notified straight away.',
+    visual: <AttendanceVisual />,
   },
   {
-    icon: Bell,
-    title: 'Announcements & Alerts',
-    desc: 'Send updates to one bus or the whole fleet. Parents also get an alert when the bus is getting close.',
+    title: 'Fleet capacity',
+    desc: 'See seats filled on every bus, and spot the ones that are nearly full before it becomes a problem.',
+    visual: <CapacityVisual />,
   },
   {
-    icon: Zap,
-    title: 'Smart Placement',
-    desc: 'New students are assigned to the nearest bus with free seats, and the route recalculates automatically.',
+    title: 'Announcements & alerts',
+    desc: 'Message one bus or the whole fleet. Parents also get an alert when the bus is getting close.',
+    visual: <AlertsVisual />,
   },
   {
-    icon: BarChart3,
-    title: 'Fleet Analytics',
-    desc: 'See capacity, student counts and active buses across your whole fleet at a glance.',
+    title: 'Smart placement',
+    desc: 'New students join the nearest bus with free seats, and that route recalculates automatically.',
+    visual: <PlacementVisual />,
   },
 ]
 
 export function Features() {
   return (
-    <section id="features" className="max-w-6xl mx-auto px-4 sm:px-6 mb-24 scroll-mt-24">
-      <SectionHeading title="Everything your school needs" subtitle="From the first stop to drop-off at the gate." />
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {FEATURES.map(({ icon: Icon, title, desc }) => (
-          <div
-            key={title}
-            className="group bg-white dark:bg-slate-900 rounded-3xl border border-[#E2E8F0] dark:border-slate-800 shadow-sm p-6 hover:shadow-lg dark:hover:shadow-none hover:border-[#BFDBFE] dark:hover:border-blue-500 transition-all duration-300 hover:-translate-y-1"
+    <section id="features" className="mx-auto mb-24 max-w-6xl scroll-mt-24 px-4 sm:px-6 md:mb-32">
+      <SectionHeading
+        index="05"
+        label="Features"
+        title="Everything between the first stop and the school gate"
+      />
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {TILES.map(tile => (
+          <article
+            key={tile.title}
+            className={cn(
+              'group flex flex-col overflow-hidden rounded-lg border border-border bg-card transition-shadow duration-300 hover:shadow-[0_18px_40px_-24px_rgb(15_23_42/0.3)]',
+              tile.wide && 'md:col-span-2'
+            )}
           >
-            <div className="w-12 h-12 bg-[#EFF6FF] dark:bg-slate-800 rounded-2xl flex items-center justify-center text-[#1E3A8A] dark:text-blue-400 mb-5 group-hover:scale-110 group-hover:bg-[#1E3A8A] dark:group-hover:bg-blue-500 group-hover:text-white transition-all duration-300">
-              <Icon size={22} strokeWidth={1.75} />
+            <div className="border-b border-border bg-muted/40 bg-map-grid">{tile.visual}</div>
+            <div className="p-5">
+              <h3 className="text-[15px] font-semibold text-foreground">{tile.title}</h3>
+              <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{tile.desc}</p>
             </div>
-            <h3 className="text-base font-bold text-[#0F172A] dark:text-white mb-2">{title}</h3>
-            <p className="text-sm text-[#64748B] dark:text-slate-400 leading-relaxed">{desc}</p>
-          </div>
+          </article>
         ))}
       </div>
     </section>

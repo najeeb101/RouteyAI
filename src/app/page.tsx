@@ -2,10 +2,11 @@ import type { Metadata } from 'next'
 import { AppModalProvider } from '@/components/landing/AppModalProvider'
 import { LandingNav } from '@/components/landing/LandingNav'
 import { Hero } from '@/components/landing/Hero'
-import { TrustStrip } from '@/components/landing/TrustStrip'
+import { LiveBoard } from '@/components/landing/LiveBoard'
 import { ProblemOutcome } from '@/components/landing/ProblemOutcome'
 import { HowItWorks } from '@/components/landing/HowItWorks'
-import { AdminOrchestrator } from '@/components/landing/AdminOrchestrator'
+import { OptimizeDemo } from '@/components/landing/OptimizeDemo'
+import { ProductShot } from '@/components/landing/ProductShot'
 import { MobileAppsSection } from '@/components/landing/MobileApps'
 import { Features } from '@/components/landing/Features'
 import { SafetyPrivacy } from '@/components/landing/SafetyPrivacy'
@@ -61,23 +62,19 @@ export default function HomePage() {
     <AppModalProvider>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <LandingNav />
-      <main className="min-h-screen bg-[#F8FAFF] dark:bg-slate-950 font-sans selection:bg-[#1E3A8A] selection:text-white relative overflow-clip">
-        {/* Subtle blue gradient overlay (light mode only) */}
-        <div className="absolute inset-0 bg-gradient-to-b from-blue-50/50 via-transparent to-transparent pointer-events-none dark:hidden" />
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-400/15 dark:bg-blue-600/10 rounded-full blur-[100px] pointer-events-none" />
-        <div className="absolute bottom-[10%] right-[-5%] w-[30%] h-[30%] bg-emerald-400/10 dark:bg-emerald-600/10 rounded-full blur-[100px] pointer-events-none" />
-
+      <main className="relative min-h-screen overflow-clip bg-background font-sans selection:bg-primary selection:text-primary-foreground">
         <Hero />
-        <TrustStrip />
-        <Reveal><ProblemOutcome /></Reveal>
-        <Reveal><HowItWorks /></Reveal>
-        <AdminOrchestrator />
-        <Reveal><MobileAppsSection /></Reveal>
-        <Reveal><Features /></Reveal>
-        <Reveal><SafetyPrivacy /></Reveal>
+        <LiveBoard />
+        <ProblemOutcome />
+        <HowItWorks />
+        <OptimizeDemo />
+        <ProductShot />
+        <MobileAppsSection />
+        <Features />
+        <SafetyPrivacy />
         <Reveal><Pricing /></Reveal>
-        <Reveal><FinalCta /></Reveal>
-        <Faq />
+        <Reveal><Faq /></Reveal>
+        <FinalCta />
       </main>
       <Footer />
     </AppModalProvider>

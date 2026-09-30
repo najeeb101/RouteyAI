@@ -39,6 +39,50 @@
 
     --radius: 0.75rem;
   }
+
+  .dark {
+    --background: 229 84% 5%;               /* slate 950 */
+    --foreground: 210 40% 98%;
+
+    --card: 222 47% 8%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222 47% 8%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 217 91% 60%;                 /* lifted blue so it reads on dark surfaces */
+    --primary-foreground: 0 0% 100%;
+    --primary-light: 213 94% 68%;
+
+    --secondary: 160 84% 39%;
+    --secondary-foreground: 0 0% 100%;
+
+    --accent: 199 89% 60%;
+    --accent-foreground: 222 47% 11%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --muted: 217 33% 14%;                   /* slate 800-ish */
+    --muted-foreground: 215 20% 65%;        /* slate 400 */
+
+    --border: 217 33% 17%;
+    --input: 217 33% 17%;
+    --ring: 217 91% 60%;
+  }
+}
+
+@layer utilities {
+  /* Faint street-grid texture used behind map-like visuals on the landing page. */
+  .bg-map-grid {
+    background-image:
+      linear-gradient(to right, hsl(var(--border) / 0.7) 1px, transparent 1px),
+      linear-gradient(to bottom, hsl(var(--border) / 0.7) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
 }
 
 @layer base {
