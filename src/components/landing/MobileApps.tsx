@@ -56,7 +56,7 @@ export function MobileAppsSection() {
               <AppShowcase {...app.showcase} />
             </div>
             <div className={cn(i % 2 === 1 && 'lg:order-1')}>
-              <p className="text-sm font-semibold text-primary-light">{app.role}</p>
+              <p className="text-sm font-semibold text-primary">{app.role}</p>
               <h3 className="mt-2 text-balance text-2xl font-bold tracking-tight text-primary md:text-3xl">{app.title}</h3>
               <p className="mt-3 text-base leading-relaxed text-muted-foreground">{app.desc}</p>
               <ul className="mt-7 space-y-4">
@@ -74,7 +74,7 @@ export function MobileAppsSection() {
         ))}
       </div>
 
-      <div className="mt-16 flex flex-col gap-4 rounded-2xl bg-muted/70 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mt-16 flex flex-col gap-4 rounded-2xl bg-muted/50 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-[15px] text-foreground">
           <span className="font-semibold">Parent or driver?</span>{' '}
           <span className="text-muted-foreground">Your school will send you a personal invite link.</span>

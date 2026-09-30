@@ -13,16 +13,12 @@ export const metadata: Metadata = {
   description:
     "School bus route planning, live bus tracking and parent notifications for schools in Qatar.",
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"),
-  icons: {
-    icon: "/favicon.ico",
-  },
 }
 
 export const viewport: Viewport = {
   themeColor: "#1E3A8A",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
 }
 
 import { ThemeProvider } from "@/components/theme-provider"

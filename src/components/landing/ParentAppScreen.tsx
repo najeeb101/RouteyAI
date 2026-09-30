@@ -21,7 +21,7 @@ export function ParentAppScreen({ className }: { className?: string }) {
           <p className="text-[15px] font-extrabold text-white">
             Routey<span className="text-accent">AI</span>
           </p>
-          <p className="text-[10px] text-white/45">Good morning</p>
+          <p className="text-[10px] text-white/70">Good morning</p>
         </div>
         <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-white/10 bg-white/10 text-white">
           <Bell size={13} />
@@ -31,12 +31,12 @@ export function ParentAppScreen({ className }: { className?: string }) {
       {/* Child */}
       <div className="bg-slate-900 px-4 pb-3.5">
         <div className="flex items-center gap-2.5 rounded-2xl border border-white/5 bg-white/[0.07] p-2.5">
-          <span className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-accent bg-primary-light text-[12px] font-extrabold text-white">
+          <span className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-accent bg-primary text-[12px] font-extrabold text-white">
             AM
           </span>
           <div className="min-w-0 flex-1">
             <p className="text-[12px] font-bold text-white">Aisha M.</p>
-            <p className="text-[9.5px] text-white/45">Bus 3</p>
+            <p className="text-[9.5px] text-white/70">Bus 3</p>
           </div>
           <span className="rounded-full bg-warning/15 px-2 py-0.5 text-[9px] font-bold text-warning">Waiting</span>
         </div>
@@ -46,9 +46,9 @@ export function ParentAppScreen({ className }: { className?: string }) {
         {/* ETA */}
         <div className="flex items-center justify-between gap-2 rounded-[18px] bg-primary p-3.5 shadow-[0_8px_18px_-8px_hsl(var(--primary)/0.7)]">
           <div>
-            <p className="text-[8.5px] font-bold uppercase tracking-[0.12em] text-white/60">ETA to your stop</p>
+            <p className="text-[8.5px] font-bold uppercase tracking-[0.12em] text-white/75">ETA to your stop</p>
             <p className="text-[26px] font-extrabold leading-tight tracking-tight text-accent">6 min</p>
-            <p className="text-[9.5px] text-white/55">Estimated time based on live GPS</p>
+            <p className="text-[9.5px] text-white/75">Estimated time based on live GPS</p>
           </div>
           <span className="flex flex-col items-center rounded-xl border border-white/10 bg-white/15 px-3 py-2 text-white">
             <MapPin size={15} />
@@ -66,11 +66,11 @@ export function ParentAppScreen({ className }: { className?: string }) {
               <Bus size={12} className="text-primary" /> Route Info
             </p>
             <p className="flex justify-between">
-              <span className="text-slate-400">Bus</span>
+              <span className="text-slate-500">Bus</span>
               <span className="font-semibold">Bus 3</span>
             </p>
             <p className="flex justify-between">
-              <span className="text-slate-400">Stop</span>
+              <span className="text-slate-500">Stop</span>
               <span className="font-semibold">Villa 8, Al Sadd</span>
             </p>
           </div>
@@ -84,7 +84,7 @@ export function ParentAppScreen({ className }: { className?: string }) {
           <ul className="mt-2 space-y-1.5">
             {UPDATES.map(update => (
               <li key={update.time} className="flex gap-2 text-[10px]">
-                <span className="w-7 shrink-0 text-slate-400">{update.time}</span>
+                <span className="w-7 shrink-0 text-slate-500">{update.time}</span>
                 <span className="text-slate-800">{update.body}</span>
               </li>
             ))}

@@ -23,7 +23,7 @@ export function DriverAppScreen({ className }: { className?: string }) {
         </span>
         <div className="min-w-0">
           <p className="truncate text-[13px] font-extrabold text-white">Route 3 · Al Waab</p>
-          <p className="text-[10px] text-white/45">Bus 3 · Tap to check in</p>
+          <p className="text-[10px] text-white/70">Bus 3 · Tap to check in</p>
         </div>
       </div>
 
@@ -48,13 +48,13 @@ export function DriverAppScreen({ className }: { className?: string }) {
         <span className="flex items-center gap-1.5 text-[11px]">
           <Users size={13} className="text-slate-500" />
           <span className="font-bold">5/12</span>
-          <span className="text-slate-400">boarded</span>
+          <span className="text-slate-500">boarded</span>
         </span>
         <span className="flex items-center gap-1.5">
           <span className="h-1.5 w-16 overflow-hidden rounded-full bg-slate-100">
             <span className="block h-full w-[42%] rounded-full bg-primary" />
           </span>
-          <span className="rounded-md bg-primary-light/10 px-1.5 py-0.5 text-[9px] font-bold text-primary-light">42%</span>
+          <span className="rounded-md bg-primary-light/10 px-1.5 py-0.5 text-[9px] font-bold text-primary">42%</span>
         </span>
       </div>
 
@@ -65,10 +65,10 @@ export function DriverAppScreen({ className }: { className?: string }) {
             <Check size={11} strokeWidth={3.5} />
           </span>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-[11px] font-bold text-slate-500">Villa 12, Al Waab St</p>
-            <p className="text-[9px] text-slate-400">2/2 boarded</p>
+            <p className="truncate text-[11px] font-bold text-slate-600">Villa 12, Al Waab St</p>
+            <p className="text-[9px] text-slate-600">2/2 boarded</p>
           </div>
-          <span className="text-[10px] font-bold text-secondary">6:41</span>
+          <span className="text-[10px] font-bold text-emerald-700">6:41</span>
         </div>
 
         <div className="overflow-hidden rounded-2xl border-[1.5px] border-primary-light bg-white">
@@ -78,9 +78,9 @@ export function DriverAppScreen({ className }: { className?: string }) {
             </span>
             <div className="min-w-0 flex-1">
               <p className="truncate text-[11px] font-bold">Al Furousiya St</p>
-              <p className="text-[9px] text-primary-light">1/2 boarded</p>
+              <p className="text-[9px] text-primary">1/2 boarded</p>
             </div>
-            <span className="text-right text-[10px] font-bold leading-tight text-primary-light">
+            <span className="text-right text-[10px] font-bold leading-tight text-primary">
               6:52
               <span className="block text-[8px] font-semibold">Now</span>
             </span>
@@ -90,23 +90,23 @@ export function DriverAppScreen({ className }: { className?: string }) {
               <span
                 className={cn(
                   'flex h-6 w-6 items-center justify-center rounded-full border text-[9px] font-bold',
-                  student.boarded ? 'border-secondary/30 bg-secondary/15 text-secondary' : 'border-primary-light/30 bg-primary-light/10 text-primary'
+                  student.boarded ? 'border-secondary/30 bg-secondary/15 text-emerald-700' : 'border-primary-light/30 bg-primary-light/10 text-primary'
                 )}
               >
                 {student.initials}
               </span>
               <div className="min-w-0 flex-1">
-                <p className={cn('text-[10.5px] font-semibold', student.boarded ? 'text-slate-500' : 'text-slate-900')}>{student.name}</p>
-                <p className="text-[9px] text-slate-400">{student.grade}</p>
+                <p className={cn('text-[10.5px] font-semibold', student.boarded ? 'text-slate-600' : 'text-slate-900')}>{student.name}</p>
+                <p className="text-[9px] text-slate-500">{student.grade}</p>
               </div>
               {student.boarded ? (
-                <span className="rounded-lg border border-secondary/30 bg-secondary/15 px-2 py-1 text-[9px] font-bold text-secondary">
+                <span className="rounded-lg border border-secondary/30 bg-secondary/15 px-2 py-1 text-[9px] font-bold text-emerald-700">
                   ✓ Boarded
                 </span>
               ) : (
                 <span className="flex gap-1">
-                  <span className="rounded-lg border border-slate-200 bg-slate-100 px-2 py-1 text-[9px] font-bold text-slate-500">Board</span>
-                  <span className="rounded-lg border border-slate-200 bg-slate-100 px-2 py-1 text-[9px] font-bold text-slate-500">Absent</span>
+                  <span className="rounded-lg border border-slate-200 bg-slate-100 px-2 py-1 text-[9px] font-bold text-slate-600">Board</span>
+                  <span className="rounded-lg border border-slate-200 bg-slate-100 px-2 py-1 text-[9px] font-bold text-slate-600">Absent</span>
                 </span>
               )}
             </div>
@@ -117,18 +117,18 @@ export function DriverAppScreen({ className }: { className?: string }) {
           <span className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-100 text-[9px] font-bold text-slate-500">3</span>
           <div className="min-w-0 flex-1">
             <p className="truncate text-[11px] font-bold">Al Luqta St</p>
-            <p className="text-[9px] text-slate-400">0/3 boarded</p>
+            <p className="text-[9px] text-slate-500">0/3 boarded</p>
           </div>
-          <span className="text-[10px] font-bold text-slate-400">7:01</span>
+          <span className="text-[10px] font-bold text-slate-500">7:01</span>
         </div>
 
         <div className="flex items-center gap-2.5 rounded-2xl border border-slate-200 bg-white px-3 py-2">
           <span className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-100 text-[9px] font-bold text-slate-500">4</span>
           <div className="min-w-0 flex-1">
             <p className="truncate text-[11px] font-bold">Villa 8, Al Sadd</p>
-            <p className="text-[9px] text-slate-400">0/2 boarded</p>
+            <p className="text-[9px] text-slate-500">0/2 boarded</p>
           </div>
-          <span className="text-[10px] font-bold text-slate-400">7:09</span>
+          <span className="text-[10px] font-bold text-slate-500">7:09</span>
         </div>
       </div>
     </PhoneFrame>

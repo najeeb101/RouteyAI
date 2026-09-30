@@ -51,7 +51,7 @@ export function Hero() {
       {/* A parent notification, shown over the photo on wide screens */}
       <div
         aria-hidden="true"
-        className="absolute bottom-16 right-[7%] hidden w-[270px] items-center gap-3 rounded-2xl bg-white/95 p-3.5 shadow-xl backdrop-blur lg:flex"
+        className="absolute bottom-16 right-[7%] hidden w-[270px] items-center gap-3 rounded-2xl bg-white p-3.5 shadow-xl lg:flex"
       >
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-secondary text-white">
           <Check size={18} strokeWidth={3} />

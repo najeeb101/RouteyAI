@@ -70,7 +70,7 @@ export function Footer() {
                 >
                   {store.icon}
                   <span className="text-left">
-                    <span className="block text-[10px] text-slate-500 leading-none mb-1">{store.small}</span>
+                    <span className="block text-[10px] text-slate-400 leading-none mb-1">{store.small}</span>
                     <span className="block text-sm font-bold group-hover:text-accent transition-colors">{store.big}</span>
                   </span>
                 </AppDownloadButton>
@@ -80,10 +80,10 @@ export function Footer() {
         </div>
 
         <div className="pt-8 border-t border-slate-800/60 flex flex-col md:flex-row items-center justify-between gap-4">
-          <span className="text-sm text-slate-500">© {new Date().getFullYear()} RouteyAI. Built for Qatar.</span>
+          <span className="text-sm text-slate-400">© {new Date().getFullYear()} RouteyAI. Built for Qatar.</span>
           <div className="flex items-center gap-6">
-            <Link href="/privacy" className="text-sm text-slate-500 hover:text-slate-300 transition-colors">Privacy</Link>
-            <Link href="/terms" className="text-sm text-slate-500 hover:text-slate-300 transition-colors">Terms</Link>
+            <Link href="/privacy" className="text-sm text-slate-400 hover:text-slate-300 transition-colors">Privacy</Link>
+            <Link href="/terms" className="text-sm text-slate-400 hover:text-slate-300 transition-colors">Terms</Link>
           </div>
         </div>
       </div>

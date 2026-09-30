@@ -8,7 +8,8 @@ Mobile: Expo (React Native) | React Native styles | Mapbox RN | EAS
 ## Current Status Snapshot (2026-09-29)
 
 - Completed: Phases 1–10.
-- Nearly done: Phase 11 (Lighthouse audit and custom domain left).
+- Nearly done: Phase 11 (custom domain left).
+- Landing page redesign on branch `landing-redesign` (not deployed yet): plainer copy, light brand theme, real photos, coded app screens. Merge to `main` to deploy.
 - In progress: Phase 13 — landing page live at https://routeyai.vercel.app; Supabase project paused; launch placeholders in `src/lib/siteConfig.ts`.
 - Not started: Phase 12 (store submission).
 - Loose end: `mobile/src/components/route/LiveMapPreview.tsx` still reads `mobile/src/data/demoRoute.ts`.
@@ -132,7 +133,7 @@ Mobile: Expo (React Native) | React Native styles | Mapbox RN | EAS
 - [x] Error boundaries and custom 404 page
 - [x] Lazy load Mapbox with `next/dynamic` and `ssr: false` (N/A — web uses SVG maps, no mapbox-gl imports)
 - [x] SEO meta tags on all pages
-- [ ] Performance audit (Lighthouse)
+- [x] Performance audit (Lighthouse) — home page, mobile, local production build (2026-09-30): Performance 92, Accessibility 100, Best Practices 100, SEO 100
 - [ ] Connect custom domain on Vercel
 
 ## Phase 12: App Store and Play Store Submission
@@ -169,4 +170,4 @@ Full plan: [plans/2026-09-29-landing-page-launch.md](plans/2026-09-29-landing-pa
 - [ ] Add real `NEXT_PUBLIC_MAPBOX_TOKEN` (`.env.local` has the placeholder) locally and on Vercel
 - [x] Set `NEXT_PUBLIC_APP_URL=https://routeyai.vercel.app` on Vercel (production)
 - [ ] Launch placeholders in `src/lib/siteConfig.ts`: set `NEXT_PUBLIC_CONTACT_EMAIL` (routeyai.com has no DNS/MX yet), legal review then `LEGAL_REVIEWED = true`, fill `PLAN_SUPPORT`
-- [ ] Lighthouse ≥ 90 on mobile
+- [x] Lighthouse ≥ 90 on mobile (local production build of `landing-redesign`; re-check on the live site after deploying)

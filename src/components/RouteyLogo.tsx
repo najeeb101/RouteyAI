@@ -16,6 +16,7 @@ const MARK_CROP = {
 
 export function RouteyLogo({ size = 28 }: RouteyLogoProps) {
   const scale = size / MARK_CROP.size
+  const rendered = Math.ceil(ASSET_SIZE * scale)
 
   return (
     <span
@@ -26,14 +27,14 @@ export function RouteyLogo({ size = 28 }: RouteyLogoProps) {
       <Image
         src={logoAsset}
         alt=""
-        width={ASSET_SIZE}
-        height={ASSET_SIZE}
+        width={rendered}
+        height={rendered}
         className="absolute max-w-none select-none"
         draggable={false}
         priority={size >= 48}
         style={{
-          width: ASSET_SIZE * scale,
-          height: ASSET_SIZE * scale,
+          width: rendered,
+          height: rendered,
           left: -MARK_CROP.x * scale,
           top: -MARK_CROP.y * scale,
         }}
