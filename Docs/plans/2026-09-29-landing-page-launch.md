@@ -13,7 +13,7 @@
 
 Nav → Hero (dashboard screenshot) → `AdminOrchestrator` → `MobileAppsSection` → Features grid → Final CTA → FAQ → `FeedbackSection` → Footer, plus an `AppDownloadModal`.
 
-Assets: `public/assets/dashboard-screenshot.png`, `public/assets/mockups/{driver,parent}-app.png`, `public/assets/brand/` (temporary logo files).
+Assets (at the time): `public/assets/dashboard-screenshot.png`, `public/assets/mockups/{driver,parent}-app.png` (both since removed), `public/assets/brand/` (temporary logo files).
 
 ### Problems
 
@@ -44,10 +44,10 @@ The first rebuild had 12 sections and read as a generic AI-generated template (n
 | # | Section | Component | Notes |
 |---|---|---|---|
 | 1 | Nav | `LandingNav` | How it works, Drivers & parents, Pricing, FAQ · Log in · **Book a demo** · mobile menu |
-| 2 | Hero | `Hero`, `HeroRouteMap` | Says what the product does; animated sample route map labelled "Sample data" |
+| 2 | Hero | `Hero` | Says what the product does; full-width Doha photo under a navy overlay |
 | 3 | How it works | `HowItWorks`, `OptimizeDemo` | Four steps beside the route-planner demo (sample addresses) |
-| 4 | Drivers & parents | `MobileAppsSection`, `PhoneFrame` | App features, plus a "Parent or driver?" row with Log in / Get the app |
-| 5 | Student data and privacy | `SafetyPrivacy` | Per-school isolation (RLS), role-scoped access; links to `/privacy` |
+| 4 | Drivers & parents | `MobileAppsSection`, `AppShowcase`, `DriverAppScreen`, `ParentAppScreen` | Photo plus coded phone screen for each app; "Parent or driver?" row with Log in / Get the app |
+| 5 | Student data and privacy | `SafetyPrivacy` | Per-school isolation (RLS), role-scoped access; links to `/privacy`; students photo |
 | 6 | Pricing | `Pricing` | Plan sizes plus one "Included in every plan" list |
 | 7 | FAQ | `Faq` | Every answer describes shipped features |
 | 8 | Book a demo | `FinalCta`, `DemoRequestForm` | Navy band with the demo request form |
@@ -58,7 +58,10 @@ Rules for this page:
 - Plain section headings ("How it works", "Pricing"). No eyebrow labels, slogans or em dashes in copy.
 - Lead with what schools get; don't pitch "AI".
 - Removed: `LiveBoard`, `ProblemOutcome`, `ProductShot` (its screenshot showed an empty dashboard), `Features` and its animated visuals, `WordReveal`, `Reveal`.
-- Next: replace the phone mockups with real app screenshots. The driver mockup shows a "Start Navigation" button, but the app has no turn-by-turn navigation.
+- Visual style (2026-09-30) takes cues from Qatar Post's [Connected](https://connected.qa/en/): real photos, product screens on devices, brand-coloured circles around photos, round icon badges.
+- Photos are Unsplash (free licence); the list and credits live in `src/components/landing/photos.ts`.
+- The phone screens are HTML redrawn from the real Expo screens (`DriverRouteScreen`, `ParentHomeScreen`), so they stay sharp and only show shipped features. The old AI-generated mockup images (garbled map labels, a "Start Navigation" button the app does not have) and the empty dashboard screenshot were deleted. Update the coded screens if the app UI changes.
+- Removed `HeroRouteMap` (the hero is now a photo).
 
 ---
 
