@@ -5,6 +5,7 @@ import { AppDownloadButton } from '@/components/landing/AppDownloadButton'
 import { AppShowcase } from '@/components/landing/AppShowcase'
 import { DriverAppScreen } from '@/components/landing/DriverAppScreen'
 import { ParentAppScreen } from '@/components/landing/ParentAppScreen'
+import { Reveal } from '@/components/landing/Reveal'
 import { SectionHeading } from '@/components/landing/SectionHeading'
 import { PHOTOS } from '@/components/landing/photos'
 
@@ -25,7 +26,7 @@ const APPS: {
       { icon: Radio, text: 'Shares the bus location every 10 seconds' },
       { icon: MessageSquare, text: 'Messages from the school office' },
     ],
-    showcase: { photo: PHOTOS.driver, objectPosition: '70% 50%', phone: <DriverAppScreen />, phoneSide: 'left' },
+    showcase: { photo: PHOTOS.driver, objectPosition: '60% 50%', phone: <DriverAppScreen />, phoneSide: 'left' },
   },
   {
     role: 'For parents',
@@ -37,17 +38,19 @@ const APPS: {
       { icon: BellRing, text: 'A notification when their child boards or is marked absent' },
       { icon: Megaphone, text: 'Announcements from the school and the driver' },
     ],
-    showcase: { photo: PHOTOS.parent, objectPosition: '12% 40%', phone: <ParentAppScreen />, phoneSide: 'right' },
+    showcase: { photo: PHOTOS.parent, objectPosition: '55% 62%', phone: <ParentAppScreen />, phoneSide: 'left' },
   },
 ]
 
 export function MobileAppsSection() {
   return (
     <section id="apps" className="mx-auto max-w-6xl scroll-mt-16 px-4 py-16 sm:px-6 md:py-24">
-      <SectionHeading
-        title="Apps for drivers and parents"
-        intro="Free for drivers and parents. Coming soon to the App Store and Google Play."
-      />
+      <Reveal>
+        <SectionHeading
+          title="Apps for drivers and parents"
+          intro="Free for drivers and parents. Coming soon to the App Store and Google Play."
+        />
+      </Reveal>
 
       <div className="space-y-20 md:space-y-16">
         {APPS.map((app, i) => (
@@ -55,7 +58,7 @@ export function MobileAppsSection() {
             <div className={cn(i % 2 === 1 && 'lg:order-2')}>
               <AppShowcase {...app.showcase} />
             </div>
-            <div className={cn(i % 2 === 1 && 'lg:order-1')}>
+            <Reveal delay={0.1} className={cn(i % 2 === 1 && 'lg:order-1')}>
               <p className="text-sm font-semibold text-primary">{app.role}</p>
               <h3 className="mt-2 text-balance text-2xl font-bold tracking-tight text-primary md:text-3xl">{app.title}</h3>
               <p className="mt-3 text-base leading-relaxed text-muted-foreground">{app.desc}</p>
@@ -69,12 +72,13 @@ export function MobileAppsSection() {
                   </li>
                 ))}
               </ul>
-            </div>
+            </Reveal>
           </div>
         ))}
       </div>
 
-      <div className="mt-16 flex flex-col gap-4 rounded-2xl bg-muted/50 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
+      <Reveal className="mt-16">
+      <div className="flex flex-col gap-4 rounded-2xl bg-muted/50 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-[15px] text-foreground">
           <span className="font-semibold">Parent or driver?</span>{' '}
           <span className="text-muted-foreground">Your school will send you a personal invite link.</span>
@@ -91,6 +95,7 @@ export function MobileAppsSection() {
           </AppDownloadButton>
         </div>
       </div>
+      </Reveal>
     </section>
   )
 }

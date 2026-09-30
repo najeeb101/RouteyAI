@@ -1,5 +1,6 @@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { ContactLink } from '@/components/landing/ContactLink'
+import { Reveal } from '@/components/landing/Reveal'
 
 export const FAQS = [
   {
@@ -52,7 +53,7 @@ export const FAQS = [
 export function Faq() {
   return (
     <section id="faqs" className="scroll-mt-16 border-t border-border bg-muted/50">
-      <div className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-16 sm:px-6 md:flex-row md:gap-16 md:py-24">
+      <Reveal className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-16 sm:px-6 md:flex-row md:gap-16 md:py-24">
         <div className="shrink-0 md:w-[36%]">
           <h2 className="text-3xl font-bold tracking-tight text-primary md:text-4xl">Frequently asked questions</h2>
           <p className="mt-3 text-base leading-relaxed text-muted-foreground">
@@ -70,7 +71,7 @@ export function Faq() {
             </AccordionItem>
           ))}
         </Accordion>
-      </div>
+      </Reveal>
     </section>
   )
 }

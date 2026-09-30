@@ -9,6 +9,7 @@ import { Pricing } from '@/components/landing/Pricing'
 import { Faq, FAQS } from '@/components/landing/Faq'
 import { FinalCta } from '@/components/landing/FinalCta'
 import { Footer } from '@/components/landing/Footer'
+import { Reveal } from '@/components/landing/Reveal'
 
 export const metadata: Metadata = {
   title: { absolute: 'RouteyAI — School Bus Route Planning and Live Tracking in Qatar' },
@@ -60,7 +61,9 @@ export default function HomePage() {
         <HowItWorks />
         <MobileAppsSection />
         <SafetyPrivacy />
-        <Pricing />
+        <Reveal>
+          <Pricing />
+        </Reveal>
         <Faq />
         <FinalCta />
       </main>

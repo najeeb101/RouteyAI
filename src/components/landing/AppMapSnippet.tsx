@@ -1,13 +1,21 @@
-/** Small street-map drawing used inside the phone mockups: blocks, roads, a park and one route. */
+'use client'
+
+import { motion } from 'framer-motion'
+
+/** Small street-map drawing used inside the phone mockups: blocks, roads, a park, one route and a moving bus. */
 export function AppMapSnippet({
   route,
   stops,
   bus,
+  instant = false,
   home,
 }: {
   route: string
   stops: [number, number][]
-  bus: [number, number]
+  /** Bus position; pass arrays of keyframes to move it along the route. */
+  bus: { x: number | number[]; y: number | number[] }
+  /** Jump to the new position instead of animating (used when a loop restarts). */
+  instant?: boolean
   home?: [number, number]
 }) {
   return (
@@ -36,10 +44,14 @@ export function AppMapSnippet({
       ))}
       {home && <circle cx={home[0]} cy={home[1]} r="6" className="fill-warning stroke-white" strokeWidth="2.5" />}
       {/* Bus */}
-      <g transform={`translate(${bus[0]} ${bus[1]})`}>
+      <motion.g
+        initial={false}
+        animate={{ x: bus.x, y: bus.y }}
+        transition={instant ? { duration: 0 } : { duration: 1.4, ease: 'easeInOut' }}
+      >
         <rect x="-15" y="-8" width="30" height="16" rx="5" className="fill-primary" />
         <text y="3.5" textAnchor="middle" className="fill-white text-[8px] font-extrabold">BUS 3</text>
-      </g>
+      </motion.g>
     </svg>
   )
 }

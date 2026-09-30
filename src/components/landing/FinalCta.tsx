@@ -1,5 +1,6 @@
 import { Check } from 'lucide-react'
 import { DemoRequestForm } from '@/components/landing/DemoRequestForm'
+import { Reveal } from '@/components/landing/Reveal'
 import { SectionHeading } from '@/components/landing/SectionHeading'
 
 const DEMO_POINTS = [
@@ -16,7 +17,7 @@ export function FinalCta() {
       <span aria-hidden="true" className="absolute right-8 top-8 -z-10 hidden h-10 w-10 rounded-full bg-warning lg:block" />
       <span aria-hidden="true" className="absolute right-24 top-8 -z-10 hidden h-10 w-10 rounded-full bg-white lg:block" />
       <div className="mx-auto grid max-w-6xl items-start gap-10 px-4 py-16 sm:px-6 md:py-24 lg:grid-cols-[1fr_1.1fr] lg:gap-16">
-        <div>
+        <Reveal>
           <SectionHeading
             inverted
             title="Book a demo"
@@ -32,11 +33,11 @@ export function FinalCta() {
               </li>
             ))}
           </ul>
-        </div>
+        </Reveal>
 
-        <div className="rounded-lg bg-card p-5 shadow-lg sm:p-7">
+        <Reveal from="right" delay={0.1} className="rounded-lg bg-card p-5 shadow-lg sm:p-7">
           <DemoRequestForm />
-        </div>
+        </Reveal>
       </div>
     </section>
   )

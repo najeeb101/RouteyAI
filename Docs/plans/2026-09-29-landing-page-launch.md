@@ -44,9 +44,9 @@ The first rebuild had 12 sections and read as a generic AI-generated template (n
 | # | Section | Component | Notes |
 |---|---|---|---|
 | 1 | Nav | `LandingNav` | How it works, Drivers & parents, Pricing, FAQ · Log in · **Book a demo** · mobile menu |
-| 2 | Hero | `Hero` | Says what the product does; full-width Doha photo under a navy overlay |
+| 2 | Hero | `Hero`, `WordReveal`, `HeroRouteMap` | Says what the product does; headline animates in word by word (CSS only); animated sample route map |
 | 3 | How it works | `HowItWorks`, `OptimizeDemo` | Four steps beside the route-planner demo (sample addresses) |
-| 4 | Drivers & parents | `MobileAppsSection`, `AppShowcase`, `DriverAppScreen`, `ParentAppScreen` | Photo plus coded phone screen for each app; "Parent or driver?" row with Log in / Get the app |
+| 4 | Drivers & parents | `MobileAppsSection`, `AppShowcase`, `DriverAppScreen`, `ParentAppScreen` | Photo plus a live coded phone screen for each app (driver checks a student in; parent ETA counts down, then the boarding notification arrives); "Parent or driver?" row with Log in / Get the app |
 | 5 | Student data and privacy | `SafetyPrivacy` | Per-school isolation (RLS), role-scoped access; links to `/privacy`; students photo |
 | 6 | Pricing | `Pricing` | Plan sizes plus one "Included in every plan" list |
 | 7 | FAQ | `Faq` | Every answer describes shipped features |
@@ -57,11 +57,11 @@ Rules for this page:
 - `/`, `/privacy` and `/terms` always render in the light brand theme (`forcedTheme` in `src/components/theme-provider.tsx`).
 - Plain section headings ("How it works", "Pricing"). No eyebrow labels, slogans or em dashes in copy.
 - Lead with what schools get; don't pitch "AI".
-- Removed: `LiveBoard`, `ProblemOutcome`, `ProductShot` (its screenshot showed an empty dashboard), `Features` and its animated visuals, `WordReveal`, `Reveal`.
+- Removed: `LiveBoard`, `ProblemOutcome`, `ProductShot` (its screenshot showed an empty dashboard), `Features` and its animated visuals.
+- Animations (restored 2026-09-30 at the user's request): hero map and word-by-word headline, scroll reveals (`Reveal`, a plain IntersectionObserver + CSS, far cheaper than Framer Motion components), phone parallax, nav scroll-progress bus, live phone screens (`useStepLoop`). All respect reduced motion. Keep new animations off the hydration path: the Framer Motion version of `Reveal` dropped Lighthouse performance to 63.
 - Visual style (2026-09-30) takes cues from Qatar Post's [Connected](https://connected.qa/en/): real photos, product screens on devices, brand-coloured circles around photos, round icon badges.
-- Photos are Unsplash (free licence); the list and credits live in `src/components/landing/photos.ts`.
+- Photos are AI-generated for Qatar (Higgsfield, Nano Banana Pro, approved by the user 2026-09-30); see `src/components/landing/photos.ts`. Replace with real photos from pilot schools when available.
 - The phone screens are HTML redrawn from the real Expo screens (`DriverRouteScreen`, `ParentHomeScreen`), so they stay sharp and only show shipped features. The old AI-generated mockup images (garbled map labels, a "Start Navigation" button the app does not have) and the empty dashboard screenshot were deleted. Update the coded screens if the app UI changes.
-- Removed `HeroRouteMap` (the hero is now a photo).
 
 ---
 

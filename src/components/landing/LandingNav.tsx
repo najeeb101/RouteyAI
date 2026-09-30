@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { motion, useReducedMotion, useScroll, useSpring, useTransform } from 'framer-motion'
 import { Menu, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { RouteyLogo } from '@/components/RouteyLogo'
@@ -16,6 +17,10 @@ const NAV_LINKS = [
 export function LandingNav() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  const reduceMotion = useReducedMotion()
+  const { scrollYProgress } = useScroll()
+  const progress = useSpring(scrollYProgress, { stiffness: 200, damping: 30, mass: 0.3 })
+  const busLeft = useTransform(progress, v => `${Math.max(v * 100, 1.5)}%`)
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8)
@@ -78,6 +83,17 @@ export function LandingNav() {
           </button>
         </div>
       </div>
+
+      {/* Scroll progress drawn as a route line with a bus at its head */}
+      {!reduceMotion && (
+        <div aria-hidden="true" className="absolute inset-x-0 -bottom-px h-[2px]">
+          <motion.div className="h-full origin-left bg-primary" style={{ scaleX: progress }} />
+          <motion.span
+            className="absolute top-1/2 block h-2 w-3.5 -translate-x-full -translate-y-1/2 rounded-[3px] bg-primary ring-2 ring-background"
+            style={{ left: busLeft }}
+          />
+        </div>
+      )}
 
       {menuOpen && (
         <div id="mobile-menu" className="border-t border-border bg-background px-4 pb-4 pt-2 md:hidden">

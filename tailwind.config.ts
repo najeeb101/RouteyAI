@@ -102,12 +102,22 @@ const config: Config = {
   					transform: 'scale(2.4)',
   					opacity: '0'
   				}
+  			},
+  			'word-up': {
+  				from: { transform: 'translateY(105%)' },
+  				to: { transform: 'translateY(0)' }
+  			},
+  			'fade-up': {
+  				from: { opacity: '0', transform: 'translateY(16px)' },
+  				to: { opacity: '1', transform: 'translateY(0)' }
   			}
   		},
   		animation: {
   			'accordion-down': 'accordion-down 0.2s ease-out',
   			'accordion-up': 'accordion-up 0.2s ease-out',
   			'pulse-ring': 'pulse-ring 1.6s cubic-bezier(0.215, 0.61, 0.355, 1) infinite',
+  			'word-up': 'word-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) both',
+  			'fade-up': 'fade-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) both',
   		}
   	}
   },

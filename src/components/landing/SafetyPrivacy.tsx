@@ -1,6 +1,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { BellRing, Bus, Building2, UserRound, type LucideIcon } from 'lucide-react'
+import { Reveal } from '@/components/landing/Reveal'
 import { SectionHeading } from '@/components/landing/SectionHeading'
 import { PHOTOS } from '@/components/landing/photos'
 
@@ -32,10 +33,13 @@ export function SafetyPrivacy() {
     <section id="safety" className="scroll-mt-16 border-y border-border bg-muted/50">
       <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 py-16 sm:px-6 md:py-24 lg:grid-cols-[1.1fr_1fr] lg:gap-16">
         <div>
-          <SectionHeading title="Student data and privacy" intro="Everyone sees only what they need for their role." />
+          <Reveal>
+            <SectionHeading title="Student data and privacy" intro="Everyone sees only what they need for their role." />
+          </Reveal>
           <ul className="space-y-6">
-            {POINTS.map(({ icon: Icon, title, desc }) => (
-              <li key={title} className="flex gap-4">
+            {POINTS.map(({ icon: Icon, title, desc }, i) => (
+              <li key={title}>
+                <Reveal delay={i * 0.08} className="flex gap-4">
                 <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
                   <Icon size={19} />
                 </span>
@@ -43,6 +47,7 @@ export function SafetyPrivacy() {
                   <h3 className="text-base font-semibold text-foreground">{title}</h3>
                   <p className="mt-1 text-[15px] leading-relaxed text-muted-foreground">{desc}</p>
                 </div>
+                </Reveal>
               </li>
             ))}
           </ul>
@@ -55,7 +60,7 @@ export function SafetyPrivacy() {
           </p>
         </div>
 
-        <div className="relative mx-auto w-full max-w-md lg:max-w-none">
+        <Reveal from="right" className="relative mx-auto w-full max-w-md lg:max-w-none">
           <div aria-hidden="true" className="absolute -right-3 -top-3 hidden h-full w-full rounded-[28px] border-2 border-primary/15 sm:block" />
           <div className="relative aspect-[4/5] overflow-hidden rounded-[28px]">
             <Image
@@ -68,7 +73,7 @@ export function SafetyPrivacy() {
           </div>
           <span aria-hidden="true" className="absolute -left-5 top-12 h-12 w-12 rounded-full bg-warning" />
           <span aria-hidden="true" className="absolute -bottom-4 right-16 h-8 w-8 rounded-full bg-accent" />
-        </div>
+        </Reveal>
       </div>
     </section>
   )

@@ -1,26 +1,18 @@
 /**
- * Landing-page photos. All are from Unsplash under the Unsplash License (free for commercial use,
- * no attribution required); photographers are credited here anyway.
+ * Landing-page photos. These are AI-generated (Higgsfield, Nano Banana Pro, 2026-09-30) to show school transport
+ * in Qatar; the people in them are not real. Replace them with real photos of pilot schools when available.
  */
 export const PHOTOS = {
-  doha: {
-    src: '/assets/photos/doha-dhows.jpg',
-    alt: 'Traditional dhows flying the Qatari flag in Doha Bay, with the West Bay skyline behind',
-    credit: 'Rowen Smith — https://unsplash.com/photos/bL5GFVYyJC4',
-  },
   driver: {
-    src: '/assets/photos/bus-driver.jpg',
-    alt: 'A bus driver at the wheel, checking his mirror',
-    credit: 'Aji Maulidio Indra Rukmana — https://unsplash.com/photos/ATudihKlWb8',
+    src: '/assets/photos/driver-doha.jpg',
+    alt: 'A school bus driver in Doha checking the phone mounted on his dashboard, with students on board',
   },
   parent: {
-    src: '/assets/photos/parent-checking-phone.jpg',
-    alt: 'A father at his desk checking his phone',
-    credit: 'Amina Atar — https://unsplash.com/photos/oJ4E_Vm5HaI',
+    src: '/assets/photos/parent-at-gate.jpg',
+    alt: 'A mother in an abaya checks her phone at the villa gate while her son waits for the school bus',
   },
   students: {
-    src: '/assets/photos/kids-walking-to-school.jpg',
-    alt: 'Young students with backpacks walking together on a sunny morning',
-    credit: 'note thanun — https://unsplash.com/photos/hQXmjNi2baA',
+    src: '/assets/photos/students-boarding.jpg',
+    alt: 'Students with backpacks boarding a yellow school bus on a residential street, helped by a bus attendant',
   },
 } as const
