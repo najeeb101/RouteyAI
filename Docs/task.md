@@ -11,7 +11,7 @@ Mobile: Expo (React Native) | React Native styles | Mapbox RN | EAS
 - Nearly done: Phase 11 (custom domain left).
 - Landing page redesign on branch `landing-redesign` (not deployed yet): photo hero with live cards, scroll-story "How it works", light and dark mode, coded app screens. Merge to `main` to deploy.
 - In progress: Phase 13 — landing page live at https://routeyai.vercel.app; Supabase project paused; launch placeholders in `src/lib/siteConfig.ts`.
-- Phase 14 (parent and driver app upgrade) built on `landing-redesign`; migration `0013` not yet applied to Supabase.
+- Phase 14 (parent and driver app upgrade) built on `landing-redesign`; migrations `0013` and `0014` (RLS fixes, see Docs/Claude.md §5) not yet applied to Supabase.
 - Not started: Phase 12 (store submission).
 - Loose end: `mobile/src/components/route/LiveMapPreview.tsx` still reads `mobile/src/data/demoRoute.ts`.
 
@@ -188,6 +188,11 @@ Full plan: [plans/2026-10-01-parent-driver-apps.md](plans/2026-10-01-parent-driv
 - [x] Driver: students staying home on Home and Route; they count as done for the stop
 - [x] Driver: trip state in context, End route confirmation, end-of-route summary
 - [x] Landing page phones redrawn from the new screens on real OpenStreetMap close-ups (`build.mjs` → `phone-*.webp`, `appMapData.ts`)
-- [ ] Apply `0013` to Supabase (`pnpm db:push`) after the project is restored
-- [ ] Test on a real phone: parent reports an absence → driver sees it; delay notice push; end-of-route summary
+- [x] Local test stack: `supabase/config.toml` added; `pnpm db:reset` now replays all migrations and the seed (seeded users can sign in)
+- [x] `0014_fix_rls.sql`: policy recursion (parent/driver apps could not load), missing school_admin role checks, invite listing, `set_bus_active()`
+- [ ] Apply `0013` and `0014` to Supabase (`pnpm db:push`) after the project is restored
+- [x] Tested on an Android emulator against the local stack (2026-10-01): parent (two children, switch, report and cancel absence, history, alerts, account, live map following GPS) and driver (start route, GPS every 10 s, delay notice, check-in with a parent-reported absence, end-of-route summary, sign out)
+- [x] Fixes from that test: Android build (`@rnmapbox/maps` 10.0.12 → 10.1.33 and `RNMapboxMapsImpl: mapbox`), seed users could not sign in, app now stays signed in, dev shortcuts only in dev builds, Start route hung when location was already allowed, stale GPS shown as live, ETA now follows the remaining stops, keyboard covered the absence sheet
+- [ ] **Background location**: GPS stops as soon as the driver's app is in the background (screen locked or another app open). Needs `expo-location` background updates with a foreground service, "Allow all the time" and a Play Store declaration
+- [ ] Test on a real phone with push notifications (needs an EAS build)
 - [ ] School admin dashboard: list absence reports

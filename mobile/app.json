@@ -33,6 +33,7 @@
       [
         "@rnmapbox/maps",
         {
+          "RNMapboxMapsImpl": "mapbox",
           "RNMapboxMapsDownloadToken": "sk.eyJ1IjoibmFqZWViMTAxIiwiYSI6ImNtb2tkMHoycjAwNWUycHFsYjIyYjd5YXgifQ.LDmeEge6bCbzYacpS0Ns0w"
         }
       ]

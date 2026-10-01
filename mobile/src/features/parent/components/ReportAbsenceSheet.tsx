@@ -7,7 +7,7 @@ import { PrimaryButton } from '@/components/primitives/PrimaryButton'
 import { SheetLabel, SheetModal } from '@/components/primitives/SheetModal'
 import { ABSENCE_REASONS, type AbsenceReason, type AbsenceReport } from '@/lib/absence'
 import { colors } from '@/lib/colors'
-import { dayLabel, upcomingSchoolDays } from '@/lib/dates'
+import { dayLabel, dayPhrase, upcomingSchoolDays } from '@/lib/dates'
 import type { ParentChildProfile, TodayAttendance } from '@/features/parent/screens/useParentData'
 
 type ReportAbsenceSheetProps = {
@@ -76,7 +76,7 @@ export function ReportAbsenceSheet({ visible, onClose, items, initialChildId, re
             <Ionicons name="checkmark" size={34} color={colors.successMid} />
           </View>
           <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 16, color: colors.dark, textAlign: 'center' }}>
-            {child.firstName} is staying home {sent.length === 1 ? dayLabel(sent[0] ?? '', today).toLowerCase() : `on ${sent.length} days`}
+            {child.firstName} is staying home {sent.length === 1 ? dayPhrase(sent[0] ?? '', today) : `on ${sent.length} days`}
           </Text>
           <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 13, color: colors.muted, textAlign: 'center', lineHeight: 19 }}>
             The driver sees this on the route and won&apos;t wait at your stop. You can cancel it from Home or History until the day starts.

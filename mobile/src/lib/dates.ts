@@ -79,3 +79,9 @@ export function whenLabel(iso: string, today: string = localDateKey()): string {
   const day = localDateKey(new Date(iso))
   return day === today ? timeLabel(iso) : `${dayLabel(day, today)}, ${timeLabel(iso)}`
 }
+
+/** For sentences: "today", "tomorrow" or "on Sun 4 Oct". */
+export function dayPhrase(key: string, today: string = localDateKey()): string {
+  const label = dayLabel(key, today)
+  return label === 'Today' || label === 'Tomorrow' || label === 'Yesterday' ? label.toLowerCase() : `on ${label}`
+}

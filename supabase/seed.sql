@@ -189,6 +189,30 @@ BEGIN
 END $$;
 
 -- ─────────────────────────────────────────────
+-- Make the seeded users able to sign in.
+-- Supabase Auth only finds users with the default instance_id, fails on NULL token columns,
+-- and expects an email identity per user. Without this the demo credentials above are rejected.
+-- ─────────────────────────────────────────────
+UPDATE auth.users SET
+  instance_id                = '00000000-0000-0000-0000-000000000000',
+  confirmation_token         = COALESCE(confirmation_token, ''),
+  recovery_token             = COALESCE(recovery_token, ''),
+  email_change               = COALESCE(email_change, ''),
+  email_change_token_new     = COALESCE(email_change_token_new, ''),
+  email_change_token_current = COALESCE(email_change_token_current, ''),
+  phone_change               = COALESCE(phone_change, ''),
+  phone_change_token         = COALESCE(phone_change_token, ''),
+  reauthentication_token     = COALESCE(reauthentication_token, '')
+WHERE instance_id IS NULL;
+
+INSERT INTO auth.identities (id, user_id, provider_id, provider, identity_data, last_sign_in_at, created_at, updated_at)
+SELECT gen_random_uuid(), u.id, u.id::TEXT, 'email',
+       jsonb_build_object('sub', u.id::TEXT, 'email', u.email, 'email_verified', true),
+       NOW(), NOW(), NOW()
+FROM auth.users u
+WHERE NOT EXISTS (SELECT 1 FROM auth.identities i WHERE i.user_id = u.id AND i.provider = 'email');
+
+-- ─────────────────────────────────────────────
 -- Seed demo invites (for testing the invite flow)
 -- ─────────────────────────────────────────────
 INSERT INTO invites(code, role, school_id, bus_id, created_by, expires_at)

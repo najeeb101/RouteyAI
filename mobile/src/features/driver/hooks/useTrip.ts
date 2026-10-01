@@ -37,12 +37,15 @@ export function useTrip(busId: string | null) {
     setBusy(true)
     setGpsError(null)
     try {
-      const { status: permission } = await Location.requestForegroundPermissionsAsync()
+      // Only ask when not granted yet: on some Android versions the request never settles if it was already granted.
+      const current = await Location.getForegroundPermissionsAsync()
+      const permission = current.granted ? current.status : (await Location.requestForegroundPermissionsAsync()).status
       if (permission !== 'granted') {
         setGpsError('Allow location access so parents can see the bus. You can change this in your phone settings.')
         return
       }
-      const { error } = await supabase.from('buses').update({ is_active: true }).eq('id', busId)
+      // Drivers can't update buses directly; this RPC only touches their own bus (0014_fix_rls.sql).
+      const { error } = await supabase.rpc('set_bus_active', { p_active: true })
       if (error) {
         setGpsError('Could not start the route. Check your connection and try again.')
         return
@@ -50,11 +53,8 @@ export function useTrip(busId: string | null) {
       setStartedAt(new Date())
       setEndedAt(null)
       setStatus('active')
-      try {
-        await sendLocation()
-      } catch {
-        setGpsError('Could not get your location yet. Trying again every 10 seconds.')
-      }
+      // The first GPS fix can take a while (or wait on a system prompt); don't hold the button on it.
+      sendLocation().catch(() => setGpsError('Could not get your location yet. Trying again every 10 seconds.'))
     } finally {
       setBusy(false)
     }
@@ -64,7 +64,7 @@ export function useTrip(busId: string | null) {
     if (!busId || busy) return
     setBusy(true)
     try {
-      const { error } = await supabase.from('buses').update({ is_active: false }).eq('id', busId)
+      const { error } = await supabase.rpc('set_bus_active', { p_active: false })
       if (error) {
         setGpsError('Could not end the route. Check your connection and try again.')
         return

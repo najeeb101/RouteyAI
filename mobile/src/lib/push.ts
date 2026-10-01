@@ -77,7 +77,9 @@ export async function clearPushToken(): Promise<boolean> {
 
 /** Whether the signed-in account currently has a push token saved. */
 export async function hasPushToken(): Promise<boolean> {
-  const { data, error } = await supabase.from('user_roles').select('push_token').maybeSingle()
+  const { data: auth } = await supabase.auth.getUser()
+  if (!auth.user) return false
+  const { data, error } = await supabase.from('user_roles').select('push_token').eq('user_id', auth.user.id).maybeSingle()
   if (error) return false
   return Boolean((data as { push_token?: string | null } | null)?.push_token)
 }

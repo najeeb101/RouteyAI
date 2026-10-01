@@ -61,7 +61,7 @@ export function DriverRouteScreen() {
       <ScreenHeader
         back
         title={profile?.routeName ?? 'Route'}
-        subtitle={`${profile?.busName ?? 'No bus assigned'} · Tap Board or Absent at each stop`}
+        subtitle={`${stops.length} stops · Tap Board or Absent at each stop`}
       />
 
       {error && (
@@ -75,7 +75,7 @@ export function DriverRouteScreen() {
         {/* Map */}
         {!loading && mapCoordinates.length > 0 && (
           <View style={{ height: 240, borderBottomWidth: 1, borderBottomColor: colors.border }}>
-            <Mapbox.MapView style={{ flex: 1 }} styleURL={Mapbox.StyleURL.Street}>
+            <Mapbox.MapView style={{ flex: 1 }} styleURL={Mapbox.StyleURL.Street} scaleBarEnabled={false}>
               {mapBounds ? (
                 <Mapbox.Camera bounds={{ ...mapBounds, paddingTop: 30, paddingBottom: 70, paddingLeft: 30, paddingRight: 30 }} animationDuration={0} />
               ) : (

@@ -50,30 +50,35 @@ CREATE POLICY "platform_admin: full access on absence_reports" ON absence_report
   USING (get_user_role() = 'platform_admin')
   WITH CHECK (get_user_role() = 'platform_admin');
 
+-- Role check matters here: parents and drivers also have a school_id, and reasons can be health information.
 CREATE POLICY "school_admin: read own school absence reports" ON absence_reports FOR SELECT
-  USING (school_id = get_user_school_id());
+  USING (get_user_role() = 'school_admin' AND school_id = get_user_school_id());
+
+-- auth_driver_student_ids() / auth_parent_student_ids() come from 0014_fix_rls.sql; they are created here
+-- too so this migration also works on its own.
+CREATE OR REPLACE FUNCTION auth_driver_student_ids()
+RETURNS SETOF UUID
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public
+AS $$ SELECT s.id FROM students s JOIN buses b ON b.id = s.bus_id WHERE b.driver_id = auth.uid(); $$;
+
+CREATE OR REPLACE FUNCTION auth_parent_student_ids()
+RETURNS SETOF UUID
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public
+AS $$ SELECT id FROM students WHERE parent_id = auth.uid(); $$;
 
 CREATE POLICY "driver: read absence reports for own bus" ON absence_reports FOR SELECT
-  USING (student_id IN (
-    SELECT id FROM students WHERE bus_id IN (SELECT id FROM buses WHERE driver_id = auth.uid())
-  ));
+  USING (student_id IN (SELECT auth_driver_student_ids()));
 
 CREATE POLICY "parent: read own child's absence reports" ON absence_reports FOR SELECT
-  USING (student_id IN (SELECT id FROM students WHERE parent_id = auth.uid()));
+  USING (student_id IN (SELECT auth_parent_student_ids()));
 
 -- Parents can report today or a later day, and take back a report that hasn't passed yet.
 -- CURRENT_DATE is UTC, which is never ahead of the date in Qatar (UTC+3).
 CREATE POLICY "parent: report own child absent" ON absence_reports FOR INSERT
-  WITH CHECK (
-    student_id IN (SELECT id FROM students WHERE parent_id = auth.uid())
-    AND date >= CURRENT_DATE
-  );
+  WITH CHECK (student_id IN (SELECT auth_parent_student_ids()) AND date >= CURRENT_DATE);
 
 CREATE POLICY "parent: cancel own child's upcoming absence" ON absence_reports FOR DELETE
-  USING (
-    student_id IN (SELECT id FROM students WHERE parent_id = auth.uid())
-    AND date >= CURRENT_DATE
-  );
+  USING (student_id IN (SELECT auth_parent_student_ids()) AND date >= CURRENT_DATE);
 
 -- Drivers see new reports on the route without refreshing.
 ALTER PUBLICATION supabase_realtime ADD TABLE absence_reports;

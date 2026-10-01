@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, TouchableOpacity, View } from 'react-native'
+import { KeyboardAvoidingView, Modal, Pressable, ScrollView, Text, TouchableOpacity, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
 import { colors } from '@/lib/colors'
@@ -20,7 +20,8 @@ export function SheetModal({ visible, title, subtitle, onClose, children, footer
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent>
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      {/* A translucent-status-bar modal doesn't resize for the keyboard on Android, so pad on both platforms. */}
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
         <View style={{ flex: 1, justifyContent: 'flex-end' }}>
           <Pressable
             onPress={onClose}

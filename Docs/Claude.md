@@ -383,6 +383,18 @@ CREATE POLICY "School admin reads own school absence reports" ON absence_reports
 -- set_push_token(p_token TEXT)
 ```
 
+### RLS fixes (0014_fix_rls.sql, 2026-10-01)
+
+Found while testing the apps against a local database. The policies above show the intent; 0014 is what runs:
+- Parent and driver policies use SECURITY DEFINER helpers (`auth_driver_bus_ids()`, `auth_parent_bus_ids()`,
+  `auth_parent_student_ids()`, `auth_driver_student_ids()`). The old buses ↔ students subqueries recursed, so every
+  parent and driver query failed with "infinite recursion detected in policy".
+- Every `school_admin: …` policy also checks `get_user_role() = 'school_admin'`. Parents and drivers have a
+  `school_id` too, so before this they could read all roles in the school and create school_admin invites.
+- Invites can't be listed any more; the invite page calls `get_invite(code)`.
+- Drivers set their bus active or inactive with `set_bus_active(p_active)` instead of updating `buses`.
+- Announcements: parents and drivers see school-wide ones plus their own bus's, not other buses'.
+
 ### RLS Summary
 - **Platform Admin**: Full access to all tables.
 - **School Admin**: CRUD on their own school's data only (filtered by `school_id`).

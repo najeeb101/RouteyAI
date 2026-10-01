@@ -94,7 +94,7 @@ export default function LoginPage() {
     setLoading(true)
 
     const supabase = createClient()
-    const { error: authError } = await supabase.auth.signInWithPassword({ email, password })
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({ email, password })
 
     if (authError) {
       setError(authError.message)
@@ -105,6 +105,7 @@ export default function LoginPage() {
     const { data: roleRow } = await supabase
       .from('user_roles')
       .select('role')
+      .eq('user_id', authData.user.id)
       .maybeSingle()
 
     const role = roleRow?.role as Role | undefined

@@ -33,7 +33,7 @@ export function LoginScreen() {
     setError('')
     setLoading(true)
 
-    const { error: signInError } = await supabase.auth.signInWithPassword({
+    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
       email: email.trim(),
       password,
     })
@@ -46,6 +46,7 @@ export function LoginScreen() {
     const { data: roleData, error: roleErr } = await supabase
       .from('user_roles')
       .select('role')
+      .eq('user_id', signInData.user.id)
       .maybeSingle()
 
     setLoading(false)
@@ -245,7 +246,8 @@ export function LoginScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* ── Dev shortcuts (remove before production) ── */}
+          {/* ── Dev shortcuts: development builds only, never in store builds ── */}
+          {__DEV__ && (
           <View style={{ marginTop: 24 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 }}>
               <View style={{ flex: 1, height: 1, backgroundColor: 'rgba(255,255,255,0.08)' }} />
@@ -289,6 +291,7 @@ export function LoginScreen() {
               </TouchableOpacity>
             </View>
           </View>
+          )}
 
           <Text style={{ textAlign: 'center', fontSize: 11, color: 'rgba(255,255,255,0.2)', marginTop: 24, fontFamily: 'Inter_400Regular' }}>
             RouteyAI · Doha, Qatar

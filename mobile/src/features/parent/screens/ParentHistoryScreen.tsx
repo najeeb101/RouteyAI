@@ -117,7 +117,7 @@ export function ParentHistoryScreen() {
         ) : (
           <Card style={{ padding: 0, overflow: 'hidden' }}>
             {days.map((day, i) => (
-              <HistoryRow key={day.date} day={day} today={today} first={first} last={i === days.length - 1} />
+              <HistoryRow key={day.date} day={day} today={today} last={i === days.length - 1} />
             ))}
           </Card>
         )}
@@ -137,7 +137,7 @@ export function ParentHistoryScreen() {
   )
 }
 
-function HistoryRow({ day, today, first, last }: { day: HistoryDay; today: string; first: string; last: boolean }) {
+function HistoryRow({ day, today, last }: { day: HistoryDay; today: string; last: boolean }) {
   let icon: IconName = 'help-circle'
   let color: string = colors.muted
   let bg: string = colors.borderLight
@@ -160,7 +160,7 @@ function HistoryRow({ day, today, first, last }: { day: HistoryDay; today: strin
     color = colors.danger
     bg = colors.dangerBg
     title = 'Absent'
-    detail = `${first} wasn't at the stop · marked ${timeLabel(day.attendance.at)}`
+    detail = `Not at the stop · ${timeLabel(day.attendance.at)}`
   }
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 13, borderBottomWidth: last ? 0 : 1, borderBottomColor: colors.borderLight }}>

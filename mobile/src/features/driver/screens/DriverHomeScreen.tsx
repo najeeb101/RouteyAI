@@ -136,7 +136,7 @@ export function DriverHomeScreen() {
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 4 }}>
             <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.success }} />
             <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 12.5, color: colors.muted }}>
-              Sharing location with parents{trip.lastFixAt ? ` · last update ${timeLabel(trip.lastFixAt)}` : ''}
+              {trip.lastFixAt ? `Sharing location with parents · last update ${timeLabel(trip.lastFixAt)}` : 'Getting your location…'}
             </Text>
           </View>
         )}

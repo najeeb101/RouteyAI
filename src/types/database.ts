@@ -378,6 +378,12 @@ export interface Database {
       redeem_invite: { Args: { p_code: string; p_user_id: string }; Returns: Json }
       // 0013_absence_reports.sql
       set_push_token: { Args: { p_token: string | null }; Returns: undefined }
+      // 0014_fix_rls.sql
+      get_invite: {
+        Args: { p_code: string }
+        Returns: { code: string; role: InviteRole; school_id: string | null; expires_at: string; used_at: string | null }[]
+      }
+      set_bus_active: { Args: { p_active: boolean }; Returns: undefined }
       // 0005_admin_helpers.sql
       get_platform_stats: { Args: Record<PropertyKey, never>; Returns: Json }
       get_schools_with_admins: {

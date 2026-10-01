@@ -40,11 +40,9 @@ function ErrorCard({ message }: { message: string }) {
 export default async function InvitePage({ params }: Props) {
   const supabase = createClient()
 
-  const { data: invite } = await supabase
-    .from('invites')
-    .select('code, role, school_id, expires_at, used_at')
-    .eq('code', params.code)
-    .maybeSingle()
+  // get_invite() returns only this code; invites can't be listed (0014_fix_rls.sql).
+  const { data: rows } = await supabase.rpc('get_invite', { p_code: params.code })
+  const invite = rows?.[0]
 
   if (!invite) {
     return <ErrorCard message="This invite link is invalid or does not exist." />

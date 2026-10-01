@@ -46,6 +46,9 @@ export type ParentRoutePoint = {
 
 export type ParentBusLocation = LatLng & { at: string | null }
 
+/** The driver's phone sends a point every 10 seconds; older than this and the bus is not shown as live. */
+const LIVE_WINDOW_MS = 3 * 60 * 1000
+
 type StudentRow = {
   id: string
   name: string
@@ -113,7 +116,8 @@ export function useParentData() {
   const [announcements, setAnnouncements] = useState<ParentAnnouncement[]>([])
   const [routePoints, setRoutePoints] = useState<ParentRoutePoint[]>([])
   const [encodedPolyline, setEncodedPolyline] = useState<string | null>(null)
-  const [busLocation, setBusLocation] = useState<ParentBusLocation | null>(null)
+  const [lastLocation, setBusLocation] = useState<ParentBusLocation | null>(null)
+  const [now, setNow] = useState(() => Date.now())
   const [today, setToday] = useState(localDateKey)
   const etaAlertsSent = useRef(new Set<string>())
   const busNames = useRef(new Map<string, string>())
@@ -337,14 +341,21 @@ export function useParentData() {
   const status: ChildStatus = child ? statusFor(child.id) : 'waiting'
   const childPoint = child ? routePoints.find((p) => p.studentId === child.id) : undefined
 
-  const etaMinutes = useMemo(() => {
-    if (!busLocation || !childPoint || status !== 'waiting') return null
-    return etaMinutesBetween(busLocation, childPoint)
-  }, [busLocation, childPoint, status])
+  // Re-check every 30 seconds whether the last GPS point is still recent.
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 30_000)
+    return () => clearInterval(id)
+  }, [])
 
-  /** Stops the bus still has to make before this child's, from the waypoint nearest the bus. */
-  const stopsBefore = useMemo(() => {
-    if (!busLocation || !childPoint || status !== 'waiting' || routePoints.length === 0) return null
+  /** Only a recent point counts as the bus's live position (an old one would show yesterday's bus as "7 min away"). */
+  const busLocation = useMemo(() => {
+    if (!lastLocation?.at) return null
+    return now - Date.parse(lastLocation.at) < LIVE_WINDOW_MS ? lastLocation : null
+  }, [lastLocation, now])
+
+  /** Route waypoint nearest the bus, and the child's position in the route. */
+  const progress = useMemo(() => {
+    if (!busLocation || !childPoint || routePoints.length === 0) return null
     let nearest = 0
     let best = Infinity
     routePoints.forEach((p, i) => {
@@ -354,9 +365,28 @@ export function useParentData() {
         nearest = i
       }
     })
-    const childIndex = routePoints.indexOf(childPoint)
-    return Math.max(0, childIndex - nearest)
-  }, [busLocation, childPoint, routePoints, status])
+    return { nearest, childIndex: routePoints.indexOf(childPoint) }
+  }, [busLocation, childPoint, routePoints])
+
+  /** Minutes to the child's stop along the remaining stops (not straight-line, which stalls on looping routes). */
+  const etaMinutes = useMemo(() => {
+    if (!busLocation || !childPoint || status !== 'waiting' || !progress) return null
+    const { nearest, childIndex } = progress
+    if (childIndex <= nearest) return etaMinutesBetween(busLocation, childPoint)
+    let km = haversineKm(busLocation, routePoints[nearest] ?? childPoint)
+    for (let i = nearest; i < childIndex; i++) {
+      const a = routePoints[i]
+      const b = routePoints[i + 1]
+      if (a && b) km += haversineKm(a, b)
+    }
+    return Math.max(1, Math.round((km / 25) * 60))
+  }, [busLocation, childPoint, progress, routePoints, status])
+
+  /** Stops the bus still has to make before this child's, from the waypoint nearest the bus. */
+  const stopsBefore = useMemo(() => {
+    if (!progress || status !== 'waiting') return null
+    return Math.max(0, progress.childIndex - progress.nearest)
+  }, [progress, status])
 
   // Push "bus arriving in ~5 minutes" once per child per session.
   useEffect(() => {

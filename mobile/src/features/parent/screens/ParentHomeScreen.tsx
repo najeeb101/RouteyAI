@@ -12,7 +12,7 @@ import { ReportAbsenceSheet } from '@/features/parent/components/ReportAbsenceSh
 import { useParentContext } from '@/features/parent/context/ParentDataContext'
 import { reasonLabel } from '@/lib/absence'
 import { colors } from '@/lib/colors'
-import { dayLabel, greeting, timeLabel, whenLabel } from '@/lib/dates'
+import { dayLabel, dayPhrase, greeting, timeLabel, whenLabel } from '@/lib/dates'
 import { routes } from '@/lib/navigation/routes'
 
 type IconName = ComponentProps<typeof Ionicons>['name']
@@ -76,7 +76,7 @@ export function ParentHomeScreen() {
   }
 
   function confirmCancel(reportId: string, date: string) {
-    Alert.alert('Cancel this report?', `The driver will expect ${first} at the stop ${dayLabel(date, today).toLowerCase()}.`, [
+    Alert.alert('Cancel this report?', `The driver will expect ${first} at the stop ${dayPhrase(date, today)}.`, [
       { text: 'Keep it', style: 'cancel' },
       {
         text: 'Cancel report',
