@@ -199,4 +199,4 @@ Full plan: [plans/2026-10-01-parent-driver-apps.md](plans/2026-10-01-parent-driv
 - [x] Map style from the user's Google Maps reference: `mobile/src/lib/mapStyle.ts` (light and dark, follows the phone setting; `userInterfaceStyle: automatic` + `expo-system-ui`), landing maps re-rendered in the same palette with named places and Arabic names
 - [ ] Check the new app map style on a phone in light and dark (previewed with MapLibre; the emulator session had ended)
 - [ ] Test on a real phone with push notifications (needs an EAS build)
-- [ ] School admin dashboard: list absence reports
+- [x] School admin dashboard: Absences page (`/school/absences`: today, coming up, past 30 days)

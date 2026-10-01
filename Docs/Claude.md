@@ -117,6 +117,7 @@ routeyai/
 │   │   │   │   ├── page.tsx          # Overview
 │   │   │   │   ├── buses/page.tsx
 │   │   │   │   ├── students/page.tsx
+│   │   │   │   ├── absences/page.tsx # parent-reported absences
 │   │   │   │   ├── routes/page.tsx
 │   │   │   │   └── analytics/page.tsx
 │   │   │   ├── driver/               # Bus Driver pages

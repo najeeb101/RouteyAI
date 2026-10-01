@@ -8,6 +8,7 @@ const LABELS: Record<string, string> = {
   '/school': 'Overview',
   '/school/routes': 'Routes',
   '/school/students': 'Students',
+  '/school/absences': 'Absences',
   '/school/buses': 'Fleet',
   '/school/analytics': 'Analytics',
 }

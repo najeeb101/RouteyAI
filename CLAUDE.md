@@ -41,7 +41,7 @@ routeyai/
 │   │   ├── (auth)/           # login, signup, invite/[code]
 │   │   ├── (dashboard)/
 │   │   │   ├── admin/        # platform admin: overview, schools, analytics
-│   │   │   ├── school/       # school admin: overview, buses, students, routes, analytics
+│   │   │   ├── school/       # school admin: overview, buses, students, absences, routes, analytics
 │   │   │   ├── driver/       # web driver view
 │   │   │   └── parent/       # web parent view
 │   │   ├── privacy/, terms/  # legal pages
