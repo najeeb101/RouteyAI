@@ -46,7 +46,7 @@ mobile/
 - Shared UI lives in `components/primitives`, `components/navigation`, and `components/route`.
 - Driver and parent screens read live Supabase data (no demo data left).
 - Styling uses React Native styles with shared tokens in `lib/colors` (NativeWind is not installed).
-- The driver app sends GPS every 10 seconds while a route is active (`expo-location`).
+- The driver app sends GPS every 10 seconds while a route is active, also with the screen locked: `features/driver/gpsTask.ts` runs `expo-location` background updates (`expo-task-manager`) as an Android foreground service. It needs a native build (`npx expo run:android`), not Expo Go.
 - Push tokens are registered on launch (`expo-notifications`) and saved to `user_roles.push_token`.
 - `/login`, `/driver`, and `/parent` are the stable app paths used by navigation.
 

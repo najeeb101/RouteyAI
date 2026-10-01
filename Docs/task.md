@@ -5,14 +5,14 @@ Mobile: Expo (React Native) | React Native styles | Mapbox RN | EAS
 
 ---
 
-## Current Status Snapshot (2026-09-29)
+## Current Status Snapshot (2026-10-01)
 
 - Completed: Phases 1–10.
 - Nearly done: Phase 11 (custom domain left).
-- Landing page redesign on branch `landing-redesign` (not deployed yet): photo hero with live cards, scroll-story "How it works", light and dark mode, coded app screens. Merge to `main` to deploy.
+- Landing page redesign merged to `main` and deployed (2026-10-01).
 - In progress: Phase 13 — landing page live at https://routeyai.vercel.app; Supabase project paused; launch placeholders in `src/lib/siteConfig.ts`.
-- Phase 14 (parent and driver app upgrade) built on `landing-redesign`; migrations `0013` and `0014` (RLS fixes, see Docs/Claude.md §5) not yet applied to Supabase.
-- Not started: Phase 12 (store submission).
+- Phase 14 (parent and driver app upgrade) merged; migrations `0013` and `0014` (RLS fixes, see Docs/Claude.md §5) not yet applied to Supabase. After the merge, on `landing-redesign`: school admin Absences page, driver GPS with the screen locked, Mapbox secret out of git.
+- Not started: Phase 12 (store submission). Needs an Expo SDK upgrade first (16 KB page size).
 
 ## Phase 1: Project Setup and Landing Page
 
@@ -141,6 +141,8 @@ Mobile: Expo (React Native) | React Native styles | Mapbox RN | EAS
 - [x] Mapbox secret token out of git: `app.json`/`eas.json` → `RNMAPBOX_MAPS_DOWNLOAD_TOKEN` in `mobile/.env.local`, read by `mobile/app.config.js` (2026-10-01)
 - [ ] **Rotate the Mapbox secret token** — it sat in `app.json`/`eas.json` in the public repo since Phase 7, so it is still in git history
 - [ ] Public Mapbox `pk.` token for `EXPO_PUBLIC_MAPBOX_TOKEN` (the app uses the secret one locally until then); EAS secret `RNMAPBOX_MAPS_DOWNLOAD_TOKEN` for cloud builds
+- [ ] **Upgrade Expo SDK 51 → 53 or later before Play submission**: Google Play requires 16 KB memory page support for apps targeting Android 15+ (React Native 0.74 isn't; an Android 16 emulator warns "This app isn't 16 KB compatible") and a current target SDK. Re-test Mapbox and background GPS after the upgrade
+- [ ] Play Console: declare the location foreground service (`FOREGROUND_SERVICE_LOCATION`) with a short video of the driver starting a route
 - [ ] Configure EAS build profiles in `eas.json`
 - [ ] Add app icons and splash assets (`mobile/assets/`)
 - [ ] iOS bundle ID and signing setup
@@ -195,7 +197,8 @@ Full plan: [plans/2026-10-01-parent-driver-apps.md](plans/2026-10-01-parent-driv
 - [ ] Apply `0013` and `0014` to Supabase (`pnpm db:push`) after the project is restored
 - [x] Tested on an Android emulator against the local stack (2026-10-01): parent (two children, switch, report and cancel absence, history, alerts, account, live map following GPS) and driver (start route, GPS every 10 s, delay notice, check-in with a parent-reported absence, end-of-route summary, sign out)
 - [x] Fixes from that test: Android build (`@rnmapbox/maps` 10.0.12 → 10.1.33 and `RNMapboxMapsImpl: mapbox`), seed users could not sign in, app now stays signed in, dev shortcuts only in dev builds, Start route hung when location was already allowed, stale GPS shown as live, ETA now follows the remaining stops, keyboard covered the absence sheet
-- [ ] **Background location**: GPS stops as soon as the driver's app is in the background (screen locked or another app open). Needs `expo-location` background updates with a foreground service, "Allow all the time" and a Play Store declaration
+- [x] **Background location** (2026-10-01): `mobile/src/features/driver/gpsTask.ts` runs `expo-location` background updates (`expo-task-manager`) as an Android foreground service ("Route in progress" notification) / iOS background location. Only "while using the app" permission: no "Allow all the time", no `ACCESS_BACKGROUND_LOCATION`. A route still running when the app reopens comes back so it can be ended. Emulator: rows every 10 s for 90 s with the screen locked; force-close and reopen resumed the route
+- [ ] Check on a phone: End route stops the "Route in progress" notification and the GPS rows (the emulator ran out of memory before this was tested); one row per 10 s after reopening mid-route; iOS not tried yet
 - [x] Map style from the user's Google Maps reference: `mobile/src/lib/mapStyle.ts` (light and dark, follows the phone setting; `userInterfaceStyle: automatic` + `expo-system-ui`), landing maps re-rendered in the same palette with named places and Arabic names
 - [ ] Check the new app map style on a phone in light and dark (previewed with MapLibre; the emulator session had ended)
 - [ ] Test on a real phone with push notifications (needs an EAS build)

@@ -435,7 +435,7 @@ Numbering matches [task.md](task.md), which holds the live checklist.
 - **Progress indicator**: "X of Y students picked up" — always visible at the top
 - **Passenger manifest**: ordered list of all students with stop addresses
 - **Digital attendance**: tap to mark Boarded / Absent
-- **GPS broadcast**: "Start Route" sends the device location (`expo-location`) to `bus_locations` every 10 seconds; "Live" badge while active
+- **GPS broadcast**: "Start Route" sends the device location (`expo-location`) to `bus_locations` every 10 seconds, also with the screen locked (background task in `mobile/src/features/driver/gpsTask.ts`: an Android foreground service with a "Route in progress" notification, an iOS background location session; only "while using the app" permission). "Live" badge while active; a route still running when the app reopens comes back so it can be ended
 - **Bus capacity bar**: seats filled vs. total capacity (e.g. 18 / 40)
 - **Announcements**: send updates to parents on that route; receive School Admin alerts
 - Phase 14: running-late notice in one tap; students reported absent by parents count as done at their stop; end-of-route summary; Account tab

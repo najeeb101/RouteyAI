@@ -9,6 +9,7 @@ import { colors } from '@/lib/colors'
 import { routes } from '@/lib/navigation/routes'
 import { clearPushToken, hasPushToken, isPushOptedOut, setPushEnabled } from '@/lib/push'
 import { supabase } from '@/lib/supabase'
+import { stopBackgroundGps } from '@/features/driver/gpsTask'
 
 type IconName = ComponentProps<typeof Ionicons>['name']
 
@@ -68,6 +69,8 @@ export function AccountScreen({ role, name, email, sections, notificationHint }:
         style: 'destructive',
         onPress: async () => {
           await clearPushToken()
+          // A driver signing out mid-route: the GPS can't send without a session, so stop it.
+          await stopBackgroundGps().catch(() => {})
           await supabase.auth.signOut()
           router.replace(routes.login)
         },

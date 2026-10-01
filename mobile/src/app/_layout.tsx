@@ -7,6 +7,8 @@ import { useEffect } from 'react'
 import * as Notifications from 'expo-notifications'
 import { registerForPushNotifications } from '@/lib/push'
 import { supabase } from '@/lib/supabase'
+// Defines the driver's background GPS task; it has to exist before the OS hands it a location.
+import '@/features/driver/gpsTask'
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({

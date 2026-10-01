@@ -23,6 +23,15 @@
       "expo-router",
       "expo-secure-store",
       [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "RouteyAI shares the bus location with parents while your route is running.",
+          "isIosBackgroundLocationEnabled": true,
+          "isAndroidForegroundServiceEnabled": true,
+          "isAndroidBackgroundLocationEnabled": false
+        }
+      ],
+      [
         "expo-notifications",
         {
           "color": "#1E3A8A",
