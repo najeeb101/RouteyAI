@@ -194,5 +194,7 @@ Full plan: [plans/2026-10-01-parent-driver-apps.md](plans/2026-10-01-parent-driv
 - [x] Tested on an Android emulator against the local stack (2026-10-01): parent (two children, switch, report and cancel absence, history, alerts, account, live map following GPS) and driver (start route, GPS every 10 s, delay notice, check-in with a parent-reported absence, end-of-route summary, sign out)
 - [x] Fixes from that test: Android build (`@rnmapbox/maps` 10.0.12 → 10.1.33 and `RNMapboxMapsImpl: mapbox`), seed users could not sign in, app now stays signed in, dev shortcuts only in dev builds, Start route hung when location was already allowed, stale GPS shown as live, ETA now follows the remaining stops, keyboard covered the absence sheet
 - [ ] **Background location**: GPS stops as soon as the driver's app is in the background (screen locked or another app open). Needs `expo-location` background updates with a foreground service, "Allow all the time" and a Play Store declaration
+- [x] Map style from the user's Google Maps reference: `mobile/src/lib/mapStyle.ts` (light and dark, follows the phone setting; `userInterfaceStyle: automatic` + `expo-system-ui`), landing maps re-rendered in the same palette with named places and Arabic names
+- [ ] Check the new app map style on a phone in light and dark (previewed with MapLibre; the emulator session had ended)
 - [ ] Test on a real phone with push notifications (needs an EAS build)
 - [ ] School admin dashboard: list absence reports

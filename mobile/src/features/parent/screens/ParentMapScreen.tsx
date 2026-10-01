@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ElementRef } from 'react'
-import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native'
+import { ActivityIndicator, Text, TouchableOpacity, useColorScheme, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import Mapbox from '@rnmapbox/maps'
 import { Ionicons } from '@expo/vector-icons'
@@ -10,6 +10,7 @@ import { useParentContext } from '@/features/parent/context/ParentDataContext'
 import { colors } from '@/lib/colors'
 import { timeLabel } from '@/lib/dates'
 import { boundsOf, decodePolyline } from '@/lib/geo'
+import { mapStyleJSON, ROUTE_LINE } from '@/lib/mapStyle'
 
 Mapbox.setAccessToken(process.env.EXPO_PUBLIC_MAPBOX_TOKEN ?? '')
 
@@ -76,13 +77,15 @@ export function ParentMapScreen() {
     detail = 'Waiting for the next GPS update'
   }
 
-  const lineColor = child?.busColor ?? colors.primary
+  // The map follows the phone's light or dark setting (Google Maps-style palette, see lib/mapStyle).
+  const scheme = useColorScheme() === 'dark' ? 'dark' : 'light'
+  const lineColor = child?.busColor ?? ROUTE_LINE[scheme].line
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <Mapbox.MapView
         style={{ flex: 1 }}
-        styleURL={Mapbox.StyleURL.Street}
+        styleJSON={mapStyleJSON(scheme)}
         scaleBarEnabled={false}
         logoPosition={{ bottom: CARD_SPACE - 30, left: 12 }}
         attributionPosition={{ bottom: CARD_SPACE - 30, right: 12 }}
@@ -94,7 +97,7 @@ export function ParentMapScreen() {
 
         {line.length > 1 && (
           <Mapbox.ShapeSource id="route" shape={{ type: 'Feature', geometry: { type: 'LineString', coordinates: line }, properties: {} }}>
-            <Mapbox.LineLayer id="route-casing" style={{ lineColor: '#FFFFFF', lineWidth: 9, lineCap: 'round', lineJoin: 'round' }} />
+            <Mapbox.LineLayer id="route-casing" style={{ lineColor: ROUTE_LINE[scheme].casing, lineWidth: 9, lineCap: 'round', lineJoin: 'round' }} />
             <Mapbox.LineLayer id="route-line" aboveLayerID="route-casing" style={{ lineColor, lineWidth: 5, lineCap: 'round', lineJoin: 'round' }} />
           </Mapbox.ShapeSource>
         )}

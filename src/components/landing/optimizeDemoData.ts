@@ -21,6 +21,9 @@ export const MAP_HEIGHT = 400
 /** Real-world metres per map unit, for the scale bar. */
 export const METERS_PER_UNIT = 5.6
 
+/** Base map images (content-hashed file names). */
+export const MAP_IMAGES = {"light":"/assets/maps/aspire-light-c0dda3e0.webp","dark":"/assets/maps/aspire-dark-f5ca1098.webp"} as const
+
 export const SCHOOL: Point = {"x":259.9,"y":240.6}
 export const CLUSTER_COUNT = 3
 

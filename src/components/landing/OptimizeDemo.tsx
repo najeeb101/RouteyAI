@@ -17,6 +17,7 @@ import {
   ROUTE_PATHS,
   ROUTE_STARTS,
   SCHOOL,
+  MAP_IMAGES,
 } from '@/components/landing/optimizeDemoData'
 
 /** 0 add students · 1 plan routes · 2 invite drivers and parents · 3 run the route */
@@ -100,8 +101,8 @@ export function OptimizeDemo({ stage, inView }: { stage: PlannerStage; inView: b
 
       <div className="relative aspect-[540/400] bg-muted">
         {/* Base map: real streets from OpenStreetMap, drawn once per theme. Only the visible one is downloaded. */}
-        <Image src="/assets/maps/aspire-light.webp" alt="" fill sizes="(min-width: 1024px) 640px, 100vw" className="object-cover dark:hidden" />
-        <Image src="/assets/maps/aspire-dark.webp" alt="" fill sizes="(min-width: 1024px) 640px, 100vw" className="hidden object-cover dark:block" />
+        <Image src={MAP_IMAGES.light} alt="" fill sizes="(min-width: 1024px) 640px, 100vw" className="object-cover dark:hidden" />
+        <Image src={MAP_IMAGES.dark} alt="" fill sizes="(min-width: 1024px) 640px, 100vw" className="hidden object-cover dark:block" />
 
         <svg
           viewBox={`0 0 ${MAP_WIDTH} ${MAP_HEIGHT}`}
@@ -115,7 +116,7 @@ export function OptimizeDemo({ stage, inView }: { stage: PlannerStage; inView: b
               <motion.path
                 d={d}
                 fill="none"
-                className="stroke-white dark:stroke-brand-ink"
+                className="stroke-white dark:stroke-[#26282B]"
                 strokeWidth="6.6"
                 strokeLinecap="round"
                 strokeLinejoin="round"

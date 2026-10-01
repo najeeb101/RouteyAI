@@ -80,6 +80,10 @@ The visual identity is inspired by **Karwa** (Qatar) and **Metro Link** — prem
 7. **Subtle animations**: Smooth transitions with `transition-all duration-200`. No jarring jumps.
 8. **Color-coded routes**: Each bus gets a unique color on the map for instant differentiation.
 
+### Maps
+
+Maps use one Google Maps-like palette everywhere: grey land, white (light) or charcoal (dark) roads, soft green parks, blue water, category-coloured place dots, English names with Arabic underneath. App: `mobile/src/lib/mapStyle.ts` (Mapbox Streets data, `styleJSON`, follows the phone's light/dark setting). Landing page: `scripts/landing-map/build.mjs` renders OpenStreetMap data with the same colours. Route lines are navy on light maps and `#8AB4F8` on dark maps.
+
 ### 3.4 Component Patterns
 - **Cards**: `rounded-xl shadow-sm border bg-white p-6` — elevated, soft corners
 - **Buttons**: Primary = solid deep blue; Secondary = outlined; Danger = red

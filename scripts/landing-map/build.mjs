@@ -2,7 +2,7 @@
  * Builds the route-planner map on the landing page ("How it works") from real OpenStreetMap data
  * around Aspire Park, Doha. Map data © OpenStreetMap contributors, available under the ODbL; the page credits it.
  *
- *   node scripts/landing-map/build.mjs [--osm cached.json] [--preview preview.png] [--plan-only]
+ *   node scripts/landing-map/build.mjs [--osm cached.json] [--pois cached.json] [--preview preview.png] [--plan-only]
  *
  * What it does:
  *  1. Downloads roads, parks, water and buildings from the Overpass API (or reads a cached download).
@@ -12,13 +12,15 @@
  *  4. Draws the base map as light and dark SVGs and renders them to WebP with headless Chrome
  *     (public/assets/maps/aspire-{light,dark}.webp).
  *  5. Writes the overlay data to src/components/landing/optimizeDemoData.ts.
+ *     Named places (POIs) come from a second Overpass query (or --pois cached.json) and are drawn Google Maps style.
  *  6. Renders close-up maps of Bus 3 for the phone mockups (public/assets/maps/phone-{driver,parent}.webp) and
  *     writes their data to src/components/landing/appMapData.ts.
  *
  * Needs Node 22+ and Chrome (set CHROME_PATH if it is not in the default Windows location).
  */
 import { spawn } from 'node:child_process'
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { createHash } from 'node:crypto'
+import { mkdirSync, readdirSync, readFileSync, renameSync, unlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -66,18 +68,42 @@ const PHONE_LABEL_PX = 8.5
 /** Rough driving speeds (km/h) per road class, so routes prefer main roads like a real drive-time matrix would. */
 const SPEED = { trunk: 80, primary: 60, secondary: 50, tertiary: 40, unclassified: 30, residential: 25, living_street: 15 }
 
+/** Map palettes modelled on Google Maps: grey land, white (light) or charcoal (dark) roads, soft parks and water. */
 const STYLES = {
   light: {
-    land: '#EDF1F6', green: '#D3EACD', pitch: '#C2E0BB', water: '#B9D5F0', building: '#DCE2EB',
-    service: '#FFFFFF', casing: ['#CDD5E1', '#C3CDDC', '#BAC5D7'], fill: ['#FFFFFF', '#FFFFFF', '#FFFFFF'],
-    label: '#66748D', halo: '#EDF1F6', parkLabel: '#4A7A46',
+    dark: false,
+    land: '#F1F3F4', green: '#C9E9CF', pitch: '#B5DFBD', water: '#A0CBF2', building: '#E3E6EA', buildingStroke: '#D6DADF',
+    service: '#FFFFFF', casing: ['#D7DBE0', '#CDD2D8', '#C1C7CF'], fill: ['#FFFFFF', '#FFFFFF', '#FFFFFF'],
+    label: '#5F6368', halo: '#F8F9FA', poiLabel: null, poiRing: '#FFFFFF',
   },
   dark: {
-    land: '#0B1430', green: '#0F2A2C', pitch: '#123530', water: '#0C2A4E', building: '#131D3A',
-    service: '#18244A', casing: ['#070D22', '#060B1E', '#050A1A'], fill: ['#1C2A4B', '#23345C', '#2B3F6D'],
-    label: '#8492B1', halo: '#0B1430', parkLabel: '#5FA08C',
+    dark: true,
+    land: '#26282B', green: '#1E3A2B', pitch: '#244634', water: '#17273A', building: '#2E3135', buildingStroke: '#35383D',
+    service: '#323539', casing: ['#26282B', '#26282B', '#26282B'], fill: ['#3A3D42', '#44484E', '#4F5359'],
+    label: '#A9AEB5', halo: '#26282B', poiLabel: '#C4C7CC', poiRing: '#26282B',
   },
 }
+
+/**
+ * Named places drawn like Google Maps: a round icon in the category colour (a Material Symbols glyph) and the
+ * English name, with the Arabic name underneath when OpenStreetMap has one. Higher rank wins when labels collide.
+ */
+const POI_TYPES = [
+  { test: t => t.leisure === 'stadium', icon: 'stadium', color: '#188038', rank: 10 },
+  { test: t => t.tourism === 'attraction', icon: 'tour', color: '#129EAF', rank: 9 },
+  { test: t => t.shop === 'mall', icon: 'local_mall', color: '#1A73E8', rank: 9 },
+  { test: t => t.amenity === 'place_of_worship', icon: 'mosque', color: '#5F6368', rank: 8 },
+  { test: t => ['school', 'university', 'college', 'kindergarten'].includes(t.amenity), icon: 'school', color: '#5F6368', rank: 8 },
+  { test: t => t.amenity === 'hospital' && !/clinic|dental|medical cent/i.test(`${t['name:en'] ?? ''} ${t.name ?? ''}`), icon: 'local_hospital', color: '#D93025', rank: 7 },
+  { test: t => t.leisure === 'park', icon: 'park', color: '#188038', rank: 7 },
+  { test: t => t.leisure === 'sports_centre', icon: t => (/aquatic|swim/i.test(t.name ?? '') ? 'pool' : 'sports_soccer'), color: '#188038', rank: 6 },
+  { test: t => ['hotel', 'resort'].includes(t.tourism), icon: 'hotel', color: '#D01884', rank: 5 },
+  { test: t => ['supermarket', 'department_store'].includes(t.shop), icon: 'shopping_cart', color: '#1A73E8', rank: 4 },
+  { test: t => t.amenity === 'fuel', icon: 'local_gas_station', color: '#1A73E8', rank: 4 },
+  { test: t => ['clinic', 'pharmacy', 'hospital'].includes(t.amenity), icon: 'medical_services', color: '#D93025', rank: 3 },
+  { test: t => t.amenity === 'cafe', icon: 'local_cafe', color: '#E8710A', rank: 3 },
+  { test: t => ['restaurant', 'fast_food'].includes(t.amenity), icon: 'restaurant', color: '#E8710A', rank: 2 },
+]
 
 // ---------------------------------------------------------------- helpers
 
@@ -168,6 +194,98 @@ function simplify(points, tolerance) {
 const toPath = points => points.map((p, i) => `${i ? 'L' : 'M'}${round1(p.x)} ${round1(p.y)}`).join(' ')
 
 // ---------------------------------------------------------------- 1. OSM data
+
+/** Named places (schools, mosques, malls, food...) as points, from a cached download or the Overpass API. */
+async function loadPois() {
+  if (args.pois) return JSON.parse(readFileSync(args.pois, 'utf8')).elements
+  const b = `${BBOX.s},${BBOX.w},${BBOX.n},${BBOX.e}`
+  const query = `[out:json][timeout:90];(
+    nwr["amenity"~"^(school|university|college|kindergarten|hospital|clinic|place_of_worship|restaurant|cafe|fast_food|fuel|pharmacy)$"]["name"](${b});
+    nwr["leisure"~"^(park|stadium|sports_centre)$"]["name"](${b});
+    nwr["tourism"~"^(attraction|hotel|resort)$"]["name"](${b});
+    nwr["shop"~"^(mall|supermarket|department_store)$"]["name"](${b});
+  );out center tags;`
+  const res = await fetch('https://overpass-api.de/api/interpreter', {
+    method: 'POST',
+    headers: { 'User-Agent': 'RouteyAI-landing-map/1.0', 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: `data=${encodeURIComponent(query)}`,
+  })
+  if (!res.ok) throw new Error(`Overpass POI request failed: ${res.status}`)
+  return (await res.json()).elements
+}
+
+const escapeXml = text => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+
+/** Keeps places with a clean English name, a known category and a position on the map. */
+function curatePois(elements) {
+  const seen = new Set()
+  const out = []
+  for (const e of elements) {
+    const t = e.tags || {}
+    const lat = e.lat ?? e.center?.lat
+    const lon = e.lon ?? e.center?.lon
+    const type = POI_TYPES.find(k => k.test(t))
+    let en = (t['name:en'] || t.name || '').split(' @ ')[0].trim()
+    // Skip junk names (lower-case starts, emoji, Arabic-only, source notes) and duplicates.
+    if (!type || lat === undefined || !/^[A-Z0-9]/.test(en) || /\(src\)|housing/i.test(en) || seen.has(en)) continue
+    if (en.length > 32) en = en.replace(/,.*$/, '')
+    if (en.length > 32) continue
+    seen.add(en)
+    const arCandidate = t['name:ar'] || (/[\u0600-\u06FF]/.test(t.name ?? '') ? t.name : '')
+    const ar = /[\u0600-\u06FF]/.test(arCandidate) && arCandidate.length <= 26 ? arCandidate : null
+    out.push({ x: px(lon), y: py(lat), en, ar, icon: typeof type.icon === 'function' ? type.icon(t) : type.icon, color: type.color, rank: type.rank })
+  }
+  return out
+}
+
+/**
+ * Picks which places get drawn in a box: highest rank first, skipping any whose icon and label would overlap a
+ * label already placed or a spot in `avoid` (homes, stops, the school), trying the label on the right, then the left.
+ */
+function placePois(pois, box, { fontSize, iconR, max, minRank, avoid = [] }) {
+  const rects = avoid.map(a => ('x0' in a ? a : { x0: a.x - a.r, x1: a.x + a.r, y0: a.y - a.r, y1: a.y + a.r }))
+  const out = []
+  const inset = iconR * 1.5
+  const candidates = pois
+    .filter(p => p.rank >= minRank && p.x > box.x + inset && p.x < box.x + box.w - inset && p.y > box.y + inset && p.y < box.y + box.h - inset)
+    .sort((a, b) => b.rank - a.rank || a.en.length - b.en.length)
+  for (const p of candidates) {
+    const textW = Math.max(p.en.length * fontSize * 0.55, p.ar ? p.ar.length * fontSize * 0.48 : 0)
+    const half = Math.max(iconR, (fontSize * (p.ar ? 2.1 : 1.15)) / 2)
+    // Label on the right like Google Maps; on the left if the right side runs off the map or into another label.
+    // Spacing scales with the text, so it works on the big map and the zoomed-in phone maps alike.
+    const m = fontSize * 0.2
+    const fits = rect =>
+      rect.x0 >= box.x + m && rect.x1 <= box.x + box.w - m && rect.y0 >= box.y + m && rect.y1 <= box.y + box.h - m &&
+      !rects.some(r => !(rect.x1 < r.x0 - m || rect.x0 > r.x1 + m || rect.y1 < r.y0 - m || rect.y0 > r.y1 + m))
+    const right = { x0: p.x - iconR, x1: p.x + iconR * 1.5 + textW, y0: p.y - half, y1: p.y + half }
+    const left = { x0: p.x - iconR * 1.5 - textW, x1: p.x + iconR, y0: p.y - half, y1: p.y + half }
+    const side = fits(right) ? 1 : fits(left) ? -1 : 0
+    if (!side) continue
+    rects.push(side > 0 ? right : left)
+    out.push({ ...p, side })
+    if (out.length >= max) break
+  }
+  return out
+}
+
+function poiSvg(p, s, fontSize, iconR) {
+  const iconFill = s.dark && p.color === '#5F6368' ? '#80868B' : p.color
+  const labelColor = s.poiLabel ?? (p.color === '#5F6368' ? '#3C4043' : p.color)
+  const tx = round1(p.x + p.side * iconR * 1.5)
+  const anchor = p.side > 0 ? 'start' : 'end'
+  const enY = round1(p.ar ? p.y - fontSize * 0.12 : p.y + fontSize * 0.36)
+  const halo = `stroke="${s.halo}" stroke-width="${round1(fontSize * 0.32)}" paint-order="stroke" stroke-linejoin="round"`
+  const arabic = p.ar
+    ? `<text x="${tx}" y="${round1(enY + fontSize * 1.02)}" text-anchor="${anchor}" font-family="'Noto Sans Arabic', 'Segoe UI', sans-serif" font-size="${round1(fontSize * 0.88)}" font-weight="500" fill="${labelColor}" ${halo}>${escapeXml(p.ar)}</text>`
+    : ''
+  return `<g>
+<circle cx="${round1(p.x)}" cy="${round1(p.y)}" r="${round1(iconR)}" fill="${iconFill}" stroke="${s.poiRing}" stroke-width="${round1(iconR * 0.2)}"/>
+<text x="${round1(p.x)}" y="${round1(p.y + iconR * 0.62)}" text-anchor="middle" font-family="'Material Symbols Rounded'" font-size="${round1(iconR * 1.3)}" fill="#FFFFFF">${p.icon}</text>
+<text x="${tx}" y="${enY}" text-anchor="${anchor}" font-family="Inter, 'Segoe UI', Arial, sans-serif" font-size="${fontSize}" font-weight="600" fill="${labelColor}" ${halo}>${escapeXml(p.en)}</text>
+${arabic}
+</g>`
+}
 
 async function loadOsm() {
   if (args.osm) return JSON.parse(readFileSync(args.osm, 'utf8'))
@@ -469,7 +587,7 @@ function localStreetLabels(osm, box, fontSize) {
  * Draws the base map. By default the whole 540 x 400 planner map with its fixed road labels. For the phone maps,
  * `box` picks the part to draw and every named street with room for its name inside the box gets a label.
  */
-function baseMapSvg(osm, style, { box = { x: 0, y: 0, w: W, h: H }, width, height, fontSize = 6.4, localLabels = false } = {}) {
+function baseMapSvg(osm, style, { box = { x: 0, y: 0, w: W, h: H }, width, height, fontSize = 6.4, localLabels = false, pois = [], poiFontSize = 5.6, iconR = 4.2 } = {}) {
   const layers = { green: [], pitch: [], water: [], building: [], service: [], roads: [[], [], []] }
   const labelPaths = []
   const shape = g => g.map((p, i) => `${i ? 'L' : 'M'}${round1(px(p.lon))} ${round1(py(p.lat))}`).join('')
@@ -501,16 +619,14 @@ function baseMapSvg(osm, style, { box = { x: 0, y: 0, w: W, h: H }, width, heigh
       .map(e => e.geometry.map(p => ({ x: px(p.lon), y: py(p.lat) })).filter(p => p.x > 20 && p.x < W - 20 && p.y > 14 && p.y < H - 14))
       .sort((a, b) => b.reduce((s, p, i) => s + (i ? dist(p, b[i - 1]) : 0), 0) - a.reduce((s, p, i) => s + (i ? dist(p, a[i - 1]) : 0), 0))[0]
     if (!longest || longest.length < 2) continue
-    const pts = longest[0].x > longest[longest.length - 1].x ? [...longest].reverse() : longest
-    const vertical = Math.abs(pts[0].x - pts[pts.length - 1].x) < Math.abs(pts[0].y - pts[pts.length - 1].y)
-    labelPaths.push({ name, d: toPath(vertical && pts[0].y < pts[pts.length - 1].y ? [...pts].reverse() : pts) })
+    // Same rule as the phone maps: left to right, or bottom to top when the street is close to vertical.
+    let pts = longest[0].x > longest[longest.length - 1].x ? [...longest].reverse() : longest
+    const dx = pts[pts.length - 1].x - pts[0].x
+    const dy = pts[pts.length - 1].y - pts[0].y
+    if (Math.abs(dx) < Math.abs(dy) * 0.3 && dy > 0) pts = [...pts].reverse()
+    labelPaths.push({ name, d: toPath(pts) })
   }
   if (localLabels) labelPaths.push(...localStreetLabels(osm, box, fontSize))
-  const park = !localLabels && osm.elements.find(e => e.tags?.leisure === 'park' && /Aspire/.test(e.tags.name || e.tags['name:en'] || ''))
-  const parkCentre = park && {
-    x: park.geometry.reduce((s, p) => s + px(p.lon), 0) / park.geometry.length,
-    y: park.geometry.reduce((s, p) => s + py(p.lat), 0) / park.geometry.length,
-  }
 
   const s = style
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${box.x} ${box.y} ${box.w} ${box.h}" width="${width}" height="${height}">
@@ -519,7 +635,7 @@ function baseMapSvg(osm, style, { box = { x: 0, y: 0, w: W, h: H }, width, heigh
 <path d="${layers.green.join('')}" fill="${s.green}"/>
 <path d="${layers.pitch.join('')}" fill="${s.pitch}"/>
 <path d="${layers.water.join('')}" fill="${s.water}"/>
-<path d="${layers.building.join('')}" fill="${s.building}"/>
+<path d="${layers.building.join('')}" fill="${s.building}" stroke="${s.buildingStroke}" stroke-width="0.25"/>
 <g fill="none" stroke-linecap="round" stroke-linejoin="round">
 <path d="${layers.service.join('')}" stroke="${s.service}" stroke-width="0.9"/>
 ${[0, 1, 2].map(t => `<path d="${layers.roads[t].join('')}" stroke="${s.casing[t]}" stroke-width="${widths[t][0]}"/>`).join('\n')}
@@ -527,8 +643,8 @@ ${[0, 1, 2].map(t => `<path d="${layers.roads[t].join('')}" stroke="${s.fill[t]}
 </g>
 <g font-family="Inter, 'Segoe UI', Arial, sans-serif" font-size="${fontSize}" font-weight="500" fill="${s.label}" stroke="${s.halo}" stroke-width="${round1(fontSize * 0.34)}" paint-order="stroke" stroke-linejoin="round">
 ${labelPaths.map((l, i) => `<text dy="${round1(fontSize * 0.34)}"><textPath href="#road-${i}" startOffset="50%" text-anchor="middle">${l.name}</textPath></text>`).join('\n')}
-${parkCentre ? `<text x="${round1(parkCentre.x)}" y="${round1(parkCentre.y + 40)}" text-anchor="middle" font-size="8" font-style="italic" font-weight="600" fill="${s.parkLabel}">Aspire Park</text>` : ''}
 </g>
+${pois.map(poi => poiSvg(poi, s, poiFontSize, iconR)).join('\n')}
 </svg>`
 }
 
@@ -598,17 +714,38 @@ async function renderWebp(svgPath, outPath, width, height) {
     if (m.id && pending.has(m.id)) pending.get(m.id)(m) || pending.delete(m.id)
   })
   const send = (method, params = {}) => new Promise(r => { const i = ++id; pending.set(i, r); ws.send(JSON.stringify({ id: i, method, params })) })
-  // An HTML wrapper so the labels can use Inter from Google Fonts.
+  // An HTML wrapper so the labels can use Inter, Noto Sans Arabic and the Material Symbols icon font from Google Fonts.
   const html = join(dirname(svgPath), `${Date.now()}.html`)
-  writeFileSync(html, `<!doctype html><html><head><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600&display=block"><style>html,body{margin:0}</style></head><body>${readFileSync(svgPath, 'utf8')}</body></html>`)
+  writeFileSync(html, `<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600&family=Noto+Sans+Arabic:wght@500&family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,500,1,0&display=block"><style>html,body{margin:0}</style></head><body>${readFileSync(svgPath, 'utf8')}</body></html>`)
   await send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: false })
   await send('Page.enable')
   await send('Page.navigate', { url: `file:///${html.replace(/\\/g, '/')}` })
-  await sleep(2500)
+  await sleep(1500)
+  await send('Runtime.evaluate', {
+    expression: `Promise.all([document.fonts.load('24px "Material Symbols Rounded"', 'school'), document.fonts.load('16px "Noto Sans Arabic"', 'م'), document.fonts.ready]).then(() => true)`,
+    awaitPromise: true,
+  })
+  await sleep(800)
   const shot = await send('Page.captureScreenshot', { format: 'webp', quality: 90 })
   writeFileSync(outPath, Buffer.from(shot.result.data, 'base64'))
   ws.close()
   chrome.kill()
+}
+
+/**
+ * Renders a map image to public/assets/maps/<name>-<hash>.webp and returns its URL. The content hash in the name means
+ * a changed map gets a new URL, so image caches (next/image, Vercel, browsers) never serve the old one.
+ */
+async function renderMap(svgPath, name, width, height) {
+  const dir = join(ROOT, 'public/assets/maps')
+  const tmp = join(dir, `${name}.tmp.webp`)
+  await renderWebp(svgPath, tmp, width, height)
+  const hash = createHash('sha256').update(readFileSync(tmp)).digest('hex').slice(0, 8)
+  for (const old of readdirSync(dir)) {
+    if (new RegExp(`^${name}(-[0-9a-f]{8})?\\.webp$`).test(old)) unlinkSync(join(dir, old))
+  }
+  renameSync(tmp, join(dir, `${name}-${hash}.webp`))
+  return `/assets/maps/${name}-${hash}.webp`
 }
 
 // ---------------------------------------------------------------- main
@@ -625,22 +762,59 @@ const work = join(tmpdir(), 'routeyai-landing-map')
 mkdirSync(work, { recursive: true })
 mkdirSync(join(ROOT, 'public/assets/maps'), { recursive: true })
 const SCALE = 4
+const pois = curatePois(await loadPois())
+// The planner map only shows landmarks, kept clear of the home pins and the school drawn on top of it.
+// The planner is shown about 620 px wide (1.15 px per unit), so place labels are ~8 units to read at ~10 px.
+const PLANNER_POI = { fontSize: 8.2, iconR: 5.8 }
+const plannerPois = placePois(pois, { x: 0, y: 0, w: W, h: H }, {
+  ...PLANNER_POI,
+  max: 7,
+  minRank: 5,
+  avoid: [
+    ...result.points.map(h => ({ ...h, r: 8 })),
+    { ...result.school, r: 16 },
+    // The page draws the scale bar (top left), the map credit (top right) and a caption pill (bottom left) over the map.
+    { x0: 0, x1: 120, y0: 0, y1: 22 },
+    { x0: 380, x1: W, y0: 0, y1: 20 },
+    { x0: 0, x1: 270, y0: 362, y1: H },
+  ],
+})
+console.log('planner places', plannerPois.map(poi => poi.en).join(', '))
+const mapImages = {}
 for (const theme of ['light', 'dark']) {
   const svgPath = join(work, `aspire-${theme}.svg`)
-  writeFileSync(svgPath, baseMapSvg(osm, STYLES[theme], { width: W * SCALE, height: H * SCALE }))
-  await renderWebp(svgPath, join(ROOT, `public/assets/maps/aspire-${theme}.webp`), W * SCALE, H * SCALE)
+  writeFileSync(svgPath, baseMapSvg(osm, STYLES[theme], { width: W * SCALE, height: H * SCALE, fontSize: 7.4, pois: plannerPois, poiFontSize: PLANNER_POI.fontSize, iconR: PLANNER_POI.iconR }))
+  mapImages[theme] = await renderMap(svgPath, `aspire-${theme}`, W * SCALE, H * SCALE)
 }
 
 const phoneMaps = {}
 for (const view of PHONE_VIEWS) {
   const route = result.routes[view.route]
   const box = phoneBox(route, view)
-  const fontSize = round1((PHONE_LABEL_PX * box.w) / view.width)
-  const svgPath = join(work, `phone-${view.name}.svg`)
-  writeFileSync(svgPath, baseMapSvg(osm, STYLES.light, { box, width: view.width * 2, height: view.height * 2, fontSize, localLabels: true }))
-  await renderWebp(svgPath, join(ROOT, `public/assets/maps/phone-${view.name}.webp`), view.width * 2, view.height * 2)
+  const unit = box.w / view.width // map units per CSS pixel in the mockup
+  const fontSize = round1(PHONE_LABEL_PX * unit)
+  // Places around the route, kept off the stops (and the child's stop label on the parent phone).
+  const viewPois = placePois(pois, box, {
+    fontSize: round1(8 * unit),
+    iconR: round1(6.5 * unit),
+    max: 7,
+    minRank: 1,
+    // The child's stop has a label above its pin, so keep clear of the area above it.
+    avoid: route.stops.map((stop, i) =>
+      view.name === 'parent' && i === view.toStop ? { x: stop.x, y: stop.y - 14 * unit, r: 24 * unit } : { ...stop, r: 11 * unit },
+    ),
+  })
+  console.log(`${view.name} places`, viewPois.map(poi => poi.en).join(', '))
+  const images = {}
+  for (const theme of ['light', 'dark']) {
+    const svgPath = join(work, `phone-${view.name}-${theme}.svg`)
+    const options = { box, width: view.width * 2, height: view.height * 2, fontSize, localLabels: true, pois: viewPois, poiFontSize: round1(8 * unit), iconR: round1(6.5 * unit) }
+    writeFileSync(svgPath, baseMapSvg(osm, STYLES[theme], options))
+    images[theme] = await renderMap(svgPath, `phone-${view.name}${theme === 'dark' ? '-dark' : ''}`, view.width * 2, view.height * 2)
+  }
   phoneMaps[view.name] = {
-    src: `/assets/maps/phone-${view.name}.webp`,
+    src: images.light,
+    srcDark: images.dark,
     box,
     bus: `Bus ${view.route + 1}`,
     route: { points: route.points, length: route.length, stops: route.stops },
@@ -663,8 +837,9 @@ export interface RouteStop {
 }
 
 export interface PhoneMap {
-  /** Base map image of the part of the 540 x 400 planner frame in box. */
+  /** Base map image of the part of the 540 x 400 planner frame in box, light and dark. */
   src: string
+  srcDark: string
   box: { x: number; y: number; w: number; h: number }
   bus: string
   /** Route line ([x, y] in the planner frame), its length and its stops in driving order. */
@@ -698,6 +873,9 @@ export const MAP_WIDTH = ${W}
 export const MAP_HEIGHT = ${H}
 /** Real-world metres per map unit, for the scale bar. */
 export const METERS_PER_UNIT = ${round1(METERS_PER_UNIT)}
+
+/** Base map images (content-hashed file names). */
+export const MAP_IMAGES = ${JSON.stringify(mapImages)} as const
 
 export const SCHOOL: Point = ${JSON.stringify(result.school)}
 export const CLUSTER_COUNT = ${INITIAL_CENTROIDS.length}

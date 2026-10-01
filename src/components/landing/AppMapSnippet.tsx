@@ -72,10 +72,15 @@ export function AppMapSnippet({
 
   return (
     <svg viewBox={`${box.x} ${box.y} ${box.w} ${box.h}`} className="block h-full w-full" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-      {loadMap && <image href={map.src} x={box.x} y={box.y} width={box.w} height={box.h} preserveAspectRatio="none" />}
+      {loadMap && (
+        <>
+          <image href={map.src} x={box.x} y={box.y} width={box.w} height={box.h} preserveAspectRatio="none" className="dark:hidden" />
+          <image href={map.srcDark} x={box.x} y={box.y} width={box.w} height={box.h} preserveAspectRatio="none" className="hidden dark:inline" />
+        </>
+      )}
       <g fill="none" strokeLinecap="round" strokeLinejoin="round">
-        <path d={line} stroke="#FFFFFF" strokeWidth={7 * u} />
-        <path d={line} className="stroke-primary" strokeWidth={4 * u} />
+        <path d={line} className="stroke-white dark:stroke-[#26282B]" strokeWidth={7 * u} />
+        <path d={line} className="stroke-primary dark:stroke-[#8AB4F8]" strokeWidth={4 * u} />
       </g>
       {showStops &&
         route.stops.map(s => (
