@@ -13,7 +13,6 @@ Mobile: Expo (React Native) | React Native styles | Mapbox RN | EAS
 - In progress: Phase 13 — landing page live at https://routeyai.vercel.app; Supabase project paused; launch placeholders in `src/lib/siteConfig.ts`.
 - Phase 14 (parent and driver app upgrade) built on `landing-redesign`; migrations `0013` and `0014` (RLS fixes, see Docs/Claude.md §5) not yet applied to Supabase.
 - Not started: Phase 12 (store submission).
-- Loose end: `mobile/src/components/route/LiveMapPreview.tsx` still reads `mobile/src/data/demoRoute.ts`.
 
 ## Phase 1: Project Setup and Landing Page
 
@@ -106,7 +105,7 @@ Mobile: Expo (React Native) | React Native styles | Mapbox RN | EAS
 - [x] Stop Route flow and bus status update
 - [x] Driver announcements to parents
 - [x] Realtime subscription to School Admin announcements
-- [ ] Replace remaining demo data in `LiveMapPreview.tsx`
+- [x] Remove the last demo data: `LiveMapPreview.tsx` was unused, deleted with `data/demoRoute.ts`
 
 ## Phase 9: Expo - Parent Interface
 
@@ -139,6 +138,9 @@ Mobile: Expo (React Native) | React Native styles | Mapbox RN | EAS
 
 ## Phase 12: App Store and Play Store Submission
 
+- [x] Mapbox secret token out of git: `app.json`/`eas.json` → `RNMAPBOX_MAPS_DOWNLOAD_TOKEN` in `mobile/.env.local`, read by `mobile/app.config.js` (2026-10-01)
+- [ ] **Rotate the Mapbox secret token** — it sat in `app.json`/`eas.json` in the public repo since Phase 7, so it is still in git history
+- [ ] Public Mapbox `pk.` token for `EXPO_PUBLIC_MAPBOX_TOKEN` (the app uses the secret one locally until then); EAS secret `RNMAPBOX_MAPS_DOWNLOAD_TOKEN` for cloud builds
 - [ ] Configure EAS build profiles in `eas.json`
 - [ ] Add app icons and splash assets (`mobile/assets/`)
 - [ ] iOS bundle ID and signing setup

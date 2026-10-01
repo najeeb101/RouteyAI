@@ -420,7 +420,7 @@ Numbering matches [task.md](task.md), which holds the live checklist.
 | 5 | School Admin dashboard (buses, students, Smart Placement, announcements, analytics) | Done |
 | 6 | AI route optimization Edge Function (K-Means + TSP + Matrix API) | Done |
 | 7 | Expo app setup (routing, Supabase, Mapbox, deep links, push tokens, EAS) | Done |
-| 8 | Expo driver interface | Done (one leftover demo-data component) |
+| 8 | Expo driver interface | Done |
 | 9 | Expo parent interface | Done |
 | 10 | Push notifications (`send-notification` Edge Function) | Done |
 | 11 | Web polish & production | Lighthouse audit + custom domain left |

@@ -66,7 +66,6 @@ routeyai/
 │       │   ├── driver/       # screens/, hooks/useDriverData, context/DriverDataContext
 │       │   └── parent/       # screens/ (incl. useParentData), context/ParentDataContext
 │       ├── components/primitives/  # Card, MetricCard, ProgressBar, ScreenHeader, StatusPill
-│       ├── data/demoRoute.ts       # leftover demo data — only LiveMapPreview still uses it
 │       └── lib/supabase.ts
 ├── supabase/
 │   ├── migrations/           # 0001_schema.sql … 0014_fix_rls.sql
