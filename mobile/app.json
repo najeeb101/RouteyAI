@@ -6,6 +6,7 @@
     "scheme": "routeyai",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
+    "icon": "./assets/icon.png",
     "assetBundlePatterns": [
       "**/*"
     ],
@@ -16,7 +17,8 @@
     "android": {
       "package": "com.routeyai.app",
       "adaptiveIcon": {
-        "backgroundColor": "#1E3A8A"
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#FFFFFF"
       }
     },
     "plugins": [
@@ -34,6 +36,7 @@
       [
         "expo-notifications",
         {
+          "icon": "./assets/notification-icon.png",
           "color": "#1E3A8A",
           "defaultChannel": "default",
           "sounds": []
