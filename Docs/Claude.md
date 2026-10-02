@@ -400,6 +400,15 @@ Found while testing the apps against a local database. The policies above show t
 - Drivers set their bus active or inactive with `set_bus_active(p_active)` instead of updating `buses`.
 - Announcements: parents and drivers see school-wide ones plus their own bus's, not other buses'.
 
+### Account deletion (0015_delete_account.sql, 2026-10-02)
+
+- `delete_my_account()` deletes the caller's `auth.users` row (App Store and Play require in-app deletion);
+  `user_roles` goes with it by cascade. Platform admins are refused so the last one can't lock out the dashboard.
+- Every other foreign key to `auth.users` is `ON DELETE SET NULL`: `schools.created_by`, `buses.driver_id`,
+  `students.parent_id`, `announcements.sender_id`, `invites.created_by`, `invites.used_by`,
+  `absence_reports.reported_by`. School records stay, unlinked from the deleted user. Before 0015 these had no rule,
+  so deleting any parent, driver or inviter failed.
+
 ### RLS Summary
 - **Platform Admin**: Full access to all tables.
 - **School Admin**: CRUD on their own school's data only (filtered by `school_id`).

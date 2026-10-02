@@ -33,6 +33,7 @@ export function AccountScreen({ role, name, email, sections, notificationHint }:
   const router = useRouter()
   const [pushOn, setPushOn] = useState<boolean | null>(null)
   const [pushBusy, setPushBusy] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -76,6 +77,37 @@ export function AccountScreen({ role, name, email, sections, notificationHint }:
         },
       },
     ])
+  }
+
+  // Required by the App Store and Google Play. The school's records (children, bus) stay; see 0015_delete_account.sql.
+  function deleteAccount() {
+    Alert.alert(
+      'Delete your account?',
+      `This permanently deletes your RouteyAI account and signs you out. ${
+        role === 'parent'
+          ? 'Your children stay registered with the school, and it can invite you again.'
+          : 'Your bus and route stay with the school.'
+      } This can’t be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete account',
+          style: 'destructive',
+          onPress: async () => {
+            setDeleting(true)
+            await stopBackgroundGps().catch(() => {})
+            const { error } = await supabase.rpc('delete_my_account')
+            if (error) {
+              setDeleting(false)
+              Alert.alert('Couldn’t delete your account', 'Check your connection and try again.')
+              return
+            }
+            await supabase.auth.signOut()
+            router.replace(routes.login)
+          },
+        },
+      ],
+    )
   }
 
   const initials = (name ?? email ?? '?')
@@ -152,6 +184,16 @@ export function AccountScreen({ role, name, email, sections, notificationHint }:
         >
           <Ionicons name="log-out-outline" size={19} color={colors.danger} />
           <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 15, color: colors.danger }}>Sign out</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={deleteAccount}
+          disabled={deleting}
+          activeOpacity={0.7}
+          accessibilityRole="button"
+          style={{ alignSelf: 'center', paddingVertical: 6, paddingHorizontal: 12, opacity: deleting ? 0.6 : 1 }}
+        >
+          <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 13.5, color: colors.danger }}>{deleting ? 'Deleting account…' : 'Delete account'}</Text>
         </TouchableOpacity>
 
         <Text style={{ textAlign: 'center', fontFamily: 'Inter_400Regular', fontSize: 11.5, color: colors.subtle }}>

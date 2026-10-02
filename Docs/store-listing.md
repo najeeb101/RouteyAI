@@ -76,7 +76,7 @@ No ads, no tracking across apps, nothing sold. Data is encrypted in transit.
 
 ## Blocking before submission
 
-- **Account deletion in the app.** Apple (guideline 5.1.1(v)) and Google Play both require an in-app way to delete the account, and Play also asks for a web URL where people can request it. The Account tab has sign out but no delete.
+- Account deletion (Apple 5.1.1(v), Google Play) is built: Account tab → Delete account. Play's "delete account URL" is `https://<domain>/privacy#delete-account`. Needs migration `0015` on the production database.
 - Demo reviewer accounts on the production database (above).
 - A real support email and privacy policy URL (`NEXT_PUBLIC_CONTACT_EMAIL`, `/privacy` on the final domain).
 

@@ -149,7 +149,7 @@ Mobile: Expo (React Native) | React Native styles | Mapbox RN | EAS
 - [ ] Android `applicationId` and keystore setup
 - [ ] Run production builds (`eas build --platform all --profile production`)
 - [ ] Internal testing via TestFlight and Play internal track
-- [ ] **Account deletion in the app** (Apple 5.1.1(v) and Google Play require it; Play also wants a web URL to request deletion). The Account tab only has sign out
+- [x] **Account deletion in the app** (Apple 5.1.1(v), Google Play): Account tab → Delete account calls `delete_my_account()` (`0015_delete_account.sql`, tested on the local database for parent, driver and platform admin); web deletion page for Play: `/privacy#delete-account` (2026-10-02). Needs `pnpm db:push`
 - [x] Store listing copy for both stores, review notes and privacy answers: [store-listing.md](store-listing.md) (2026-10-02)
 - [ ] App Store and Play screenshots, Play feature graphic
 - [ ] Demo reviewer accounts (parent + driver) on the production database
@@ -173,7 +173,7 @@ Full plan: [plans/2026-09-29-landing-page-launch.md](plans/2026-09-29-landing-pa
 - [x] `sitemap.ts`, `robots.ts`, `opengraph-image.tsx`, JSON-LD
 - [x] Vercel project `routeyai` created and linked to GitHub; production env vars set (`NEXT_PUBLIC_DEMO_MODE=false`)
 - [x] Fix Vercel production build (Supabase packages aligned, `database.ts` completed) — live at https://routeyai.vercel.app
-- [ ] Restore paused Supabase project (host no longer resolves), then test demo form end to end
+- [x] Restore paused Supabase project, then test demo form end to end (2026-10-02: submitted on the live site in headless Chrome, success toast shown, row read back from `demo_requests`; the test row "TEST Claude Code" can be deleted)
 - [ ] Add real `NEXT_PUBLIC_MAPBOX_TOKEN` (`.env.local` has the placeholder) locally and on Vercel
 - [x] Set `NEXT_PUBLIC_APP_URL=https://routeyai.vercel.app` on Vercel (production)
 - [ ] Launch placeholders in `src/lib/siteConfig.ts`: set `NEXT_PUBLIC_CONTACT_EMAIL` (routeyai.com has no DNS/MX yet), legal review then `LEGAL_REVIEWED = true`, fill `PLAN_SUPPORT`
@@ -196,7 +196,7 @@ Full plan: [plans/2026-10-01-parent-driver-apps.md](plans/2026-10-01-parent-driv
 - [x] Landing page phones redrawn from the new screens on real OpenStreetMap close-ups (`build.mjs` → `phone-*.webp`, `appMapData.ts`)
 - [x] Local test stack: `supabase/config.toml` added; `pnpm db:reset` now replays all migrations and the seed (seeded users can sign in)
 - [x] `0014_fix_rls.sql`: policy recursion (parent/driver apps could not load), missing school_admin role checks, invite listing, `set_bus_active()`
-- [ ] Apply `0013` and `0014` to Supabase (`pnpm db:push`) after the project is restored
+- [ ] Apply `0011`–`0015` to Supabase (`pnpm db:push`). The project was restored on 2026-10-02; the production database stops at `0010`, so live invite links fail (`get_invite()` is missing) and the apps can't load
 - [x] Tested on an Android emulator against the local stack (2026-10-01): parent (two children, switch, report and cancel absence, history, alerts, account, live map following GPS) and driver (start route, GPS every 10 s, delay notice, check-in with a parent-reported absence, end-of-route summary, sign out)
 - [x] Fixes from that test: Android build (`@rnmapbox/maps` 10.0.12 → 10.1.33 and `RNMapboxMapsImpl: mapbox`), seed users could not sign in, app now stays signed in, dev shortcuts only in dev builds, Start route hung when location was already allowed, stale GPS shown as live, ETA now follows the remaining stops, keyboard covered the absence sheet
 - [x] **Background location** (2026-10-01): `mobile/src/features/driver/gpsTask.ts` runs `expo-location` background updates (`expo-task-manager`) as an Android foreground service ("Route in progress" notification) / iOS background location. Only "while using the app" permission: no "Allow all the time", no `ACCESS_BACKGROUND_LOCATION`. A route still running when the app reopens comes back so it can be ended. Emulator: rows every 10 s for 90 s with the screen locked; force-close and reopen resumed the route

@@ -91,6 +91,17 @@ export default function PrivacyPage() {
         </p>
       </section>
 
+      <section id="delete-account">
+        <h2>Deleting your account</h2>
+        <p>
+          Parents and drivers can delete their account in the RouteyAI app: open the Account tab and tap Delete account.
+          This removes your sign-in, name, email address, role and push tokens straight away. Records that belong to the
+          school stay with it but are no longer linked to you, such as your children&apos;s student records, attendance
+          and absence reports, or the bus you drove. School admins, and anyone who can&apos;t use the app, can ask us to
+          delete their account through <ContactLink />.
+        </p>
+      </section>
+
       <section>
         <h2>Changes</h2>
         <p>If we change this policy we will update the date at the top of this page.</p>

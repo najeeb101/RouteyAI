@@ -68,7 +68,7 @@ routeyai/
 │       ├── components/primitives/  # Card, MetricCard, ProgressBar, ScreenHeader, StatusPill
 │       └── lib/supabase.ts
 ├── supabase/
-│   ├── migrations/           # 0001_schema.sql … 0014_fix_rls.sql
+│   ├── migrations/           # 0001_schema.sql … 0015_delete_account.sql
 │   ├── functions/
 │   │   ├── optimize-route/index.ts     # Edge Function: K-Means + TSP
 │   │   └── send-notification/index.ts  # Edge Function: Expo push
