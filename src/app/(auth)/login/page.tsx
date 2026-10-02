@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Eye, EyeOff } from 'lucide-react'
 import { RouteyLogo } from '@/components/RouteyLogo'
+import { AppleIcon, GooglePlayIcon } from '@/components/landing/StoreIcons'
 import { createClient } from '@/lib/supabase/client'
 import { ROLE_HOME, type Role } from '@/lib/constants'
 
@@ -52,18 +53,14 @@ function MobileAppModal({ onClose }: { onClose: () => void }) {
 
         <div className="flex gap-2 mb-4">
           <button className="flex-1 bg-[#0F172A] text-white rounded-xl px-3 py-2.5 flex items-center gap-2 hover:bg-[#1E293B] transition-colors">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
-              <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
-            </svg>
+            <AppleIcon size={16} />
             <div>
               <div className="text-[8px] text-white/60 leading-none">Download on</div>
               <div className="text-[11px] font-bold">App Store</div>
             </div>
           </button>
           <button className="flex-1 bg-[#0F172A] text-white rounded-xl px-3 py-2.5 flex items-center gap-2 hover:bg-[#1E293B] transition-colors">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
-              <path d="M3.18 23.76c.3.17.65.19.97.08l11.46-6.62-2.36-2.36-10.07 8.9zM20.73 9.11L17.5 7.23 14.86 9.87l2.77 2.77 3.12-1.8c.89-.51.89-1.74-.02-2.73zM2.13.29C1.86.56 1.7.97 1.7 1.5v21c0 .53.16.94.43 1.21l.07.06 11.76-11.76v-.28L2.2.23l-.07.06zM14.57 10.53l-2.77-2.77L2.2.23l12.37 10.3z"/>
-            </svg>
+            <GooglePlayIcon size={16} />
             <div>
               <div className="text-[8px] text-white/60 leading-none">Get it on</div>
               <div className="text-[11px] font-bold">Google Play</div>
