@@ -149,8 +149,10 @@ Mobile: Expo (React Native) | React Native styles | Mapbox RN | EAS
 - [ ] Android `applicationId` and keystore setup
 - [ ] Run production builds (`eas build --platform all --profile production`)
 - [ ] Internal testing via TestFlight and Play internal track
-- [ ] Prepare App Store listing copy and screenshots
-- [ ] Prepare Play Store listing copy and screenshots
+- [ ] **Account deletion in the app** (Apple 5.1.1(v) and Google Play require it; Play also wants a web URL to request deletion). The Account tab only has sign out
+- [x] Store listing copy for both stores, review notes and privacy answers: [store-listing.md](store-listing.md) (2026-10-02)
+- [ ] App Store and Play screenshots, Play feature graphic
+- [ ] Demo reviewer accounts (parent + driver) on the production database
 - [ ] Submit to App Store review
 - [ ] Submit to Google Play review
 - [ ] Configure OTA updates via `eas update`
