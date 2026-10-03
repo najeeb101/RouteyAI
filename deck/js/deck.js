@@ -14,13 +14,18 @@
   const MAP = window.ROUTEY_MAP
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
+  const viewport = document.getElementById('viewport')
   const stage = document.getElementById('stage')
   const slides = Array.from(stage.querySelectorAll('.slide'))
 
   /* ------------------------------------------------------------ helpers */
 
+  /** Scale the 1920 × 1080 stage to the window, keeping a 16px margin on phone-sized screens. */
   function fit() {
-    stage.style.setProperty('--s', Math.min(window.innerWidth / W, window.innerHeight / H))
+    const w = viewport.clientWidth
+    const h = viewport.clientHeight
+    const gutter = w < 900 ? 16 : 0
+    stage.style.setProperty('--s', Math.min((w - gutter * 2) / W, (h - gutter * 2) / H))
   }
 
   function svg(tag, attrs, parent) {
@@ -711,7 +716,11 @@
     cur = n
     updateChrome(quick ? 0 : WIPE_MS * 0.6)
     enter(next)
-    if (window.location.hash !== `#${n + 1}`) history.replaceState(null, '', `#${n + 1}`)
+    try {
+      if (window.location.hash !== `#${n + 1}`) history.replaceState(null, '', `#${n + 1}`)
+    } catch {
+      // Some embedded viewers refuse history changes; the deck works without the slide number in the URL.
+    }
     hideHint()
   }
 
@@ -719,8 +728,12 @@
   const prevSlide = () => go(cur - 1)
 
   function toggleFullscreen() {
-    if (document.fullscreenElement) document.exitFullscreen()
-    else document.documentElement.requestFullscreen?.()
+    try {
+      const p = document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen?.()
+      p?.catch?.(() => {})
+    } catch {
+      // Full screen is optional: phones and some embedded viewers refuse it.
+    }
   }
 
   document.addEventListener('keydown', e => {
