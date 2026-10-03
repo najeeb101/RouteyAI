@@ -162,6 +162,7 @@ RouteyAI/
 │   ├── lib/                 # Supabase and Mapbox setup
 │   └── types/               # Database types
 ├── mobile/                  # Phone app for drivers and parents (Expo)
+├── deck/                    # Pitch deck (HTML, open deck/index.html)
 ├── supabase/
 │   ├── migrations/          # Database changes, in order (0001 to 0015)
 │   ├── functions/           # Server functions: route planning, push notifications

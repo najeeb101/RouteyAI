@@ -1,0 +1,569 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RouteyAI Pitch Deck</title>
+<meta name="description" content="RouteyAI plans school bus routes and lets parents track the bus live. Built for schools in Qatar.">
+<link rel="icon" href="assets/brand/app-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,100..900;1,62..125,100..900&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="css/deck.css">
+</head>
+<body>
+
+<!-- Icon sprite: simple stroke icons drawn for the deck -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-bus" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="15" rx="3"/><rect x="6.5" y="6" width="11" height="5" rx="1"/><path d="M7 18v2.5M17 18v2.5M8.5 14.5h.01M15.5 14.5h.01"/></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M4 11 12 4l8 7"/><path d="M6 9.5V20h12V9.5"/><path d="M10 20v-5h4v5"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21Z"/><circle cx="12" cy="9.5" r="2.5"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15Z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24"><path d="M9 6.5h11M9 12h11M9 17.5h11"/><circle cx="4.5" cy="6.5" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="17.5" r="1"/></symbol>
+  <symbol id="i-chat" viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4Z"/></symbol>
+  <symbol id="i-map" viewBox="0 0 24 24"><path d="M9 4 3.5 6v14L9 18l6 2 5.5-2V4L15 6Z"/><path d="M9 4v14M15 6v14"/></symbol>
+  <symbol id="i-grid" viewBox="0 0 24 24"><rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20h16"/><path d="M7 16v-5M12 16V7M17 16v-8"/></symbol>
+  <symbol id="i-route" viewBox="0 0 24 24"><circle cx="6" cy="18" r="2.2"/><circle cx="18" cy="6" r="2.2"/><path d="M8.2 18H15a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h6.8"/></symbol>
+  <symbol id="i-signal" viewBox="0 0 24 24"><path d="M4 18h2M9 18v-3M14 18v-7M19 18V7"/></symbol>
+  <symbol id="i-battery" viewBox="0 0 24 24"><rect x="3" y="7" width="16" height="10" rx="2.5"/><path d="M21 10.5v3"/><rect x="5" y="9" width="10" height="6" rx="1" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-replay" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v4.5h4.5"/></symbol>
+</svg>
+
+<div class="viewport" id="viewport">
+<main class="stage" id="stage" aria-live="polite">
+
+  <!-- ============================================================ 01 COVER -->
+  <section class="slide dark s-cover" data-title="RouteyAI" data-hook="cover">
+    <div class="cover-photo"><img src="assets/photos/hero-corniche.jpg" alt="A yellow school bus on the Corniche in Doha at sunrise"></div>
+    <div class="cover-shade"></div>
+
+    <div class="cover-body">
+      <div class="lockup" data-a style="--d:0">
+        <img src="assets/brand/mark.png" alt="">
+        <span>RouteyAI</span>
+      </div>
+      <p class="eyebrow" data-a style="--d:1">School transport · Doha, Qatar</p>
+      <h1 class="h-cover">
+        <span class="ln"><span>Every school bus,</span></span>
+        <span class="ln"><span>planned and</span></span>
+        <span class="ln"><span class="hl">on the map.</span></span>
+      </h1>
+      <p class="lede" data-a style="--d:6">Route planning, live bus tracking and parent alerts, in one system built for schools in Qatar.</p>
+    </div>
+
+    <svg class="cover-line" viewBox="0 0 1100 120" aria-hidden="true">
+      <path id="coverPath" d="M10 60 H1080" />
+      <g class="cover-stops">
+        <circle cx="10" cy="60" r="9"/><circle cx="330" cy="60" r="9"/><circle cx="600" cy="60" r="9"/><circle cx="850" cy="60" r="9"/>
+        <rect x="1066" y="46" width="28" height="28" rx="7" class="school"/>
+      </g>
+      <g class="cover-labels">
+        <text x="10" y="104">06:42</text><text x="330" y="104">06:47</text><text x="600" y="104">06:53</text><text x="850" y="104">06:58</text><text x="1080" y="104" text-anchor="middle">SCHOOL</text>
+      </g>
+      <g id="coverBus" class="cover-bus"><circle r="22" class="halo"/><circle r="13"/></g>
+    </svg>
+
+    <div class="cover-meta" data-a="fade" style="--d:8">
+      <span>Pitch deck</span><span>October 2026</span><span>routeyai.vercel.app</span>
+    </div>
+  </section>
+
+  <!-- ============================================================ 02 PROBLEM -->
+  <section class="slide light s-problem" data-title="The problem" data-hook="problem">
+    <div class="pad">
+      <p class="eyebrow" data-a style="--d:0"><b>02</b> The problem</p>
+      <h2 class="h-xl">
+        <span class="ln"><span class="mono-time">6<i class="colon">:</i>45&nbsp;AM.</span></span>
+        <span class="ln"><span>Where’s the bus?</span></span>
+      </h2>
+
+      <ol class="pains">
+        <li data-a style="--d:4">
+          <span class="who">Parents</span>
+          <p>Wait at the gate, guessing, then chase the school or the driver by phone.</p>
+        </li>
+        <li data-a style="--d:5">
+          <span class="who">Schools</span>
+          <p>Plan routes by hand, and redo them whenever a student joins or moves house.</p>
+        </li>
+        <li data-a style="--d:6">
+          <span class="who">Drivers</span>
+          <p>Work from paper lists, with no quick way to tell parents they’re running late.</p>
+        </li>
+      </ol>
+    </div>
+
+    <figure class="problem-photo" data-a="fade" style="--d:1">
+      <img src="assets/photos/parent-at-gate.jpg" alt="A mother checks her phone at the gate while her son waits for the school bus">
+      <div class="chat">
+        <div class="chat-head"><b>Grade 4 parents</b><span>06:52</span></div>
+        <div class="bubble b1">Has bus 3 left yet?</div>
+        <div class="bubble b2">We’ve been at the gate for 20 minutes</div>
+        <div class="bubble b3">Driver isn’t picking up</div>
+      </div>
+    </figure>
+  </section>
+
+  <!-- ============================================================ 03 TODAY -->
+  <section class="slide dark s-today" data-title="Today">
+    <div class="pad">
+      <div class="today-head">
+        <div>
+          <p class="eyebrow" data-a style="--d:0"><b>03</b> How it’s done today</p>
+          <h2 class="h-l">
+            <span class="ln"><span>Schools are stitching</span></span>
+            <span class="ln"><span>it together.</span></span>
+          </h2>
+        </div>
+        <p class="lede narrow" data-a style="--d:3">Routes live in a spreadsheet, updates in a group chat, and a GPS tracker knows where the bus is but not who is on it.</p>
+      </div>
+
+      <div class="matrix" data-a style="--d:4">
+        <div class="mx-row mx-head">
+          <span></span>
+          <span>Spreadsheets<br>and group chats</span>
+          <span>Vehicle GPS<br>trackers</span>
+          <span class="us">RouteyAI</span>
+        </div>
+        <div class="mx-row"><span>Plans the routes</span><i class="dot no"></i><i class="dot no"></i><i class="dot yes"></i></div>
+        <div class="mx-row"><span>Re-plans when a student joins</span><i class="dot part"></i><i class="dot no"></i><i class="dot yes"></i></div>
+        <div class="mx-row"><span>Parents see the bus live</span><i class="dot no"></i><i class="dot part"></i><i class="dot yes"></i></div>
+        <div class="mx-row"><span>Attendance for each student</span><i class="dot part"></i><i class="dot no"></i><i class="dot yes"></i></div>
+        <div class="mx-row"><span>Parent alert when their child boards</span><i class="dot no"></i><i class="dot no"></i><i class="dot yes"></i></div>
+        <div class="mx-legend"><span><i class="dot yes"></i>Yes</span><span><i class="dot part"></i>Partly, or by hand</span><span><i class="dot no"></i>No</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 04 SOLUTION -->
+  <section class="slide light s-solution" data-title="The solution">
+    <div class="pad">
+      <p class="eyebrow" data-a style="--d:0"><b>04</b> The solution</p>
+      <h2 class="h-xl tight">
+        <span class="ln"><span>One system.</span></span>
+        <span class="ln"><span>Three apps.</span></span>
+      </h2>
+      <p class="lede sol-lede" data-a style="--d:3">RouteyAI plans the routes, guides the driver and keeps parents in the loop, all from the same live data.</p>
+
+      <div class="trio">
+        <div class="flow" aria-hidden="true">
+          <span class="flow-tag t1">Routes</span>
+          <span class="flow-tag t2">Live GPS + attendance</span>
+          <i class="pulse p1"></i><i class="pulse p2"></i><i class="pulse p3"></i><i class="pulse p4"></i>
+        </div>
+
+        <article class="app-card" data-a style="--d:4">
+          <div class="mini mini-dash">
+            <svg viewBox="0 0 200 110"><path d="M10 90 C40 70 50 30 90 34 S150 70 190 20" class="r1"/><path d="M10 30 C50 40 70 80 110 78 S170 90 190 96" class="r2"/><path d="M30 104 C60 80 90 70 120 50 S160 26 186 60" class="r3"/></svg>
+          </div>
+          <p class="app-kind">Web · school staff</p>
+          <h3>School dashboard</h3>
+          <p>Add buses and students, press Optimize, and watch the whole fleet live.</p>
+        </article>
+
+        <article class="app-card" data-a style="--d:5">
+          <div class="mini mini-driver">
+            <div class="mrow done"><svg><use href="#i-check"/></svg><span>Omar K.</span></div>
+            <div class="mrow done"><svg><use href="#i-check"/></svg><span>Maryam S.</span></div>
+            <div class="mrow now"><i></i><span>Sara K.</span></div>
+          </div>
+          <p class="app-kind">iOS + Android · drivers</p>
+          <h3>Driver app</h3>
+          <p>The next pickup in route order, attendance in one tap, GPS every 10 seconds.</p>
+        </article>
+
+        <article class="app-card" data-a style="--d:6">
+          <div class="mini mini-parent">
+            <div class="eta-mini"><b>4</b><span>min</span></div>
+            <div class="note-mini"><svg><use href="#i-bell"/></svg>Aisha has boarded</div>
+          </div>
+          <p class="app-kind">iOS + Android · parents</p>
+          <h3>Parent app</h3>
+          <p>The bus on a map, the arrival time for their stop, and an alert when their child boards.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 05 HOW IT WORKS -->
+  <section class="slide dark s-how" data-title="How it works" data-hook="kmeans">
+    <div class="how-map" data-a="fade" style="--d:0">
+      <img src="assets/maps/aspire-dark.webp" alt="Street map around Aspire Park, Doha">
+      <svg id="kmSvg" viewBox="0 0 540 400" aria-hidden="true">
+        <g id="kmRoutes"></g>
+        <g id="kmHomes"></g>
+        <g id="kmCentroids"></g>
+        <g id="kmSchool"></g>
+        <g id="kmBuses"></g>
+      </svg>
+      <div class="km-caption"><i class="live"></i><span id="kmCaption">27 home addresses on the map</span></div>
+      <button class="km-replay" id="kmReplay" type="button"><svg><use href="#i-replay"/></svg>Replay</button>
+    </div>
+    <div class="how-foot" data-a="fade" style="--d:2">
+      <div class="km-legend" id="kmLegend">
+        <span><i style="--c:var(--r1)"></i>Bus 1 · Khalid</span>
+        <span><i style="--c:var(--r2)"></i>Bus 2 · Rashid</span>
+        <span><i style="--c:var(--r3)"></i>Bus 3 · Imran</span>
+      </div>
+      <p class="km-credit">Aspire Park, Doha · Map data © OpenStreetMap</p>
+    </div>
+
+    <div class="how-side">
+      <p class="eyebrow" data-a style="--d:1"><b>05</b> How it works</p>
+      <h2 class="h-m">
+        <span class="ln"><span>Addresses in.</span></span>
+        <span class="ln"><span>Routes out.</span></span>
+      </h2>
+      <ol class="steps" id="kmSteps">
+        <li data-a style="--d:4"><b>01</b><div><h4>Add students</h4><p>Each home address is found and pinned on the map.</p></div></li>
+        <li data-a style="--d:5"><b>02</b><div><h4>Group by area</h4><p>Nearby homes are grouped, and no bus gets more students than it has seats.</p></div></li>
+        <li data-a style="--d:6"><b>03</b><div><h4>Order the stops</h4><p>Stops go in the shortest order, using real road travel times.</p></div></li>
+        <li data-a style="--d:7"><b>04</b><div><h4>Run the route</h4><p>Drivers start, parents follow, and a new student joins the nearest bus with a free seat.</p></div></li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ============================================================ 06 PARENTS -->
+  <section class="slide light s-parent" data-title="For parents" data-hook="parent">
+    <div class="pad two">
+      <div class="col-text">
+        <p class="eyebrow" data-a style="--d:0"><b>06</b> For parents</p>
+        <h2 class="h-l">
+          <span class="ln"><span>No more waiting</span></span>
+          <span class="ln"><span>at the gate.</span></span>
+        </h2>
+        <p class="lede" data-a style="--d:3">Parents see their child’s bus on the map, know when it will reach their stop, and get a notification the moment their child boards.</p>
+        <ul class="ticks" data-a style="--d:4">
+          <li>Live bus on the map</li>
+          <li>Arrival time for their stop</li>
+          <li>Boarded and absent alerts</li>
+          <li>Report an absence ahead of time</li>
+          <li>Switch between children</li>
+          <li>Look back at past rides</li>
+        </ul>
+      </div>
+
+      <div class="phone-wrap" data-a="up" style="--d:2">
+        <div class="phone">
+          <div class="screen">
+            <div class="sbar"><span>6:51</span><span class="sbar-r"><svg><use href="#i-signal"/></svg><svg><use href="#i-battery"/></svg></span></div>
+            <div class="pmap">
+              <svg id="pSvg" viewBox="451.4 110.8 88.6 167.4" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+                <image href="assets/maps/phone-parent.webp" x="451.4" y="110.8" width="88.6" height="167.4" preserveAspectRatio="none"/>
+                <path id="pRouteCase" class="rt-case"/>
+                <path id="pRoute" class="rt-line"/>
+                <g id="pHome" class="home-pin"></g>
+                <g id="pBus" class="bus-pin"><circle r="4.05" class="halo"/><circle r="2.6" class="core"/><use href="#i-bus" x="-1.45" y="-1.45" width="2.9" height="2.9"/></g>
+              </svg>
+              <div class="chips"><span class="chip on">Aisha</span><span class="chip">Yousef · <em>Staying home</em></span></div>
+              <div class="notif" id="pNotif">
+                <img src="assets/brand/app-icon.png" alt="">
+                <div><p class="n-top"><b>RouteyAI</b><span>now</span></p><p class="n-title">Aisha has boarded</p><p class="n-body">Aisha is on the bus and on the way to school.</p></div>
+              </div>
+            </div>
+            <div class="sheet">
+              <div class="sheet-row">
+                <div>
+                  <p class="s-k">Bus 3 · Imran</p>
+                  <p class="s-eta"><b id="pEta">6</b><span id="pEtaUnit">min</span></p>
+                  <p class="s-k2" id="pSub">to Aisha’s stop · Sidriyat Wasit St</p>
+                </div>
+                <span class="pill wait" id="pPill">Waiting</span>
+              </div>
+              <div class="s-bar"><i id="pBar"></i></div>
+            </div>
+            <nav class="tabs"><span><svg><use href="#i-home"/></svg>Home</span><span class="on"><svg><use href="#i-map"/></svg>Track</span><span><svg><use href="#i-clock"/></svg>History</span><span><svg><use href="#i-bell"/></svg>Alerts</span><span><svg><use href="#i-user"/></svg>Account</span></nav>
+          </div>
+        </div>
+        <div class="callout c1" data-a="fade" style="--d:6"><i></i>Bus position, every 10 seconds</div>
+        <div class="callout c2" data-a="fade" style="--d:7"><i></i>Arrival time for their own stop</div>
+        <div class="callout c3" data-a="fade" style="--d:8"><i></i>A notification when their child boards</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 07 DRIVERS -->
+  <section class="slide dark s-driver" data-title="For drivers" data-hook="driver">
+    <figure class="driver-photo" data-a="fade" style="--d:0"><img src="assets/photos/driver-doha.jpg" alt="A school bus driver in Doha tapping the phone on his dashboard"></figure>
+
+    <div class="driver-text">
+      <p class="eyebrow" data-a style="--d:1"><b>07</b> For drivers</p>
+      <h2 class="h-m">
+        <span class="ln"><span>One hand.</span></span>
+        <span class="ln"><span>One tap.</span></span>
+        <span class="ln"><span class="hl">Next stop.</span></span>
+      </h2>
+      <p class="lede" data-a style="--d:5">The next pickup in route order, attendance in one tap, and parents kept up to date without a single phone call.</p>
+      <ul class="ticks on-dark" data-a style="--d:6">
+        <li>Pickups in the best order</li>
+        <li>Boarded or absent in one tap</li>
+        <li>Sees absences parents reported</li>
+        <li>“Running late” notice in one tap</li>
+        <li>Shares GPS every 10 s while driving</li>
+        <li>A summary when the route ends</li>
+      </ul>
+    </div>
+
+    <div class="phone-wrap driver-phone" data-a="up" style="--d:3">
+      <div class="phone">
+        <div class="screen">
+          <div class="sbar"><span>6:48</span><span class="sbar-r"><svg><use href="#i-signal"/></svg><svg><use href="#i-battery"/></svg></span></div>
+          <div class="d-head">
+            <div><p class="d-title">Morning route</p><p class="d-sub">Bus 1 · 9 stops</p></div>
+            <span class="live-pill"><i></i>Sharing location</span>
+          </div>
+          <div class="dmap">
+            <svg id="dSvg" viewBox="225.9 29.8 107.2 56.1" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+              <image href="assets/maps/phone-driver.webp" x="225.9" y="29.8" width="107.2" height="56.1" preserveAspectRatio="none"/>
+              <path id="dRouteCase" class="rt-case d"/>
+              <path id="dRoute" class="rt-line d"/>
+              <g id="dStops"></g>
+              <g id="dBus" class="bus-pin"><circle r="4.8" class="halo"/><circle r="3.1" class="core"/><use href="#i-bus" x="-1.75" y="-1.75" width="3.5" height="3.5"/></g>
+            </svg>
+          </div>
+          <div class="d-prog"><span id="dProgLabel">Stop 5 of 9</span><div class="s-bar"><i id="dBar"></i></div></div>
+
+          <div class="stop-card now" id="dCardNow">
+            <p class="sc-head"><span class="tag" id="dTagNow">Now</span>Villa 27, Umm Egraiba St<span class="sc-count" id="dCount">0/2 boarded</span></p>
+            <div class="kid" id="dKid1"><span class="kid-name">Omar K.</span><span class="btns"><b class="board">Board</b><b class="absent">Absent</b></span><span class="done-label"><svg><use href="#i-check"/></svg>Boarded</span></div>
+            <div class="kid" id="dKid2"><span class="kid-name">Maryam S.</span><span class="btns"><b class="board">Board</b><b class="absent">Absent</b></span><span class="done-label"><svg><use href="#i-check"/></svg>Boarded</span></div>
+          </div>
+
+          <div class="stop-card next" id="dCardNext">
+            <p class="sc-head"><span class="tag" id="dTagNext">Next</span>Villa 9, Umm Egraiba St</p>
+            <div class="kid off"><span class="kid-name">Sara K.</span><span class="away">Staying home · Sick</span></div>
+          </div>
+
+          <div class="late-btn"><svg><use href="#i-clock"/></svg>Tell parents I’m running late</div>
+          <nav class="tabs"><span><svg><use href="#i-home"/></svg>Home</span><span class="on"><svg><use href="#i-route"/></svg>Route</span><span><svg><use href="#i-chat"/></svg>Messages</span><span><svg><use href="#i-user"/></svg>Account</span></nav>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 08 SCHOOLS -->
+  <section class="slide light s-school" data-title="For schools" data-hook="fleet">
+    <div class="pad two school-grid">
+      <div class="col-text">
+        <p class="eyebrow" data-a style="--d:0"><b>08</b> For schools</p>
+        <h2 class="h-l">
+          <span class="ln"><span>The whole fleet</span></span>
+          <span class="ln"><span>on one screen.</span></span>
+        </h2>
+        <p class="lede" data-a style="--d:3">School staff add buses and students, press Optimize, and see every bus live. New students are placed automatically, and announcements reach one bus or all of them.</p>
+      </div>
+
+      <div class="browser" data-a="up" style="--d:2">
+        <div class="br-bar"><i></i><i></i><i></i><span>routeyai.vercel.app/school</span></div>
+        <div class="br-body">
+          <aside class="br-side">
+            <div class="br-brand"><img src="assets/brand/mark.png" alt=""><b>RouteyAI</b></div>
+            <span class="on"><svg><use href="#i-grid"/></svg>Overview</span>
+            <span><svg><use href="#i-bus"/></svg>Buses</span>
+            <span><svg><use href="#i-user"/></svg>Students</span>
+            <span><svg><use href="#i-route"/></svg>Routes</span>
+            <span><svg><use href="#i-clock"/></svg>Absences</span>
+            <span><svg><use href="#i-chart"/></svg>Analytics</span>
+          </aside>
+          <div class="br-main">
+            <div class="br-top"><div><p class="br-k">Morning run</p><h5>Overview</h5></div><span class="live-pill light"><i></i>3 buses live</span></div>
+            <div class="stats">
+              <div><p>Buses on the road</p><b><span data-count="3">0</span><small>/3</small></b></div>
+              <div><p>Students</p><b data-count="27">0</b></div>
+              <div><p>Boarded so far</p><b data-count="18">0</b></div>
+              <div><p>Absent today</p><b data-count="2">0</b></div>
+            </div>
+            <div class="br-split">
+              <div class="br-map">
+                <img src="assets/maps/aspire-light.webp" alt="">
+                <svg id="fSvg" viewBox="0 0 540 400" aria-hidden="true"><g id="fRoutes"></g><g id="fBuses"></g></svg>
+              </div>
+              <div class="br-list">
+                <div class="bl"><i style="--c:var(--l1)"></i><div><b>Bus 1</b><span>Khalid · 6 of 9 boarded</span></div><em class="ok">On time</em></div>
+                <div class="bl"><i style="--c:var(--l2)"></i><div><b>Bus 2</b><span>Rashid · 7 of 9 boarded</span></div><em class="ok">On time</em></div>
+                <div class="bl"><i style="--c:var(--l3)"></i><div><b>Bus 3</b><span>Imran · 5 of 9 boarded</span></div><em class="late">3 min late</em></div>
+                <div class="bl-note"><svg><use href="#i-bell"/></svg>Announcement sent to Bus 3 parents</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 09 PRIVACY -->
+  <section class="slide dark s-privacy" data-title="Privacy">
+    <div class="pad">
+      <p class="eyebrow" data-a style="--d:0"><b>09</b> Privacy by design</p>
+      <h2 class="h-l">
+        <span class="ln"><span>Everyone sees only what</span></span>
+        <span class="ln"><span>their role needs.</span></span>
+      </h2>
+
+      <div class="access" data-a style="--d:3">
+        <div class="ac-row ac-head">
+          <span></span>
+          <span>Every bus and student at the school</span>
+          <span>One bus and the students on it</span>
+          <span>One child’s bus, stop and attendance</span>
+          <span>Any other school’s data</span>
+        </div>
+        <div class="ac-row"><span><b>School admin</b></span><i class="dot yes"></i><i class="dot yes"></i><i class="dot yes"></i><i class="dot no"></i></div>
+        <div class="ac-row"><span><b>Driver</b></span><i class="dot no"></i><i class="dot yes"></i><i class="dot no"></i><i class="dot no"></i></div>
+        <div class="ac-row"><span><b>Parent</b></span><i class="dot no"></i><i class="dot no"></i><i class="dot yes"></i><i class="dot no"></i></div>
+      </div>
+
+      <div class="facts">
+        <p data-a style="--d:6"><b>Enforced in the database</b>Access rules live in the database itself (row-level security), not just in the app.</p>
+        <p data-a style="--d:7"><b>Location only on the road</b>A bus shares its position only while a route is running.</p>
+        <p data-a style="--d:8"><b>Delete any time</b>Anyone can delete their account from inside the app.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 10 MARKET -->
+  <section class="slide light s-market" data-title="Market" data-hook="market">
+    <div class="pad two market-grid">
+      <div class="col-text">
+        <p class="eyebrow" data-a style="--d:0"><b>10</b> Market</p>
+        <h2 class="h-l">
+          <span class="ln"><span>Starting in Qatar.</span></span>
+          <span class="ln"><span>Built for the Gulf.</span></span>
+        </h2>
+        <dl class="numbers">
+          <div data-a style="--d:3"><dt data-count="419373" data-format="comma">0</dt><dd>students in Qatar’s schools and kindergartens</dd></div>
+          <div data-a style="--d:4"><dt data-count="649">0</dt><dd>public and private schools and kindergartens</dd></div>
+          <div data-a style="--d:5"><dt><span class="approx">~</span><span data-count="3000" data-format="comma">0</span></dt><dd>buses prepared for student transport</dd></div>
+        </dl>
+        <p class="source" data-a="fade" style="--d:7">Ministry of Education and Higher Education figures for the 2026–27 school year, reported by Qatar Tribune, 29 August 2026.</p>
+      </div>
+
+      <div class="zones" data-a="fade" style="--d:2">
+        <svg viewBox="0 0 800 800" aria-hidden="true">
+          <circle cx="400" cy="400" r="380" class="z z3"/>
+          <circle cx="400" cy="400" r="262" class="z z2"/>
+          <circle cx="400" cy="400" r="140" class="z z1"/>
+        </svg>
+        <div class="zl zl1"><span>Zone 1 · Now</span><b>Private schools in Doha that run their own buses</b></div>
+        <div class="zl zl2"><span>Zone 2</span><b>Every school and bus operator in Qatar</b></div>
+        <div class="zl zl3"><span>Zone 3</span><b>The GCC, with Arabic in the app</b></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 11 BUSINESS MODEL -->
+  <section class="slide dark s-model" data-title="Business model">
+    <div class="pad">
+      <div class="model-head">
+        <div>
+          <p class="eyebrow" data-a style="--d:0"><b>11</b> Business model</p>
+          <h2 class="h-l">
+            <span class="ln"><span>One product,</span></span>
+            <span class="ln"><span>priced by fleet size.</span></span>
+          </h2>
+        </div>
+        <p class="lede narrow" data-a style="--d:3">Each school pays a subscription based on how many buses it runs. Every plan includes the whole product, so revenue grows with every bus a school adds.</p>
+      </div>
+
+      <div class="tiers">
+        <article data-a style="--d:4">
+          <p class="t-name">Starter</p>
+          <p class="t-fleet">Up to 5 buses</p>
+          <div class="fleet f5"></div>
+          <p class="t-blurb">For small schools with a few buses.</p>
+        </article>
+        <article class="mid" data-a style="--d:5">
+          <p class="t-name">Growth</p>
+          <p class="t-fleet">6 to 50 buses</p>
+          <div class="fleet f50"></div>
+          <p class="t-blurb">For schools running a full fleet.</p>
+        </article>
+        <article data-a style="--d:6">
+          <p class="t-name">Enterprise</p>
+          <p class="t-fleet">More than 50 buses</p>
+          <div class="fleet f99"></div>
+          <p class="t-blurb">For large fleets and school groups.</p>
+        </article>
+      </div>
+
+      <p class="included" data-a="fade" style="--d:8"><b>Every plan</b><span>Route planning</span><span>Live fleet map</span><span>Smart placement of new students</span><span>Announcements</span><span>Driver app</span><span>Parent app</span><span>Web dashboard</span></p>
+    </div>
+  </section>
+
+  <!-- ============================================================ 12 WHERE WE ARE -->
+  <section class="slide light s-road" data-title="Where we are">
+    <div class="pad">
+      <p class="eyebrow" data-a style="--d:0"><b>12</b> Where we are</p>
+      <h2 class="h-l">
+        <span class="ln"><span>Built, live, and</span></span>
+        <span class="ln"><span>ready for pilots.</span></span>
+      </h2>
+
+      <div class="metro">
+        <div class="seg-labels"><span class="sl-built">Built</span><span class="sl-now">Now</span><span class="sl-next">Next</span></div>
+        <svg class="metro-line" viewBox="0 0 1680 40" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M20 20 H1040" class="m-built"/>
+          <path d="M1040 20 H1660" class="m-next"/>
+        </svg>
+        <ol class="stations">
+          <li class="done up"  style="--x:20px"><i></i><div><b>Route planner</b><span>Groups homes, orders stops on real roads</span></div></li>
+          <li class="done"     style="--x:276px"><i></i><div><b>School dashboard</b><span>Fleet, students, live map, reports</span></div></li>
+          <li class="done up"  style="--x:532px"><i></i><div><b>Driver and parent apps</b><span>iOS and Android, in final testing</span></div></li>
+          <li class="done"     style="--x:788px"><i></i><div><b>Website live</b><span>routeyai.vercel.app, with demo requests</span></div></li>
+          <li class="now up"   style="--x:1040px"><i></i><div><b>App Store and Google Play</b><span>Submission under way</span></div></li>
+          <li class="next"     style="--x:1246px"><i></i><div><b>First pilot schools</b><span>In Doha</span></div></li>
+          <li class="next up"  style="--x:1452px"><i></i><div><b>Arabic, right to left</b><span>Across every app</span></div></li>
+          <li class="next"     style="--x:1660px"><i></i><div><b>Routing at scale</b><span>Bigger fleets, smarter routes</span></div></li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 13 CLOSE -->
+  <section class="slide dark s-close" data-title="Let’s talk">
+    <figure class="close-photo" data-a="fade" style="--d:0"><img src="assets/photos/students-boarding.jpg" alt="Students boarding a yellow school bus, helped by a bus attendant"></figure>
+    <div class="close-body">
+      <p class="eyebrow" data-a style="--d:1"><b>13</b> Let’s talk</p>
+      <h2 class="h-l">
+        <span class="ln"><span>Let’s put every</span></span>
+        <span class="ln"><span>school bus</span></span>
+        <span class="ln"><span class="hl">on the map.</span></span>
+      </h2>
+      <div class="asks">
+        <p class="asks-k" data-a style="--d:5">What we’re looking for</p>
+        <div class="ask" data-a style="--d:6"><b>01</b><p>Pilot schools in Doha for this school year</p></div>
+        <div class="ask" data-a style="--d:7"><b>02</b><p>Partners and investors to launch across Qatar and the Gulf</p></div>
+      </div>
+      <div class="contact" data-a style="--d:8">
+        <div class="lockup small"><img src="assets/brand/mark.png" alt=""><span>RouteyAI</span></div>
+        <div><b>Najeeb Abdi</b><span>Founder</span></div>
+        <div><b>routeyai.vercel.app</b><span>Book a demo on the website</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Chrome: brand, counter and the route line, drawn over every slide -->
+  <div class="chrome" id="chrome" aria-hidden="true">
+    <div class="ch-brand"><img src="assets/brand/mark.png" alt=""><span>RouteyAI</span></div>
+    <div class="ch-count"><b id="chNow">01</b><span>/</span><span id="chTotal">13</span></div>
+    <div class="ch-line" id="chLine">
+      <div class="ch-track"><div class="ch-fill" id="chFill"></div></div>
+      <div class="ch-stations" id="chStations"></div>
+      <div class="ch-bus" id="chBus"><svg><use href="#i-bus"/></svg></div>
+    </div>
+  </div>
+
+</main>
+</div>
+
+<div class="hint" id="hint">Use <kbd>←</kbd> <kbd>→</kbd> to move · <kbd>F</kbd> full screen</div>
+
+<script src="js/mapdata.js"></script>
+<script src="js/deck.js"></script>
+</body>
+</html>
