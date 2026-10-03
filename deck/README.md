@@ -12,6 +12,17 @@ npx serve deck
 
 The fonts (Archivo and IBM Plex Mono) load from Google Fonts. Without internet, the deck still works but falls back to Arial.
 
+## Share it
+
+The deck is live at **https://routeyai-deck.vercel.app**, a separate Vercel project (`routeyai-deck`) from the main website, and anyone with the link can open it. After changing the deck, publish the new version with:
+
+```bash
+cd deck
+npx vercel deploy --prod
+```
+
+This README, `.env` files and the ignore files are left out of the upload (see `.vercelignore`).
+
 ## Present it
 
 | Key | Action |

@@ -1,0 +1,5 @@
+# Internal notes and local files stay out of the public deck
+README.md
+.env*
+.gitignore
+.vercelignore
