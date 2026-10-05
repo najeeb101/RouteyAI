@@ -52,10 +52,11 @@ mobile/
 
 ## Environment
 
-Copy `.env.example` to `.env.local`. Two Mapbox tokens are needed:
+Copy `.env.example` to `.env.local`. The map needs one Mapbox token:
 
-- `EXPO_PUBLIC_MAPBOX_TOKEN`: a **public** `pk.` token. It ships inside the app.
-- `RNMAPBOX_MAPS_DOWNLOAD_TOKEN`: a **secret** `sk.` token with the `DOWNLOADS:READ` scope, read by `app.config.js` at build time to download the Mapbox SDK. Keep it out of `app.json` and `eas.json`; for EAS cloud builds store it with `eas env:create --name RNMAPBOX_MAPS_DOWNLOAD_TOKEN --visibility secret`.
+- `EXPO_PUBLIC_MAPBOX_TOKEN`: a **public** `pk.` token. It ships inside the app, so never put a secret `sk.` token here. For EAS cloud builds, add it with `eas env:create --name EXPO_PUBLIC_MAPBOX_TOKEN --visibility plaintext`.
+
+Building no longer needs a secret download token: since `@rnmapbox/maps` 10.3 the Mapbox SDK downloads without one.
 
 ## Commands
 
