@@ -1,6 +1,7 @@
 /// <reference types="https://esm.sh/@supabase/functions-js/src/edge-runtime.d.ts" />
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createClient, type SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { getCaller, type Caller } from '../_shared/caller.ts'
 
 type OptimizeInputRow = {
   bus_id: string
@@ -35,6 +36,30 @@ const headers = {
   'Content-Type': 'application/json',
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+const reply = (body: Record<string, unknown>, status: number) => new Response(JSON.stringify(body), { headers, status })
+
+/**
+ * Whether the caller may re-optimize what the request names. Platform admins and the service role may optimize
+ * anything, including every bus at once (no bus_id or school_id). A school admin may optimize one of their school's
+ * buses or their whole school. Nobody else may.
+ */
+async function canOptimize(
+  supabase: SupabaseClient,
+  caller: Caller,
+  busId: string | null,
+  schoolId: string | null,
+): Promise<boolean> {
+  if (caller.kind === 'service' || caller.roles.some((r) => r.role === 'platform_admin')) return true
+
+  let target = schoolId
+  if (busId) {
+    const { data: bus, error } = await supabase.from('buses').select('school_id').eq('id', busId).maybeSingle()
+    if (error) throw error
+    target = bus?.school_id ?? null
+  }
+  return target !== null && caller.roles.some((r) => r.role === 'school_admin' && r.school_id === target)
 }
 
 function haversineKm(aLat: number, aLng: number, bLat: number, bLng: number): number {
@@ -225,13 +250,20 @@ Deno.serve(async (req) => {
     }
 
     const supabase = createClient(supabaseUrl, serviceKey)
+    const caller = await getCaller(req, supabase, { url: supabaseUrl, serviceKey })
+    if (!caller) return reply({ ok: false, error: 'Sign in required' }, 401)
+
     const mapboxToken = Deno.env.get('MAPBOX_ACCESS_TOKEN') ?? Deno.env.get('NEXT_PUBLIC_MAPBOX_TOKEN') ?? null
     const body = await req.json().catch(() => ({}))
     const busId = typeof body?.bus_id === 'string' ? body.bus_id : null
+    const schoolId = typeof body?.school_id === 'string' ? body.school_id : null
+    if (!(await canOptimize(supabase, caller, busId, schoolId))) {
+      return reply({ ok: false, error: 'Not allowed to optimize these routes' }, 403)
+    }
 
-    if (!busId && typeof body?.school_id === 'string') {
+    if (!busId && schoolId) {
       const { data: schoolRowsRaw, error: schoolErr } = await supabase.rpc('get_school_optimization_payload', {
-        p_school_id: body.school_id,
+        p_school_id: schoolId,
       })
       if (schoolErr) throw schoolErr
       const schoolRows = (schoolRowsRaw ?? []) as SchoolOptimizationRow[]
@@ -262,7 +294,8 @@ Deno.serve(async (req) => {
     const { data, error } = await supabase.rpc('get_route_optimization_payload', { p_bus_id: busId })
     if (error) throw error
 
-    const rows = (data ?? []) as OptimizeInputRow[]
+    // With no bus_id the payload covers every bus in every school; a school-wide run only re-plans that school's buses.
+    const rows = ((data ?? []) as OptimizeInputRow[]).filter((row) => busId || !schoolId || row.school_id === schoolId)
     const byBus = new Map<string, OptimizeInputRow[]>()
     for (const row of rows) {
       if (!byBus.has(row.bus_id)) byBus.set(row.bus_id, [])

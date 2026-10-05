@@ -400,6 +400,15 @@ Found while testing the apps against a local database. The policies above show t
 - Drivers set their bus active or inactive with `set_bus_active(p_active)` instead of updating `buses`.
 - Announcements: parents and drivers see school-wide ones plus their own bus's, not other buses'.
 
+### Edge Function and helper access (2026-10-05)
+
+- The gateway's verify_jwt accepts the public anon key, so each Edge Function checks its caller itself with
+  `supabase/functions/_shared/caller.ts` (service role, or a signed-in user and their roles). New functions must do the same.
+- `0016_lock_optimization_helpers.sql`: the route-optimization helpers (`get_route_optimization_payload`,
+  `get_school_optimization_payload`, `save_student_bus_assignments`, `save_optimized_route`) are service-role only.
+  A new SECURITY DEFINER function without its own role check must `REVOKE ALL ... FROM PUBLIC, anon, authenticated`:
+  Supabase grants anon and authenticated EXECUTE on new functions by default.
+
 ### Account deletion (0015_delete_account.sql, 2026-10-02)
 
 - `delete_my_account()` deletes the caller's `auth.users` row (App Store and Play require in-app deletion);
