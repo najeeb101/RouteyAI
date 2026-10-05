@@ -1,19 +1,18 @@
 import { useMemo, useState } from 'react'
 import { ScrollView, Text, TouchableOpacity, useColorScheme, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import Mapbox from '@rnmapbox/maps'
 import { Ionicons } from '@expo/vector-icons'
 import { Banner } from '@/components/primitives/Banner'
+import { MapPlaceholder } from '@/components/primitives/MapPlaceholder'
 import { ScreenHeader } from '@/components/primitives/ScreenHeader'
 import { useDriverContext } from '@/features/driver/context/DriverDataContext'
 import { reasonLabel } from '@/lib/absence'
 import { colors } from '@/lib/colors'
 import { localDateKey } from '@/lib/dates'
 import { boundsOf, decodePolyline } from '@/lib/geo'
+import { Mapbox } from '@/lib/mapbox'
 import { mapStyleJSON, ROUTE_LINE } from '@/lib/mapStyle'
 import { supabase } from '@/lib/supabase'
-
-Mapbox.setAccessToken(process.env.EXPO_PUBLIC_MAPBOX_TOKEN ?? '')
 
 export function DriverRouteScreen() {
   const { loading, error, profile, stops, boardedIds, setBoardedIds, absentIds, setAbsentIds, reported, reportedIds, routePoints, encodedPolyline, trip } = useDriverContext()
@@ -77,23 +76,27 @@ export function DriverRouteScreen() {
         {/* Map */}
         {!loading && mapCoordinates.length > 0 && (
           <View style={{ height: 240, borderBottomWidth: 1, borderBottomColor: colors.border }}>
-            <Mapbox.MapView style={{ flex: 1 }} styleJSON={mapStyleJSON(scheme)} scaleBarEnabled={false}>
-              {mapBounds ? (
-                <Mapbox.Camera bounds={{ ...mapBounds, paddingTop: 30, paddingBottom: 70, paddingLeft: 30, paddingRight: 30 }} animationDuration={0} />
-              ) : (
-                <Mapbox.Camera centerCoordinate={mapCenter} zoomLevel={11} />
-              )}
-              <Mapbox.ShapeSource id="route-line" shape={{ type: 'Feature', geometry: { type: 'LineString', coordinates: mapCoordinates }, properties: {} }}>
-                <Mapbox.LineLayer id="route-line-casing" style={{ lineColor: ROUTE_LINE[scheme].casing, lineWidth: 7, lineCap: 'round', lineJoin: 'round' }} />
-                <Mapbox.LineLayer id="route-line-layer" aboveLayerID="route-line-casing" style={{ lineColor: ROUTE_LINE[scheme].line, lineWidth: 4, lineCap: 'round', lineJoin: 'round' }} />
-              </Mapbox.ShapeSource>
-              <Mapbox.ShapeSource
-                id="route-stops"
-                shape={{ type: 'FeatureCollection', features: routePoints.map((p) => ({ type: 'Feature', geometry: { type: 'Point', coordinates: [p.lng, p.lat] }, properties: { stopOrder: p.stopOrder } })) }}
-              >
-                <Mapbox.CircleLayer id="route-stops-layer" style={{ circleRadius: 5, circleColor: colors.success, circleStrokeColor: '#FFFFFF', circleStrokeWidth: 2 }} />
-              </Mapbox.ShapeSource>
-            </Mapbox.MapView>
+            {Mapbox ? (
+              <Mapbox.MapView style={{ flex: 1 }} styleJSON={mapStyleJSON(scheme)} scaleBarEnabled={false}>
+                {mapBounds ? (
+                  <Mapbox.Camera bounds={{ ...mapBounds, paddingTop: 30, paddingBottom: 70, paddingLeft: 30, paddingRight: 30 }} animationDuration={0} />
+                ) : (
+                  <Mapbox.Camera centerCoordinate={mapCenter} zoomLevel={11} />
+                )}
+                <Mapbox.ShapeSource id="route-line" shape={{ type: 'Feature', geometry: { type: 'LineString', coordinates: mapCoordinates }, properties: {} }}>
+                  <Mapbox.LineLayer id="route-line-casing" style={{ lineColor: ROUTE_LINE[scheme].casing, lineWidth: 7, lineCap: 'round', lineJoin: 'round' }} />
+                  <Mapbox.LineLayer id="route-line-layer" aboveLayerID="route-line-casing" style={{ lineColor: ROUTE_LINE[scheme].line, lineWidth: 4, lineCap: 'round', lineJoin: 'round' }} />
+                </Mapbox.ShapeSource>
+                <Mapbox.ShapeSource
+                  id="route-stops"
+                  shape={{ type: 'FeatureCollection', features: routePoints.map((p) => ({ type: 'Feature', geometry: { type: 'Point', coordinates: [p.lng, p.lat] }, properties: { stopOrder: p.stopOrder } })) }}
+                >
+                  <Mapbox.CircleLayer id="route-stops-layer" style={{ circleRadius: 5, circleColor: colors.success, circleStrokeColor: '#FFFFFF', circleStrokeWidth: 2 }} />
+                </Mapbox.ShapeSource>
+              </Mapbox.MapView>
+            ) : (
+              <MapPlaceholder compact />
+            )}
 
             {/* Floating route info pill */}
             <View

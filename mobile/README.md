@@ -74,3 +74,7 @@ npx eas-cli update --channel production --message "Fix ETA rounding"
 ```
 
 Native changes (a new library, a permission, an `app.json` plugin) still need a new build and store release; bump `version` in `app.json` when you make one.
+
+## Trying the app in Expo Go
+
+Without an EAS build (for example on an iPhone before there is an Apple Developer account), run `npx expo start` in `mobile/` and scan the QR code with the phone's camera; it opens in the Expo Go app. Phone and laptop must be on the same Wi-Fi (otherwise `npx expo start --tunnel`). Expo Go has no Mapbox or background-location native code, so the map screens show a placeholder (`src/lib/mapbox.ts`) and the driver's GPS only runs while the app is open. Everything else works.

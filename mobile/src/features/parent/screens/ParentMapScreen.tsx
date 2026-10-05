@@ -1,18 +1,17 @@
 import { useEffect, useMemo, useRef, useState, type ElementRef } from 'react'
 import { ActivityIndicator, Text, TouchableOpacity, useColorScheme, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import Mapbox from '@rnmapbox/maps'
 import { Ionicons } from '@expo/vector-icons'
 import { Banner } from '@/components/primitives/Banner'
+import { MapPlaceholder } from '@/components/primitives/MapPlaceholder'
 import { ChildSwitcher } from '@/features/parent/components/ChildSwitcher'
 import { CHILD_STATUS } from '@/features/parent/components/childStatus'
 import { useParentContext } from '@/features/parent/context/ParentDataContext'
 import { colors } from '@/lib/colors'
 import { timeLabel } from '@/lib/dates'
 import { boundsOf, decodePolyline } from '@/lib/geo'
+import { Mapbox } from '@/lib/mapbox'
 import { mapStyleJSON, ROUTE_LINE } from '@/lib/mapStyle'
-
-Mapbox.setAccessToken(process.env.EXPO_PUBLIC_MAPBOX_TOKEN ?? '')
 
 const DOHA: [number, number] = [51.531, 25.2854]
 /** Space the card at the bottom and the chips at the top take up, so the camera frames the route between them. */
@@ -26,7 +25,7 @@ export function ParentMapScreen() {
   const insets = useSafeAreaInsets()
   const { loading, error, children, child, selectChild, statusFor, status, attendance, routePoints, childPoint, encodedPolyline, busLocation, etaMinutes, stopsBefore } =
     useParentContext()
-  const camera = useRef<ElementRef<typeof Mapbox.Camera>>(null)
+  const camera = useRef<ElementRef<NonNullable<typeof Mapbox>['Camera']>>(null)
   const [following, setFollowing] = useState(true)
 
   const line = useMemo<Array<[number, number]>>(
@@ -83,48 +82,52 @@ export function ParentMapScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <Mapbox.MapView
-        style={{ flex: 1 }}
-        styleJSON={mapStyleJSON(scheme)}
-        scaleBarEnabled={false}
-        logoPosition={{ bottom: CARD_SPACE - 30, left: 12 }}
-        attributionPosition={{ bottom: CARD_SPACE - 30, right: 12 }}
-        onCameraChanged={(state) => {
-          if (state.gestures.isGestureActive) setFollowing(false)
-        }}
-      >
-        <Mapbox.Camera ref={camera} defaultSettings={{ centerCoordinate: DOHA, zoomLevel: 11 }} />
+      {Mapbox ? (
+        <Mapbox.MapView
+          style={{ flex: 1 }}
+          styleJSON={mapStyleJSON(scheme)}
+          scaleBarEnabled={false}
+          logoPosition={{ bottom: CARD_SPACE - 30, left: 12 }}
+          attributionPosition={{ bottom: CARD_SPACE - 30, right: 12 }}
+          onCameraChanged={(state) => {
+            if (state.gestures.isGestureActive) setFollowing(false)
+          }}
+        >
+          <Mapbox.Camera ref={camera} defaultSettings={{ centerCoordinate: DOHA, zoomLevel: 11 }} />
 
-        {line.length > 1 && (
-          <Mapbox.ShapeSource id="route" shape={{ type: 'Feature', geometry: { type: 'LineString', coordinates: line }, properties: {} }}>
-            <Mapbox.LineLayer id="route-casing" style={{ lineColor: ROUTE_LINE[scheme].casing, lineWidth: 9, lineCap: 'round', lineJoin: 'round' }} />
-            <Mapbox.LineLayer id="route-line" aboveLayerID="route-casing" style={{ lineColor, lineWidth: 5, lineCap: 'round', lineJoin: 'round' }} />
-          </Mapbox.ShapeSource>
-        )}
+          {line.length > 1 && (
+            <Mapbox.ShapeSource id="route" shape={{ type: 'Feature', geometry: { type: 'LineString', coordinates: line }, properties: {} }}>
+              <Mapbox.LineLayer id="route-casing" style={{ lineColor: ROUTE_LINE[scheme].casing, lineWidth: 9, lineCap: 'round', lineJoin: 'round' }} />
+              <Mapbox.LineLayer id="route-line" aboveLayerID="route-casing" style={{ lineColor, lineWidth: 5, lineCap: 'round', lineJoin: 'round' }} />
+            </Mapbox.ShapeSource>
+          )}
 
-        {childPoint && (
-          <Mapbox.MarkerView id="child-stop" coordinate={[childPoint.lng, childPoint.lat]} anchor={{ x: 0.5, y: 1 }} allowOverlap>
-            <View style={{ alignItems: 'center' }}>
-              <View style={{ backgroundColor: colors.dark, borderRadius: 10, paddingHorizontal: 8, paddingVertical: 4, marginBottom: 4 }}>
-                <Text style={{ color: '#FFFFFF', fontFamily: 'Inter_700Bold', fontSize: 11 }}>{first}&apos;s stop</Text>
+          {childPoint && (
+            <Mapbox.MarkerView id="child-stop" coordinate={[childPoint.lng, childPoint.lat]} anchor={{ x: 0.5, y: 1 }} allowOverlap>
+              <View style={{ alignItems: 'center' }}>
+                <View style={{ backgroundColor: colors.dark, borderRadius: 10, paddingHorizontal: 8, paddingVertical: 4, marginBottom: 4 }}>
+                  <Text style={{ color: '#FFFFFF', fontFamily: 'Inter_700Bold', fontSize: 11 }}>{first}&apos;s stop</Text>
+                </View>
+                <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: colors.warning, borderWidth: 3, borderColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', ...markerShadow }}>
+                  <Ionicons name="home" size={14} color="#FFFFFF" />
+                </View>
               </View>
-              <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: colors.warning, borderWidth: 3, borderColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', ...markerShadow }}>
-                <Ionicons name="home" size={14} color="#FFFFFF" />
-              </View>
-            </View>
-          </Mapbox.MarkerView>
-        )}
+            </Mapbox.MarkerView>
+          )}
 
-        {busLocation && (
-          <Mapbox.MarkerView id="bus" coordinate={[busLocation.lng, busLocation.lat]} allowOverlap>
-            <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: `${lineColor}33`, alignItems: 'center', justifyContent: 'center' }}>
-              <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: lineColor, borderWidth: 3, borderColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', ...markerShadow }}>
-                <Ionicons name="bus" size={14} color="#FFFFFF" />
+          {busLocation && (
+            <Mapbox.MarkerView id="bus" coordinate={[busLocation.lng, busLocation.lat]} allowOverlap>
+              <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: `${lineColor}33`, alignItems: 'center', justifyContent: 'center' }}>
+                <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: lineColor, borderWidth: 3, borderColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', ...markerShadow }}>
+                  <Ionicons name="bus" size={14} color="#FFFFFF" />
+                </View>
               </View>
-            </View>
-          </Mapbox.MarkerView>
-        )}
-      </Mapbox.MapView>
+            </Mapbox.MarkerView>
+          )}
+        </Mapbox.MapView>
+      ) : (
+        <MapPlaceholder />
+      )}
 
       {/* Top: child chips and GPS state */}
       <View style={{ position: 'absolute', top: insets.top + 10, left: 12, right: 12, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
