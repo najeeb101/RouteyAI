@@ -47,7 +47,7 @@ Free for parents and drivers. Schools can book a demo at routeyai.vercel.app.
 
 ## Notes for app review
 
-Both stores need a working sign-in. Create two demo accounts on the production database (one parent with a child on a bus, one driver of that bus) and give reviewers:
+Both stores need a working sign-in. `node scripts/review-accounts/setup.mjs` creates "RouteyAI Demo School" on the database in `.env.local` with a parent (`demo-parent@example.com`, two children on Bus 1) and the Bus 1 driver (`demo-driver@example.com`), plus a school admin for the web dashboard. The shared password is `REVIEW_ACCOUNTS_PASSWORD` in `.env.local` (generated on the first run; never commit it, the repo is public). Re-run the script after a review: reviewers may try Delete account, and the script recreates the user and relinks the children. Give reviewers:
 
 ```
 RouteyAI is used by schools: accounts are created from an invite sent by the school, so please use these demo accounts.
