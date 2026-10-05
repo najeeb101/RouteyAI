@@ -1,4 +1,4 @@
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
+import { ChevronDown } from 'lucide-react'
 import { ContactLink } from '@/components/landing/ContactLink'
 import { Reveal } from '@/components/landing/Reveal'
 
@@ -63,16 +63,21 @@ export function Faq() {
             <ContactLink className="font-semibold text-primary hover:underline" />.
           </p>
         </div>
-        <Accordion type="single" collapsible className="w-full md:pt-1">
-          {FAQS.map((faq, i) => (
-            <AccordionItem key={faq.question} value={`item-${i}`} className="border-b border-border">
-              <AccordionTrigger className="py-5 text-left text-base font-semibold text-foreground hover:text-primary hover:no-underline">
+        {/*
+          Native <details>: no JavaScript to load or hydrate, and the answers stay in the HTML. Sharing a name makes
+          them exclusive, so opening one closes the others. The open/close animation is in globals.css (.faq-item).
+        */}
+        <div className="w-full md:pt-1">
+          {FAQS.map(faq => (
+            <details key={faq.question} name="faq" className="faq-item group border-b border-border">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 rounded-sm py-5 text-left text-base font-semibold text-foreground transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-muted [&::-webkit-details-marker]:hidden">
                 {faq.question}
-              </AccordionTrigger>
-              <AccordionContent className="pb-5 text-[15px] leading-relaxed text-muted-foreground">{faq.answer}</AccordionContent>
-            </AccordionItem>
+                <ChevronDown aria-hidden="true" className="h-4 w-4 shrink-0 transition-transform duration-200 group-open:rotate-180" />
+              </summary>
+              <p className="pb-5 text-[15px] leading-relaxed text-muted-foreground">{faq.answer}</p>
+            </details>
           ))}
-        </Accordion>
+        </div>
       </Reveal>
     </section>
   )

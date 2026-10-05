@@ -1,18 +1,13 @@
-'use client'
+import { cn } from '@/lib/utils'
 
-import { useRef } from 'react'
-import { motion, useReducedMotion, useScroll, useTransform } from 'framer-motion'
-
-/** Drifts its children slightly against the scroll direction. Off with reduced motion. */
+/**
+ * Drifts its children slightly against the scroll direction, on a CSS scroll timeline (`.parallax` in globals.css).
+ * No JavaScript: framer-motion's scroll tracking measured the page during hydration. Off with reduced motion.
+ */
 export function Parallax({ children, distance = 32, className }: { children: React.ReactNode; distance?: number; className?: string }) {
-  const ref = useRef<HTMLDivElement>(null)
-  const reduceMotion = useReducedMotion()
-  const { scrollYProgress } = useScroll({ target: ref, offset: ['start end', 'end start'] })
-  const y = useTransform(scrollYProgress, [0, 1], [distance, -distance])
-
   return (
-    <motion.div ref={ref} style={{ y: reduceMotion ? 0 : y }} className={className}>
+    <div className={cn('parallax', className)} style={{ '--parallax-distance': `${distance}px` } as React.CSSProperties}>
       {children}
-    </motion.div>
+    </div>
   )
 }

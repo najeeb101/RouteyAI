@@ -5,14 +5,13 @@ Mobile: Expo (React Native) | React Native styles | Mapbox RN | EAS
 
 ---
 
-## Current Status Snapshot (2026-10-01)
+## Current Status Snapshot (2026-10-05)
 
-- Completed: Phases 1–10.
-- Nearly done: Phase 11 (custom domain left).
-- Landing page redesign merged to `main` and deployed (2026-10-01).
-- In progress: Phase 13 — landing page live at https://routeyai.vercel.app; Supabase project paused; launch placeholders in `src/lib/siteConfig.ts`.
-- Phase 14 (parent and driver app upgrade) merged; migrations `0013` and `0014` (RLS fixes, see Docs/Claude.md §5) not yet applied to Supabase. After the merge, on `landing-redesign`: school admin Absences page, driver GPS with the screen locked, Mapbox secret out of git.
-- Not started: Phase 12 (store submission). Needs an Expo SDK upgrade first (16 KB page size).
+- Completed: Phases 1–10. Supabase restored; all migrations through `0015` are on production (2026-10-02).
+- Nearly done: Phase 11 (custom domain left), plus the Edge Function caller checks found on 2026-10-05.
+- In progress: Phase 13 — landing page live at https://routeyai.vercel.app; launch placeholders in `src/lib/siteConfig.ts`; no Mapbox token on Vercel yet, so student addresses aren't geocoded on the live site.
+- In progress: Phase 12 (store submission). Expo SDK 57, EAS profiles, OTA updates, icons, Play graphics and store copy are done; next are the device test, the Mapbox `pk.` token, `eas login` and the first EAS builds.
+- Phase 14 (parent and driver app upgrade) done apart from checks on a real phone.
 
 ## Phase 1: Project Setup and Landing Page
 
@@ -135,6 +134,7 @@ Mobile: Expo (React Native) | React Native styles | Mapbox RN | EAS
 - [x] SEO meta tags on all pages
 - [x] Performance audit (Lighthouse) — home page, mobile, local production build (2026-09-30): Performance 92, Accessibility 100, Best Practices 100, SEO 100
 - [ ] Connect custom domain on Vercel
+- [ ] **Edge Functions must check the caller** (found 2026-10-05). Both run with the service role key and only require a valid JWT, and the public anon key is one. So anyone with the web app's public key can call `send-notification` with `type: announcement` and any `message` to push text to every parent of a school, and `optimize-route` with no `bus_id` to re-optimize every bus in every school. Fix: read the caller from the `Authorization` header (`auth.getUser`), allow the service role (database triggers), and check role and school (`school_admin` of that school for `optimize-route`; announcements only from school admins or the bus's driver; `eta_alert` only from the child's parent). Redeploy both functions
 
 ## Phase 12: App Store and Play Store Submission
 
@@ -152,11 +152,12 @@ Mobile: Expo (React Native) | React Native styles | Mapbox RN | EAS
 - [ ] Internal testing via TestFlight and Play internal track
 - [x] **Account deletion in the app** (Apple 5.1.1(v), Google Play): Account tab → Delete account calls `delete_my_account()` (`0015_delete_account.sql`, tested on the local database for parent, driver and platform admin); web deletion page for Play: `/privacy#delete-account` (2026-10-02). Applied to production
 - [x] Store listing copy for both stores, review notes and privacy answers: [store-listing.md](store-listing.md) (2026-10-02)
-- [ ] App Store and Play screenshots, Play feature graphic
-- [ ] Demo reviewer accounts (parent + driver) on the production database
+- [x] Play feature graphic and 512 px Play icon: `mobile/store/`, built by `scripts/store-graphics/build.mjs` (2026-10-05)
+- [ ] App Store and Play screenshots
+- [ ] Demo reviewer accounts (parent + driver) on the production database: `scripts/review-accounts/setup.mjs` is written (demo school, parent with two children, Bus 1 driver, school admin; re-runnable after reviewers delete an account) but not run against production yet
 - [ ] Submit to App Store review
 - [ ] Submit to Google Play review
-- [ ] Configure OTA updates via `eas update`
+- [x] OTA updates: `expo-updates`, a channel per EAS build profile, `runtimeVersion` follows the app version (2026-10-05). Publishing needs `eas login`; see `mobile/README.md`
 
 ## Phase 13: Landing Page Launch
 
@@ -178,7 +179,7 @@ Full plan: [plans/2026-09-29-landing-page-launch.md](plans/2026-09-29-landing-pa
 - [ ] Add real `NEXT_PUBLIC_MAPBOX_TOKEN` (`.env.local` has the placeholder) locally and on Vercel
 - [x] Set `NEXT_PUBLIC_APP_URL=https://routeyai.vercel.app` on Vercel (production)
 - [ ] Launch placeholders in `src/lib/siteConfig.ts`: set `NEXT_PUBLIC_CONTACT_EMAIL` (routeyai.com has no DNS/MX yet), legal review then `LEGAL_REVIEWED = true`, fill `PLAN_SUPPORT`
-- [ ] Lighthouse ≥ 90 on mobile. Live site, 3 runs (2026-10-02): accessibility, best practices and SEO 100; performance 62, 71, 73 (LCP 2.9–3.5 s, TBT 0.7–1.2 s, CLS 0). Biggest cost is style and layout on the home page (~2.5 s of main thread), then ~1.9 s of script. Trace findings (2026-10-02, 4x CPU, phone viewport): the first two layouts (≈180 and ≈300 ms) lay out all ~1,250 boxes of the page at once; later re-layouts are cheap (9 ms), so it's the amount of content, not one bad section. At hydration the FAQ accordion (Radix) measures all nine answers and framer-motion measures SVG and parallax targets, forcing extra full-document style/layout (60–70 ms frames). The hero cards animate with framer-motion every 1.6 s, including the arrival card that's hidden on phones. Tried `content-visibility: auto` on sections below the hero (per-section placeholder heights); no measurable gain on the dev laptop (54% background CPU makes local runs too noisy), likely because those hydration-time measurements force the skipped sections to lay out anyway. Reverted. Next: measure with PageSpeed Insights (needs an API key; the keyless daily quota ran out), then stop the hidden arrival card animating on phones, defer the FAQ/parallax measurements, and retry `content-visibility`
+- [ ] Lighthouse ≥ 90 on mobile. Live site, 3 runs (2026-10-02): accessibility, best practices and SEO 100; performance 62, 71, 73 (LCP 2.9–3.5 s, TBT 0.7–1.2 s, CLS 0). Biggest cost is style and layout on the home page (~2.5 s of main thread), then ~1.9 s of script. Trace findings (2026-10-02, 4x CPU, phone viewport): the first two layouts (≈180 and ≈300 ms) lay out all ~1,250 boxes of the page at once; later re-layouts are cheap (9 ms), so it's the amount of content, not one bad section. At hydration the FAQ accordion (Radix) measures all nine answers and framer-motion measures SVG and parallax targets, forcing extra full-document style/layout (60–70 ms frames). The hero cards animate with framer-motion every 1.6 s, including the arrival card that's hidden on phones. Tried `content-visibility: auto` on sections below the hero (per-section placeholder heights); no measurable gain on the dev laptop (54% background CPU makes local runs too noisy), likely because those hydration-time measurements force the skipped sections to lay out anyway. Reverted. **2026-10-05:** hydration split into short tasks with a `Suspense` boundary per section (the single hydration task was 1.36 s simulated), FAQ is native `<details name="faq">` (no Radix, answers in the HTML), parallax is a CSS scroll timeline (no framer-motion measuring), the desktop arrival card is no longer rendered on phones, and `content-visibility: auto` is back on the sections below the hero (no hydration-time measuring forces them to lay out any more). Old and new production builds run side by side on the dev laptop, alternating, 3–5 runs each: performance 49–63 → 55–78, TBT 2.5–4.35 s → 0.3–2.75 s, style and layout 5.3–6.4 s → 2.0–4.3 s. Absolute numbers are pessimistic: about 200 ms (real) of every first layout is a cold-start cost of headless Chrome on this Windows laptop (the plain `/privacy` page pays it too), and the local server is HTTP/1.1 without Brotli. LCP is the hero photo; it loads in ~0.2 s but in the simulation waits for script evaluation before it's counted. Next: measure the live site with PageSpeed Insights after the deploy (keyless quota was used up again on 2026-10-05). If it's still under 90, the remaining cost is framer-motion (49 kB gz, used by the nav, hero cards and phone demos) and the 29 kB Radix/zod chunk from the demo form
 
 ## Phase 14: Parent and Driver App Upgrade
 

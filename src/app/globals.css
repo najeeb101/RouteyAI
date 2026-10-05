@@ -140,6 +140,52 @@
   }
 }
 
+/* Landing sections below the hero: the browser skips their style, layout and paint until they near the screen.
+   Laying out the whole page at once was the biggest main-thread cost on phones. `auto` keeps the real height once a
+   section has been shown; 900px is the guess before that. Sections must not draw outside their own box (paint is
+   clipped to it): FinalCta's circles are inside its own overflow-hidden. */
+.landing main > :not(:first-child),
+.landing > footer {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 900px;
+}
+
+/* Landing FAQ: native <details> that slide open where the browser can animate to `auto` height (Chrome 131+);
+   elsewhere they open instantly. */
+.faq-item {
+  interpolate-size: allow-keywords;
+}
+.faq-item::details-content {
+  block-size: 0;
+  overflow: hidden;
+  transition: block-size 0.2s ease-out, content-visibility 0.2s allow-discrete;
+}
+.faq-item[open]::details-content {
+  block-size: auto;
+}
+
+/* Landing parallax: drifts against the scroll on a CSS scroll timeline, so nothing is measured in JavaScript.
+   Browsers without scroll timelines show it still. */
+@keyframes parallax-drift {
+  from { transform: translateY(var(--parallax-distance)); }
+  to { transform: translateY(calc(var(--parallax-distance) * -1)); }
+}
+@supports (animation-timeline: view()) {
+  .parallax {
+    animation: parallax-drift linear both;
+    animation-timeline: view();
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .faq-item::details-content {
+    transition: none;
+  }
+  .parallax {
+    animation: none;
+  }
+}
+
 /* Mapbox GL overrides for clean transport-grade look */
 .mapboxgl-ctrl-attrib {
   font-size: 10px;

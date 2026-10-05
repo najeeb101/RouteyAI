@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import type { Metadata } from 'next'
 import { AppModalProvider } from '@/components/landing/AppModalProvider'
 import { LandingNav } from '@/components/landing/LandingNav'
@@ -58,18 +59,37 @@ export default function HomePage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <AppModalProvider>
         <LandingNav overlay />
+        {/*
+          Each section below the hero sits in its own Suspense boundary. Nothing here suspends; the boundaries let
+          React hydrate the sections one at a time in short tasks instead of the whole page in one long task, which
+          kept the main thread blocked for over a second on phones.
+        */}
         <main className="overflow-x-clip bg-background font-sans">
           <Hero />
-          <HowItWorks />
-          <MobileAppsSection />
-          <SafetyPrivacy />
-          <Reveal>
-            <Pricing />
-          </Reveal>
-          <Faq />
-          <FinalCta />
+          <Suspense>
+            <HowItWorks />
+          </Suspense>
+          <Suspense>
+            <MobileAppsSection />
+          </Suspense>
+          <Suspense>
+            <SafetyPrivacy />
+          </Suspense>
+          <Suspense>
+            <Reveal>
+              <Pricing />
+            </Reveal>
+          </Suspense>
+          <Suspense>
+            <Faq />
+          </Suspense>
+          <Suspense>
+            <FinalCta />
+          </Suspense>
         </main>
-        <Footer />
+        <Suspense>
+          <Footer />
+        </Suspense>
       </AppModalProvider>
     </div>
   )
