@@ -251,7 +251,7 @@ export function LoginScreen() {
           <View style={{ marginTop: 24 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 }}>
               <View style={{ flex: 1, height: 1, backgroundColor: 'rgba(255,255,255,0.08)' }} />
-              <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', fontFamily: 'Inter_500Medium' }}>Dev shortcuts</Text>
+              <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', fontFamily: 'Inter_500Medium' }}>Dev shortcuts: screens only, no sign-in or data</Text>
               <View style={{ flex: 1, height: 1, backgroundColor: 'rgba(255,255,255,0.08)' }} />
             </View>
             <View style={{ flexDirection: 'row', gap: 10 }}>
