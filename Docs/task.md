@@ -139,17 +139,18 @@ Mobile: Expo (React Native) | React Native styles | Mapbox RN | EAS
 ## Phase 12: App Store and Play Store Submission
 
 - [x] Mapbox secret token out of git: `app.json`/`eas.json` → `RNMAPBOX_MAPS_DOWNLOAD_TOKEN` in `mobile/.env.local`, read by `mobile/app.config.js` (2026-10-01)
-- [ ] **Rotate the Mapbox secret token** — it sat in `app.json`/`eas.json` in the public repo since Phase 7, so it is still in git history
-- [ ] Public Mapbox `pk.` token for `EXPO_PUBLIC_MAPBOX_TOKEN` (the app uses the secret one locally until then); EAS secret `RNMAPBOX_MAPS_DOWNLOAD_TOKEN` for cloud builds
-- [ ] **Upgrade Expo SDK 51 → 53 or later before Play submission**: Google Play requires 16 KB memory page support for apps targeting Android 15+ (React Native 0.74 isn't; an Android 16 emulator warns "This app isn't 16 KB compatible") and a current target SDK. Re-test Mapbox and background GPS after the upgrade
+- [ ] **Revoke the Mapbox secret token** — it sat in `app.json`/`eas.json` in the public repo since Phase 7, so it is still in git history. Builds no longer need it (see the SDK 57 item), so delete it in the Mapbox account rather than rotating, then remove it from `mobile/.env.local` (already commented out)
+- [ ] Public Mapbox `pk.` token for `EXPO_PUBLIC_MAPBOX_TOKEN` (the app map still uses the secret one locally until then): `mobile/.env.local` and `eas env:create --name EXPO_PUBLIC_MAPBOX_TOKEN` for cloud builds. Needed before revoking the secret token
+- [x] **Expo SDK 51 → 57** (2026-10-02): React Native 0.86, React 19.2, new architecture, `@rnmapbox/maps` 10.3.5 (Mapbox dropped the download token, so `app.config.js` is gone), Reanimated 4.5.1 / Worklets 0.10.1 pinned (Expo Router 57 pulls them in), `babel.config.js` removed (Expo applies its preset). `expo-doctor` 21/21, typecheck clean, `assembleDebug` builds; every native library is 16 KB aligned (`zipalign -P 16` and ELF LOAD segments). Unused storage and overlay permissions blocked. Google Maps was considered instead of Mapbox but needs a Google Cloud billing account
+- [ ] **Test the SDK 57 app on a device**: the JS started on a 16 KB-page Android 16 emulator, but the emulator ran out of memory (dev laptop at ~0.4 GB free RAM) before the first screen. Re-test login, parent map, driver start/end route and background GPS, absence report, Delete account. Close other apps first or use a real phone
 - [ ] Play Console: declare the location foreground service (`FOREGROUND_SERVICE_LOCATION`) with a short video of the driver starting a route
-- [ ] Configure EAS build profiles in `eas.json`
-- [ ] Add app icons and splash assets (`mobile/assets/`)
+- [x] EAS build profiles in `eas.json`: shared Supabase env, preview builds an APK, remote app versions, Play internal track (2026-10-02). Not validated by `eas` yet (needs `eas login`)
+- [x] App icon, Android adaptive and notification icons, splash (`mobile/assets/`, built by `scripts/app-icons/build.mjs` from the temp logo; re-run when the final logo lands) (2026-10-02)
 - [ ] iOS bundle ID and signing setup
-- [ ] Android `applicationId` and keystore setup
+- [ ] Android keystore setup (`applicationId` / iOS bundle ID are `com.routeyai.app` in `app.json`; let EAS manage the keystore on the first `eas build`)
 - [ ] Run production builds (`eas build --platform all --profile production`)
 - [ ] Internal testing via TestFlight and Play internal track
-- [x] **Account deletion in the app** (Apple 5.1.1(v), Google Play): Account tab → Delete account calls `delete_my_account()` (`0015_delete_account.sql`, tested on the local database for parent, driver and platform admin); web deletion page for Play: `/privacy#delete-account` (2026-10-02). Needs `pnpm db:push`
+- [x] **Account deletion in the app** (Apple 5.1.1(v), Google Play): Account tab → Delete account calls `delete_my_account()` (`0015_delete_account.sql`, tested on the local database for parent, driver and platform admin); web deletion page for Play: `/privacy#delete-account` (2026-10-02). Applied to production
 - [x] Store listing copy for both stores, review notes and privacy answers: [store-listing.md](store-listing.md) (2026-10-02)
 - [ ] App Store and Play screenshots, Play feature graphic
 - [ ] Demo reviewer accounts (parent + driver) on the production database
@@ -196,7 +197,7 @@ Full plan: [plans/2026-10-01-parent-driver-apps.md](plans/2026-10-01-parent-driv
 - [x] Landing page phones redrawn from the new screens on real OpenStreetMap close-ups (`build.mjs` → `phone-*.webp`, `appMapData.ts`)
 - [x] Local test stack: `supabase/config.toml` added; `pnpm db:reset` now replays all migrations and the seed (seeded users can sign in)
 - [x] `0014_fix_rls.sql`: policy recursion (parent/driver apps could not load), missing school_admin role checks, invite listing, `set_bus_active()`
-- [ ] Apply `0011`–`0015` to Supabase (`pnpm db:push`). The project was restored on 2026-10-02; the production database stops at `0010`, so live invite links fail (`get_invite()` is missing) and the apps can't load
+- [x] Apply `0011`–`0015` to Supabase (`pnpm db:push`, 2026-10-02). The production database had stopped at `0010`, so live invite links failed until then
 - [x] Tested on an Android emulator against the local stack (2026-10-01): parent (two children, switch, report and cancel absence, history, alerts, account, live map following GPS) and driver (start route, GPS every 10 s, delay notice, check-in with a parent-reported absence, end-of-route summary, sign out)
 - [x] Fixes from that test: Android build (`@rnmapbox/maps` 10.0.12 → 10.1.33 and `RNMapboxMapsImpl: mapbox`), seed users could not sign in, app now stays signed in, dev shortcuts only in dev builds, Start route hung when location was already allowed, stale GPS shown as live, ETA now follows the remaining stops, keyboard covered the absence sheet
 - [x] **Background location** (2026-10-01): `mobile/src/features/driver/gpsTask.ts` runs `expo-location` background updates (`expo-task-manager`) as an Android foreground service ("Route in progress" notification) / iOS background location. Only "while using the app" permission: no "Allow all the time", no `ACCESS_BACKGROUND_LOCATION`. A route still running when the app reopens comes back so it can be ended. Emulator: rows every 10 s for 90 s with the screen locked; force-close and reopen resumed the route

@@ -12,7 +12,7 @@ Current build status: **Phases 1–10 complete; Phase 11 nearly done. Phase 13 (
 
 **Web**: Next.js 14 App Router · TypeScript strict · Tailwind · shadcn/ui · Supabase · Mapbox GL JS · Zustand · React Hook Form + Zod · pnpm · Vercel
 
-**Mobile**: Expo (React Native) · React Native styles (`mobile/src/lib/colors`; NativeWind is not installed) · `@rnmapbox/maps` · `expo-router` · `expo-location` · `expo-notifications` · EAS — lives in `mobile/`
+**Mobile**: Expo SDK 57 (React Native 0.86, new architecture) · React Native styles (`mobile/src/lib/colors`; NativeWind is not installed) · `@rnmapbox/maps` · `expo-router` · `expo-location` · `expo-notifications` · EAS — lives in `mobile/`
 
 ## Commands
 

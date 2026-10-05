@@ -2,17 +2,21 @@ import { Slot } from 'expo-router'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { useFonts, Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold, Inter_800ExtraBold } from '@expo-google-fonts/inter'
-import { View, Text, ActivityIndicator } from 'react-native'
 import { useEffect } from 'react'
 import * as Notifications from 'expo-notifications'
+import * as SplashScreen from 'expo-splash-screen'
 import { registerForPushNotifications } from '@/lib/push'
 import { supabase } from '@/lib/supabase'
 // Defines the driver's background GPS task; it has to exist before the OS hands it a location.
 import '@/features/driver/gpsTask'
 
+// Keep the splash screen up until the fonts are ready, so the first screen draws in Inter.
+SplashScreen.preventAutoHideAsync()
+
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
-    shouldShowAlert: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
     shouldPlaySound: true,
     shouldSetBadge: true,
   }),
@@ -38,29 +42,11 @@ export default function RootLayout() {
     return () => data.subscription.unsubscribe()
   }, [])
 
-  if (!fontsLoaded) {
-    return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#0F172A', gap: 16 }}>
-        <View
-          style={{
-            width: 72,
-            height: 72,
-            borderRadius: 20,
-            backgroundColor: '#1E3A8A',
-            alignItems: 'center',
-            justifyContent: 'center',
-            shadowColor: '#00D4FF',
-            shadowOpacity: 0.4,
-            shadowRadius: 20,
-            shadowOffset: { width: 0, height: 6 },
-          }}
-        >
-          <Text style={{ fontSize: 34 }}>🚌</Text>
-        </View>
-        <ActivityIndicator color="#00D4FF" size="small" />
-      </View>
-    )
-  }
+  useEffect(() => {
+    if (fontsLoaded) SplashScreen.hideAsync()
+  }, [fontsLoaded])
+
+  if (!fontsLoaded) return null
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
