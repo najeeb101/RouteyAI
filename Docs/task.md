@@ -210,3 +210,12 @@ Full plan: [plans/2026-10-01-parent-driver-apps.md](plans/2026-10-01-parent-driv
 - [ ] Check the new app map style on a phone in light and dark (previewed with MapLibre; the emulator session had ended)
 - [ ] Test on a real phone with push notifications (needs an EAS build)
 - [x] School admin dashboard: Absences page (`/school/absences`: today, coming up, past 30 days)
+
+## Phase 15: Mobile UI Refresh
+
+Full plan: [plans/2026-10-05-mobile-ui-refresh.md](plans/2026-10-05-mobile-ui-refresh.md)
+
+- [ ] Decide icons, header style, primary button shape and dark mode (see the plan)
+- [ ] Foundations: `theme.ts`, Schibsted Grotesk + Inter, `Txt`, Lucide, `check:design`
+- [ ] Components, then parent, driver and login screens
+- [ ] Landing page phone mockups and store screenshots in the new style
