@@ -215,7 +215,8 @@ Full plan: [plans/2026-10-01-parent-driver-apps.md](plans/2026-10-01-parent-driv
 
 Full plan: [plans/2026-10-05-mobile-ui-refresh.md](plans/2026-10-05-mobile-ui-refresh.md)
 
-- [ ] Decide icons, header style, primary button shape and dark mode (see the plan)
+- [x] Decided (2026-10-05): Lucide icons, light large-title headers, rounded-rectangle buttons, dark mode after the light mode is final
 - [ ] Foundations: `theme.ts`, Schibsted Grotesk + Inter, `Txt`, Lucide, `check:design`
 - [ ] Components, then parent, driver and login screens
 - [ ] Landing page phone mockups and store screenshots in the new style
+- [ ] Dark mode (planned in the same document; starts when the light screens are final)

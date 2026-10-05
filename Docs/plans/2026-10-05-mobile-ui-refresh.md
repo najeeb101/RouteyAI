@@ -2,7 +2,7 @@
 
 **Goal:** make the parent and driver apps look designed by a person, not generated: one type system shared with the
 landing page, a restrained palette, a small set of shapes and spacings, and patterns borrowed from transport apps people
-already trust. Plan only; nothing here is built yet.
+already trust. Light mode first; dark mode follows once the light screens are final.
 
 ## Why it reads as generated
 
@@ -37,7 +37,10 @@ everything else.
 
 ## Design tokens
 
-All in one new file, `mobile/src/lib/theme.ts` (replaces `lib/colors.ts`), so screens never use raw values.
+All in one new file, `mobile/src/lib/theme.ts` (replaces `lib/colors.ts`), so screens never use raw values. Screens and
+components read colours through a `useTheme()` hook, never a static import, and no style object that uses a colour lives
+at module level. During the light-mode work the hook always returns the light palette; dark mode later only adds a second
+palette and switches on the phone's setting (see "Dark mode" below).
 
 ### Type (same families as the landing page)
 
@@ -140,13 +143,46 @@ Each step lands as its own commit on a `mobile-ui-refresh` branch and is checked
 6. **Follow-ups outside the app:** redraw the landing page phone mockups (`src/components/landing/ParentAppScreen.tsx`,
    `DriverAppScreen.tsx`) in the new style so the website matches, then take the store screenshots.
 
-## Decisions to make before starting
+## Decisions (2026-10-05)
 
-1. **Icons:** switch to Lucide to match the landing page (recommended), or keep Ionicons (less work).
-2. **Header:** light large-title headers (recommended), or keep a dark brand bar.
-3. **Primary button shape:** rounded rectangle, radius 12 (recommended; suits dense app screens), or a full pill like
-   the landing page's "Book a demo".
-4. **Dark mode:** later (recommended; the tokens make it a small step), or as part of this.
+1. **Icons:** Lucide, matching the landing page.
+2. **Header:** light, iOS-style large titles.
+3. **Primary button shape:** rounded rectangle, radius 12.
+4. **Dark mode:** planned below, built after the light mode is final.
+
+## Dark mode (after the light mode is final)
+
+Starts only once every light screen has been checked on the iPhone. Because everything already goes through
+`useTheme()`, this is a palette, a few platform settings and a screen-by-screen check.
+
+**Behaviour:** follows the phone's light/dark setting, like the map already does (`userInterfaceStyle: automatic`,
+`lib/mapStyle.ts`). An in-app override (System / Light / Dark under Account, like the landing page's theme switch) only if
+testers ask for it.
+
+**Palette** (same token names, values from the landing page's `.dark` theme):
+
+| Token | Dark value | Note |
+|---|---|---|
+| `canvas` | `#020617` | Landing dark `background` (slate 950) |
+| `surface` | `#0B1220` | Landing dark `card` |
+| `surfaceRaised` | `#131C2E` | New, dark only: sheets and cards floating over the map, which use a lighter surface instead of a shadow |
+| `separator` | white at 8% | |
+| `ink` / `inkSecondary` / `inkTertiary` | `#F1F5F9` / `#94A3B8` / `#64748B` | |
+| `brand` | `#3B82F6` | Landing dark `primary`, lifted so it reads on dark surfaces; `brandPressed` `#2563EB`, `brandTint` `#3B82F6` at 16% |
+| `live` | `#38BDF8` | Unchanged |
+| status text | `#34D399` / `#FBBF24` / `#F87171` | Lighter shades so status text still passes 4.5:1 |
+| route line | `#8AB4F8` | Already used on the dark map (`ROUTE_LINE.dark`) |
+
+**Platform pieces:**
+- `useTheme()` picks the palette from `useColorScheme()`; the status bar switches between dark and light content.
+- Expo Router / React Navigation theme set from the same palette, so screens and transitions don't flash white.
+- Splash screen dark variant (`expo-splash-screen` `dark` options: canvas background, same "R" mark).
+- Optional: iOS 18 dark and tinted app icon variants.
+- Shadows are dropped in dark; depth comes from `surfaceRaised`.
+
+**Checks:** every screen in both modes on the iPhone (switch in Control Centre), contrast of text and status colours,
+the map overlays over the dark map style, sheets and the keyboard. Then redraw the dark landing mockups
+(`phone-*-dark.webp` already exist for the map backgrounds) and take dark store screenshots if wanted.
 
 ## Out of scope
 
