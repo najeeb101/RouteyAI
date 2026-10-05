@@ -64,3 +64,13 @@ Building no longer needs a secret download token: since `@rnmapbox/maps` 10.3 th
 npm run start
 npm run typecheck
 ```
+
+## Over-the-air updates
+
+`expo-updates` lets a JavaScript-only fix reach installed apps without a store release. Each EAS build profile has a channel of the same name (`development`, `preview`, `production`), and `runtimeVersion` follows the app `version` in `app.json`, so an update only goes to builds with the same version.
+
+```bash
+npx eas-cli update --channel production --message "Fix ETA rounding"
+```
+
+Native changes (a new library, a permission, an `app.json` plugin) still need a new build and store release; bump `version` in `app.json` when you make one.
