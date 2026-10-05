@@ -14,9 +14,9 @@ export function ParentAccountScreen() {
         {
           title: children.length === 1 ? 'Your child' : 'Your children',
           rows: children.map((c) => ({
-            icon: 'person-outline' as const,
+            person: c.name,
             label: c.name,
-            value: [c.busName ?? 'No bus yet', c.schoolName].filter(Boolean).join(' · '),
+            subtitle: [c.busName ?? 'No bus yet', c.schoolName].filter(Boolean).join(' · '),
           })),
         },
       ]}

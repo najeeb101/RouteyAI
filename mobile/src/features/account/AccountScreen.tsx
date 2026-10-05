@@ -1,19 +1,22 @@
-import { useEffect, useState, type ComponentProps } from 'react'
-import { Alert, Linking, ScrollView, Switch, Text, TouchableOpacity, View } from 'react-native'
+import { useEffect, useState } from 'react'
+import { Alert, Linking, ScrollView, Switch, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import Constants from 'expo-constants'
-import { Ionicons } from '@expo/vector-icons'
+import { Bell, FileText, LogOut, Shield, Trash, type LucideIcon } from 'lucide-react-native'
+import { Avatar } from '@/components/primitives/Avatar'
+import { Card } from '@/components/primitives/Card'
+import { ListRow, ListSection } from '@/components/primitives/List'
 import { ScreenHeader } from '@/components/primitives/ScreenHeader'
-import { colors } from '@/lib/colors'
+import { Txt } from '@/components/primitives/Txt'
 import { routes } from '@/lib/navigation/routes'
 import { clearPushToken, hasPushToken, isPushOptedOut, setPushEnabled } from '@/lib/push'
 import { supabase } from '@/lib/supabase'
+import { gutter, space, useTheme } from '@/lib/theme'
 import { stopBackgroundGps } from '@/features/driver/gpsTask'
 
-type IconName = ComponentProps<typeof Ionicons>['name']
-
-export type AccountRow = { icon: IconName; label: string; value: string }
+/** A detail row: an icon (or, for a person, their initials) with a label and a value or subtitle. */
+export type AccountRow = { icon?: LucideIcon; person?: string; label: string; value?: string; subtitle?: string }
 export type AccountSection = { title: string; rows: AccountRow[] }
 
 const SITE_URL = process.env.EXPO_PUBLIC_SITE_URL ?? 'https://routeyai.vercel.app'
@@ -28,9 +31,10 @@ type AccountScreenProps = {
   notificationHint: string
 }
 
-/** Profile, notification switch, legal links and sign out. Shared by the parent and driver apps. */
+/** Profile, notification switch, legal links and sign out (iOS Settings style). Shared by the parent and driver apps. */
 export function AccountScreen({ role, name, email, sections, notificationHint }: AccountScreenProps) {
   const router = useRouter()
+  const t = useTheme()
   const [pushOn, setPushOn] = useState<boolean | null>(null)
   const [pushBusy, setPushBusy] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -110,144 +114,77 @@ export function AccountScreen({ role, name, email, sections, notificationHint }:
     )
   }
 
-  const initials = (name ?? email ?? '?')
-    .split(/[\s@.]+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join('')
+  const displayName = name ?? (role === 'parent' ? 'Parent' : 'Driver')
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['top']}>
-      <ScreenHeader title="Account" subtitle={role === 'parent' ? 'Parent account' : 'Driver account'} />
-      <ScrollView contentContainerStyle={{ padding: 16, gap: 18, paddingBottom: 32 }} showsVerticalScrollIndicator={false}>
-        <View style={[card, { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16 }]}>
-          <View style={{ width: 54, height: 54, borderRadius: 27, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ color: '#FFFFFF', fontFamily: 'Inter_800ExtraBold', fontSize: 18 }}>{initials || '?'}</Text>
+    <SafeAreaView style={{ flex: 1, backgroundColor: t.canvas }} edges={['top']}>
+      <ScreenHeader title="Account" />
+      <ScrollView contentContainerStyle={{ paddingHorizontal: gutter, paddingTop: space.xs, paddingBottom: space.xxxl, gap: space.xxl }} showsVerticalScrollIndicator={false}>
+        <Card style={{ flexDirection: 'row', alignItems: 'center', gap: space.lg }}>
+          <Avatar name={name ?? email ?? '?'} size={56} tone="brand" />
+          <View style={{ flex: 1, gap: 2 }}>
+            <Txt variant="title" numberOfLines={1}>
+              {displayName}
+            </Txt>
+            <Txt variant="subhead" tone="inkSecondary" numberOfLines={1}>
+              {email ?? (role === 'parent' ? 'Parent account' : 'Driver account')}
+            </Txt>
           </View>
-          <View style={{ flex: 1 }}>
-            <Text style={{ fontFamily: 'Inter_800ExtraBold', fontSize: 17, color: colors.dark }} numberOfLines={1}>
-              {name ?? (role === 'parent' ? 'Parent' : 'Driver')}
-            </Text>
-            {email && (
-              <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 13, color: colors.muted, marginTop: 2 }} numberOfLines={1}>
-                {email}
-              </Text>
-            )}
-          </View>
-        </View>
+        </Card>
 
         {sections.map((section) => (
-          <Section key={section.title} title={section.title}>
+          <ListSection key={section.title} title={section.title}>
             {section.rows.map((row, i) => (
-              <Row key={`${row.label}-${i}`} icon={row.icon} label={row.label} value={row.value} last={i === section.rows.length - 1} />
+              <ListRow
+                key={`${row.label}-${i}`}
+                icon={row.icon}
+                leading={row.person ? <Avatar name={row.person} size={32} /> : undefined}
+                title={row.label}
+                subtitle={row.subtitle}
+                value={row.value}
+              />
             ))}
-          </Section>
+          </ListSection>
         ))}
 
-        <Section title="Notifications">
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14 }}>
-            <IconBadge icon="notifications-outline" />
-            <View style={{ flex: 1 }}>
-              <Text style={rowLabel}>Push notifications</Text>
-              <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, color: colors.muted, marginTop: 2, lineHeight: 17 }}>{notificationHint}</Text>
-            </View>
-            <Switch
-              value={pushOn ?? false}
-              onValueChange={togglePush}
-              disabled={pushOn === null || pushBusy}
-              trackColor={{ true: colors.primaryLight, false: colors.border }}
-              thumbColor="#FFFFFF"
-              accessibilityLabel="Push notifications"
-            />
-          </View>
-        </Section>
+        <ListSection title="Notifications" footer={notificationHint}>
+          <ListRow
+            icon={Bell}
+            title="Push notifications"
+            accessory={
+              <Switch
+                value={pushOn ?? false}
+                onValueChange={togglePush}
+                disabled={pushOn === null || pushBusy}
+                trackColor={{ true: t.brand, false: t.separator }}
+                thumbColor={t.surface}
+                accessibilityLabel="Push notifications"
+              />
+            }
+          />
+        </ListSection>
 
-        <Section title="Help and legal">
-          <LinkRow icon="shield-checkmark-outline" label="Privacy policy" onPress={() => Linking.openURL(`${SITE_URL}/privacy`)} />
-          <LinkRow icon="document-text-outline" label="Terms of use" onPress={() => Linking.openURL(`${SITE_URL}/terms`)} />
-          <View style={{ flexDirection: 'row', gap: 12, padding: 14, borderTopWidth: 1, borderTopColor: colors.borderLight }}>
-            <IconBadge icon="help-buoy-outline" />
-            <Text style={{ flex: 1, fontFamily: 'Inter_400Regular', fontSize: 13, color: colors.muted, lineHeight: 19 }}>
-              {role === 'parent'
-                ? 'Questions about a pickup, a stop or your child’s bus? Contact your school’s transport office.'
-                : 'Questions about your bus or route? Contact your school’s transport office.'}
-            </Text>
-          </View>
-        </Section>
-
-        <TouchableOpacity
-          onPress={signOut}
-          activeOpacity={0.8}
-          accessibilityRole="button"
-          style={{ height: 52, borderRadius: 16, borderWidth: 1.5, borderColor: '#FECACA', backgroundColor: '#FEF2F2', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+        <ListSection
+          title="Help and legal"
+          footer={
+            role === 'parent'
+              ? 'Questions about a pickup, a stop or your child’s bus? Contact your school’s transport office.'
+              : 'Questions about your bus or route? Contact your school’s transport office.'
+          }
         >
-          <Ionicons name="log-out-outline" size={19} color={colors.danger} />
-          <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 15, color: colors.danger }}>Sign out</Text>
-        </TouchableOpacity>
+          <ListRow icon={Shield} title="Privacy policy" accessory="external" onPress={() => Linking.openURL(`${SITE_URL}/privacy`)} />
+          <ListRow icon={FileText} title="Terms of use" accessory="external" onPress={() => Linking.openURL(`${SITE_URL}/terms`)} />
+        </ListSection>
 
-        <TouchableOpacity
-          onPress={deleteAccount}
-          disabled={deleting}
-          activeOpacity={0.7}
-          accessibilityRole="button"
-          style={{ alignSelf: 'center', paddingVertical: 6, paddingHorizontal: 12, opacity: deleting ? 0.6 : 1 }}
-        >
-          <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 13.5, color: colors.danger }}>{deleting ? 'Deleting account…' : 'Delete account'}</Text>
-        </TouchableOpacity>
+        <ListSection>
+          <ListRow icon={LogOut} title="Sign out" destructive onPress={signOut} />
+          <ListRow icon={Trash} title={deleting ? 'Deleting account…' : 'Delete account'} destructive onPress={deleting ? undefined : deleteAccount} />
+        </ListSection>
 
-        <Text style={{ textAlign: 'center', fontFamily: 'Inter_400Regular', fontSize: 11.5, color: colors.subtle }}>
+        <Txt variant="caption" tone="inkTertiary" align="center">
           RouteyAI {Constants.expoConfig?.version ?? ''}
-        </Text>
+        </Txt>
       </ScrollView>
     </SafeAreaView>
   )
 }
-
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <View style={{ gap: 8 }}>
-      <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 12, color: colors.subtle, textTransform: 'uppercase', letterSpacing: 0.8, marginLeft: 4 }}>{title}</Text>
-      <View style={[card, { overflow: 'hidden' }]}>{children}</View>
-    </View>
-  )
-}
-
-function Row({ icon, label, value, last }: AccountRow & { last: boolean }) {
-  return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderBottomWidth: last ? 0 : 1, borderBottomColor: colors.borderLight }}>
-      <IconBadge icon={icon} />
-      <Text style={[rowLabel, { flexShrink: 0 }]}>{label}</Text>
-      <Text style={{ flex: 1, textAlign: 'right', fontFamily: 'Inter_500Medium', fontSize: 13, color: colors.muted }} numberOfLines={1}>
-        {value}
-      </Text>
-    </View>
-  )
-}
-
-function LinkRow({ icon, label, onPress }: { icon: IconName; label: string; onPress: () => void }) {
-  return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.7} accessibilityRole="link" style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderBottomWidth: 1, borderBottomColor: colors.borderLight }}>
-      <IconBadge icon={icon} />
-      <Text style={[rowLabel, { flex: 1 }]}>{label}</Text>
-      <Ionicons name="open-outline" size={16} color={colors.subtle} />
-    </TouchableOpacity>
-  )
-}
-
-function IconBadge({ icon }: { icon: IconName }) {
-  return (
-    <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: colors.infoBg, alignItems: 'center', justifyContent: 'center' }}>
-      <Ionicons name={icon} size={17} color={colors.primaryLight} />
-    </View>
-  )
-}
-
-const card = {
-  backgroundColor: colors.surface,
-  borderRadius: 18,
-  borderWidth: 1,
-  borderColor: colors.border,
-}
-
-const rowLabel = { fontFamily: 'Inter_600SemiBold' as const, fontSize: 14, color: colors.dark }

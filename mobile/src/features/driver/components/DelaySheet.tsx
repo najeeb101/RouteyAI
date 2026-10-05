@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react'
-import { Text, TextInput, View } from 'react-native'
-import { Ionicons } from '@expo/vector-icons'
+import { View } from 'react-native'
+import { Check, Send } from 'lucide-react-native'
 import { Banner } from '@/components/primitives/Banner'
+import { Button } from '@/components/primitives/Button'
 import { Chip } from '@/components/primitives/Chip'
-import { PrimaryButton } from '@/components/primitives/PrimaryButton'
+import { Icon } from '@/components/primitives/Icon'
 import { SheetLabel, SheetModal } from '@/components/primitives/SheetModal'
-import { colors } from '@/lib/colors'
+import { TextField } from '@/components/primitives/TextField'
+import { Txt } from '@/components/primitives/Txt'
 import { supabase } from '@/lib/supabase'
+import { radius, space, useTheme } from '@/lib/theme'
 
 const MINUTES = [5, 10, 15, 20, 30] as const
 
@@ -21,6 +24,7 @@ type DelaySheetProps = {
 
 /** One tap tells every parent on the route the bus is late (an announcement; the push goes out automatically). */
 export function DelaySheet({ visible, onClose, busId, busName, schoolId, onSent }: DelaySheetProps) {
+  const t = useTheme()
   const [minutes, setMinutes] = useState<number>(10)
   const [note, setNote] = useState('')
   const [sending, setSending] = useState(false)
@@ -58,13 +62,17 @@ export function DelaySheet({ visible, onClose, busId, busName, schoolId, onSent 
 
   if (sent) {
     return (
-      <SheetModal visible={visible} title="Parents told" onClose={onClose} footer={<PrimaryButton label="Done" onPress={onClose} />}>
-        <View style={{ alignItems: 'center', gap: 12, paddingVertical: 12 }}>
-          <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: colors.successBg, alignItems: 'center', justifyContent: 'center' }}>
-            <Ionicons name="checkmark" size={34} color={colors.successMid} />
+      <SheetModal visible={visible} title="Parents told" onClose={onClose} footer={<Button label="Done" onPress={onClose} />}>
+        <View style={{ alignItems: 'center', gap: space.md, paddingVertical: space.md }}>
+          <View style={{ width: 56, height: 56, borderRadius: radius.full, backgroundColor: t.successTint, alignItems: 'center', justifyContent: 'center' }}>
+            <Icon icon={Check} size={28} color={t.successText} strokeWidth={2.25} />
           </View>
-          <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 16, color: colors.dark, textAlign: 'center' }}>Every parent on {busName} got your message</Text>
-          <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 13, color: colors.muted, textAlign: 'center' }}>&ldquo;{message}&rdquo;</Text>
+          <Txt variant="headline" align="center">
+            Every parent on {busName} got your message
+          </Txt>
+          <Txt variant="body" tone="inkSecondary" align="center">
+            &ldquo;{message}&rdquo;
+          </Txt>
         </View>
       </SheetModal>
     )
@@ -76,41 +84,24 @@ export function DelaySheet({ visible, onClose, busId, busName, schoolId, onSent 
       title="Running late?"
       subtitle={`Parents on ${busName} get a notification, so nobody waits outside for long.`}
       onClose={onClose}
-      footer={<PrimaryButton label="Tell parents" icon="send" onPress={send} loading={sending} disabled={sending} />}
+      footer={<Button label="Tell parents" icon={Send} onPress={send} loading={sending} disabled={sending} haptic />}
     >
       <View>
         <SheetLabel>About how late?</SheetLabel>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.sm }}>
           {MINUTES.map((m) => (
             <Chip key={m} label={`${m} min`} selected={minutes === m} onPress={() => setMinutes(m)} />
           ))}
         </View>
       </View>
 
-      <View>
-        <SheetLabel>Add a reason (optional)</SheetLabel>
-        <TextInput
-          value={note}
-          onChangeText={setNote}
-          placeholder="For example: heavy traffic on Al Waab Street"
-          placeholderTextColor={colors.subtle}
-          maxLength={120}
-          style={{
-            height: 48,
-            borderWidth: 1.5,
-            borderColor: colors.border,
-            borderRadius: 14,
-            paddingHorizontal: 14,
-            fontSize: 14,
-            fontFamily: 'Inter_400Regular',
-            color: colors.dark,
-          }}
-        />
-      </View>
+      <TextField label="Add a reason (optional)" value={note} onChangeText={setNote} placeholder="For example: heavy traffic on Al Waab Street" maxLength={120} />
 
-      <View style={{ backgroundColor: colors.background, borderRadius: 16, padding: 14, gap: 6 }}>
-        <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 11, color: colors.subtle, textTransform: 'uppercase', letterSpacing: 0.8 }}>Parents will see</Text>
-        <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 14, color: colors.dark, lineHeight: 20 }}>{message}</Text>
+      <View style={{ backgroundColor: t.canvas, borderRadius: radius.md, padding: space.lg, gap: space.xs }}>
+        <Txt variant="subhead" tone="inkSecondary">
+          Parents will see
+        </Txt>
+        <Txt variant="bodyMedium">{message}</Txt>
       </View>
 
       {error && <Banner text={error} />}

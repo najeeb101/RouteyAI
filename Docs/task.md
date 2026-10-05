@@ -216,7 +216,8 @@ Full plan: [plans/2026-10-01-parent-driver-apps.md](plans/2026-10-01-parent-driv
 Full plan: [plans/2026-10-05-mobile-ui-refresh.md](plans/2026-10-05-mobile-ui-refresh.md)
 
 - [x] Decided (2026-10-05): Lucide icons, light large-title headers, rounded-rectangle buttons, dark mode after the light mode is final
-- [ ] Foundations: `theme.ts`, Schibsted Grotesk + Inter, `Txt`, Lucide, `check:design`
-- [ ] Components, then parent, driver and login screens
+- [x] Foundations: `theme.ts`, Schibsted Grotesk + Inter, `Txt`, Lucide, `check:design` (2026-10-06)
+- [x] Components, then parent, driver and login screens (2026-10-06, branch `mobile-ui-refresh`): all 14 screens and sheets moved to the tokens; old `colors.ts`, `PrimaryButton`, `StatusPill`, `MetricCard` and the unused `RouteTimeline` removed. `npm run check:design`, typecheck and expo-doctor pass. Checked in the web preview (`npx expo start --web`), not yet on the iPhone
+- [ ] Check every screen on the iPhone in Expo Go, then merge `mobile-ui-refresh`
 - [ ] Landing page phone mockups and store screenshots in the new style
 - [ ] Dark mode (planned in the same document; starts when the light screens are final)

@@ -1,21 +1,25 @@
-import { useEffect, useMemo, useRef, useState, type ElementRef } from 'react'
-import { ActivityIndicator, Text, TouchableOpacity, useColorScheme, View } from 'react-native'
+import { useEffect, useMemo, useRef, useState, type ElementRef, type ReactNode } from 'react'
+import { ActivityIndicator, Pressable, useColorScheme, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { Ionicons } from '@expo/vector-icons'
+import { Bus, House, LocateFixed } from 'lucide-react-native'
 import { Banner } from '@/components/primitives/Banner'
+import { FloatingCard } from '@/components/primitives/Card'
+import { Icon } from '@/components/primitives/Icon'
 import { MapPlaceholder } from '@/components/primitives/MapPlaceholder'
+import { StatusText } from '@/components/primitives/StatusText'
+import { Txt } from '@/components/primitives/Txt'
 import { ChildSwitcher } from '@/features/parent/components/ChildSwitcher'
 import { CHILD_STATUS } from '@/features/parent/components/childStatus'
 import { useParentContext } from '@/features/parent/context/ParentDataContext'
-import { colors } from '@/lib/colors'
 import { timeLabel } from '@/lib/dates'
 import { boundsOf, decodePolyline } from '@/lib/geo'
 import { Mapbox } from '@/lib/mapbox'
 import { mapStyleJSON, ROUTE_LINE } from '@/lib/mapStyle'
+import { floatingShadow, fonts, radius, space, useTheme } from '@/lib/theme'
 
 const DOHA: [number, number] = [51.531, 25.2854]
 /** Space the card at the bottom and the chips at the top take up, so the camera frames the route between them. */
-const CARD_SPACE = 250
+const CARD_SPACE = 230
 
 /**
  * Full-screen live map: the bus follows GPS updates, the child's stop is marked, and the card at the bottom
@@ -23,6 +27,7 @@ const CARD_SPACE = 250
  */
 export function ParentMapScreen() {
   const insets = useSafeAreaInsets()
+  const t = useTheme()
   const { loading, error, children, child, selectChild, statusFor, status, attendance, routePoints, childPoint, encodedPolyline, busLocation, etaMinutes, stopsBefore } =
     useParentContext()
   const camera = useRef<ElementRef<NonNullable<typeof Mapbox>['Camera']>>(null)
@@ -36,7 +41,7 @@ export function ParentMapScreen() {
     () => boundsOf(childPoint ? [...line, [childPoint.lng, childPoint.lat]] : line),
     [line, childPoint],
   )
-  const topSpace = insets.top + (children.length > 1 ? 76 : 64)
+  const topSpace = insets.top + 64
 
   // Switching child frames their route again.
   useEffect(() => setFollowing(true), [child?.id])
@@ -81,7 +86,7 @@ export function ParentMapScreen() {
   const lineColor = child?.busColor ?? ROUTE_LINE[scheme].line
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
+    <View style={{ flex: 1, backgroundColor: t.canvas }}>
       {Mapbox ? (
         <Mapbox.MapView
           style={{ flex: 1 }}
@@ -104,24 +109,20 @@ export function ParentMapScreen() {
 
           {childPoint && (
             <Mapbox.MarkerView id="child-stop" coordinate={[childPoint.lng, childPoint.lat]} anchor={{ x: 0.5, y: 1 }} allowOverlap>
-              <View style={{ alignItems: 'center' }}>
-                <View style={{ backgroundColor: colors.dark, borderRadius: 10, paddingHorizontal: 8, paddingVertical: 4, marginBottom: 4 }}>
-                  <Text style={{ color: '#FFFFFF', fontFamily: 'Inter_700Bold', fontSize: 11 }}>{first}&apos;s stop</Text>
+              <View style={{ alignItems: 'center', gap: space.xs }}>
+                <View style={[{ backgroundColor: t.surface, borderRadius: radius.sm, paddingHorizontal: space.sm, paddingVertical: 3 }, floatingShadow]}>
+                  <Txt variant="caption" style={{ fontFamily: fonts.semibold }}>
+                    {first}&apos;s stop
+                  </Txt>
                 </View>
-                <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: colors.warning, borderWidth: 3, borderColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', ...markerShadow }}>
-                  <Ionicons name="home" size={14} color="#FFFFFF" />
-                </View>
+                <MapPin color={t.ink} icon={House} />
               </View>
             </Mapbox.MarkerView>
           )}
 
           {busLocation && (
             <Mapbox.MarkerView id="bus" coordinate={[busLocation.lng, busLocation.lat]} allowOverlap>
-              <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: `${lineColor}33`, alignItems: 'center', justifyContent: 'center' }}>
-                <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: lineColor, borderWidth: 3, borderColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', ...markerShadow }}>
-                  <Ionicons name="bus" size={14} color="#FFFFFF" />
-                </View>
-              </View>
+              <MapPin color={lineColor} icon={Bus} />
             </Mapbox.MarkerView>
           )}
         </Mapbox.MapView>
@@ -129,116 +130,97 @@ export function ParentMapScreen() {
         <MapPlaceholder />
       )}
 
-      {/* Top: child chips and GPS state */}
-      <View style={{ position: 'absolute', top: insets.top + 10, left: 12, right: 12, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+      {/* Top: child switcher and GPS state */}
+      <View style={{ position: 'absolute', top: insets.top + space.sm, left: space.md, right: space.md, flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
         <View style={{ flex: 1 }}>
           {children.length > 1 ? (
-            <ChildSwitcher items={children} selectedId={child?.id ?? null} statusFor={statusFor} onSelect={selectChild} variant="light" />
+            <ChildSwitcher items={children} selectedId={child?.id ?? null} statusFor={statusFor} onSelect={selectChild} variant="floating" />
           ) : (
-            <View style={floatingPill}>
-              <Ionicons name="navigate" size={15} color={colors.primary} />
-              <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 14, color: colors.dark }}>Live map</Text>
-            </View>
+            <FloatingPill>
+              <Txt variant="headline">{child?.firstName ?? 'Live map'}</Txt>
+            </FloatingPill>
           )}
         </View>
-        <View style={floatingPill}>
-          <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: busLocation ? colors.success : colors.subtle }} />
-          <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 12, color: colors.dark }}>{busLocation ? 'GPS live' : 'No GPS'}</Text>
-        </View>
+        <FloatingPill>
+          <StatusText label={busLocation ? 'Live' : 'No GPS'} tone={busLocation ? 'live' : 'neutral'} />
+        </FloatingPill>
       </View>
 
       {/* Recenter */}
       {!following && (
-        <TouchableOpacity
+        <Pressable
           onPress={() => setFollowing(true)}
+          accessibilityRole="button"
           accessibilityLabel={busLocation ? 'Follow the bus' : 'Show the whole route'}
-          style={{ position: 'absolute', right: 16, bottom: CARD_SPACE - 4, width: 48, height: 48, borderRadius: 24, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', ...markerShadow }}
+          style={({ pressed }) => [
+            { position: 'absolute', right: space.lg, bottom: CARD_SPACE, width: 48, height: 48, borderRadius: radius.full, backgroundColor: pressed ? t.canvas : t.surface, alignItems: 'center', justifyContent: 'center' },
+            floatingShadow,
+          ]}
         >
-          <Ionicons name="locate" size={22} color={colors.primary} />
-        </TouchableOpacity>
+          <Icon icon={LocateFixed} size={22} color={t.brand} />
+        </Pressable>
       )}
 
       {/* Bottom card */}
-      <View
-        style={{
-          position: 'absolute',
-          left: 12,
-          right: 12,
-          bottom: 12,
-          backgroundColor: colors.surface,
-          borderRadius: 24,
-          padding: 18,
-          gap: 14,
-          shadowColor: colors.dark,
-          shadowOpacity: 0.18,
-          shadowRadius: 18,
-          shadowOffset: { width: 0, height: 8 },
-          elevation: 10,
-        }}
-      >
+      <FloatingCard style={{ position: 'absolute', left: space.md, right: space.md, bottom: space.md, gap: space.lg }}>
         {error && <Banner text={error} />}
         {loading && !child ? (
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8 }}>
-            <ActivityIndicator color={colors.primary} />
-            <Text style={{ fontFamily: 'Inter_500Medium', color: colors.muted }}>Loading the route…</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md, paddingVertical: space.sm }}>
+            <ActivityIndicator color={t.brand} />
+            <Txt variant="body" tone="inkSecondary">
+              Loading the route…
+            </Txt>
           </View>
         ) : child ? (
           <>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontFamily: 'Inter_800ExtraBold', fontSize: 24, color: colors.dark, letterSpacing: -0.6 }}>{headline}</Text>
-                <Text style={{ fontFamily: 'Inter_500Medium', fontSize: 13, color: colors.muted, marginTop: 2 }}>{detail}</Text>
-              </View>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: meta.bg, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999 }}>
-                <Ionicons name={meta.icon} size={13} color={meta.color} />
-                <Text style={{ color: meta.color, fontSize: 12, fontFamily: 'Inter_700Bold' }}>{meta.label}</Text>
-              </View>
+            <View style={{ gap: space.xs }}>
+              <StatusText label={meta.label} tone={meta.tone} />
+              <Txt variant="largeTitle" numberOfLines={1} adjustsFontSizeToFit>
+                {headline}
+              </Txt>
+              <Txt variant="body" tone="inkSecondary">
+                {detail}
+              </Txt>
             </View>
-            <View style={{ flexDirection: 'row', gap: 10 }}>
-              <InfoTile icon="bus-outline" label="Bus" value={child.busName ?? 'Not assigned'} />
-              <InfoTile icon="home-outline" label="Stop" value={child.homeAddress} />
+            <View style={{ height: 1, backgroundColor: t.separator }} />
+            <View style={{ flexDirection: 'row', gap: space.lg }}>
+              <Detail icon={Bus} value={child.busName ?? 'Not assigned'} />
+              <Detail icon={House} value={child.homeAddress} />
             </View>
           </>
         ) : null}
-      </View>
+      </FloatingCard>
     </View>
   )
 }
 
-function InfoTile({ icon, label, value }: { icon: 'bus-outline' | 'home-outline'; label: string; value: string }) {
+function FloatingPill({ children }: { children: ReactNode }) {
+  const t = useTheme()
   return (
-    <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.background, borderRadius: 14, padding: 10 }}>
-      <Ionicons name={icon} size={18} color={colors.primaryLight} />
-      <View style={{ flex: 1 }}>
-        <Text style={{ fontSize: 10.5, color: colors.subtle, fontFamily: 'Inter_600SemiBold', textTransform: 'uppercase', letterSpacing: 0.6 }}>{label}</Text>
-        <Text style={{ fontSize: 13, color: colors.dark, fontFamily: 'Inter_700Bold' }} numberOfLines={1}>
-          {value}
-        </Text>
-      </View>
+    <View style={[{ justifyContent: 'center', alignSelf: 'flex-start', backgroundColor: t.surface, paddingHorizontal: space.lg, height: 44, borderRadius: radius.md }, floatingShadow]}>
+      {children}
     </View>
   )
 }
 
-const markerShadow = {
-  shadowColor: '#000000',
-  shadowOpacity: 0.25,
-  shadowRadius: 4,
-  shadowOffset: { width: 0, height: 2 },
-  elevation: 4,
+function Detail({ icon, value }: { icon: typeof Bus; value: string }) {
+  const t = useTheme()
+  return (
+    <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
+      <Icon icon={icon} size={18} color={t.inkSecondary} />
+      <Txt variant="bodyMedium" numberOfLines={1} style={{ flex: 1 }}>
+        {value}
+      </Txt>
+    </View>
+  )
 }
 
-const floatingPill = {
-  flexDirection: 'row' as const,
-  alignItems: 'center' as const,
-  alignSelf: 'flex-start' as const,
-  gap: 7,
-  backgroundColor: '#FFFFFF',
-  paddingHorizontal: 14,
-  height: 40,
-  borderRadius: 20,
-  shadowColor: colors.dark,
-  shadowOpacity: 0.12,
-  shadowRadius: 8,
-  shadowOffset: { width: 0, height: 3 },
-  elevation: 3,
+/** A white-ringed circle marker with an icon, coloured by the route or the stop. */
+function MapPin({ color, icon }: { color: string; icon: typeof Bus }) {
+  const t = useTheme()
+  return (
+    <View style={[{ width: 32, height: 32, borderRadius: radius.full, backgroundColor: color, borderWidth: 3, borderColor: t.surface, alignItems: 'center', justifyContent: 'center' }, floatingShadow]}>
+      <Icon icon={icon} size={15} color={t.onBrand} strokeWidth={2.25} />
+    </View>
+  )
 }

@@ -1,13 +1,17 @@
 import { useEffect, useState } from 'react'
-import { Text, TextInput, View } from 'react-native'
-import { Ionicons } from '@expo/vector-icons'
+import { View } from 'react-native'
+import { Check } from 'lucide-react-native'
 import { Banner } from '@/components/primitives/Banner'
+import { Button } from '@/components/primitives/Button'
 import { Chip } from '@/components/primitives/Chip'
-import { PrimaryButton } from '@/components/primitives/PrimaryButton'
+import { Icon } from '@/components/primitives/Icon'
+import { SegmentedControl } from '@/components/primitives/SegmentedControl'
 import { SheetLabel, SheetModal } from '@/components/primitives/SheetModal'
+import { TextField } from '@/components/primitives/TextField'
+import { Txt } from '@/components/primitives/Txt'
 import { ABSENCE_REASONS, type AbsenceReason, type AbsenceReport } from '@/lib/absence'
-import { colors } from '@/lib/colors'
 import { dayLabel, dayPhrase, upcomingSchoolDays } from '@/lib/dates'
+import { radius, space, useTheme } from '@/lib/theme'
 import type { ParentChildProfile, TodayAttendance } from '@/features/parent/screens/useParentData'
 
 type ReportAbsenceSheetProps = {
@@ -23,6 +27,7 @@ type ReportAbsenceSheetProps = {
 
 /** Lets a parent tell the driver and school ahead of time that a child won't ride on one or more days. */
 export function ReportAbsenceSheet({ visible, onClose, items, initialChildId, reports, attendance, today, onSubmit }: ReportAbsenceSheetProps) {
+  const t = useTheme()
   const [childId, setChildId] = useState<string | null>(initialChildId)
   const [dates, setDates] = useState<string[]>([])
   const [reason, setReason] = useState<AbsenceReason>('sick')
@@ -68,19 +73,17 @@ export function ReportAbsenceSheet({ visible, onClose, items, initialChildId, re
 
   if (sent && child) {
     return (
-      <SheetModal visible={visible} title="Absence reported" onClose={onClose}
-        footer={<PrimaryButton label="Done" onPress={onClose} />}
-      >
-        <View style={{ alignItems: 'center', gap: 12, paddingVertical: 12 }}>
-          <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: colors.successBg, alignItems: 'center', justifyContent: 'center' }}>
-            <Ionicons name="checkmark" size={34} color={colors.successMid} />
+      <SheetModal visible={visible} title="Absence reported" onClose={onClose} footer={<Button label="Done" onPress={onClose} />}>
+        <View style={{ alignItems: 'center', gap: space.md, paddingVertical: space.md }}>
+          <View style={{ width: 56, height: 56, borderRadius: radius.full, backgroundColor: t.successTint, alignItems: 'center', justifyContent: 'center' }}>
+            <Icon icon={Check} size={28} color={t.successText} strokeWidth={2.25} />
           </View>
-          <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 16, color: colors.dark, textAlign: 'center' }}>
+          <Txt variant="headline" align="center">
             {child.firstName} is staying home {sent.length === 1 ? dayPhrase(sent[0] ?? '', today) : `on ${sent.length} days`}
-          </Text>
-          <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 13, color: colors.muted, textAlign: 'center', lineHeight: 19 }}>
+          </Txt>
+          <Txt variant="body" tone="inkSecondary" align="center">
             The driver sees this on the route and won&apos;t wait at your stop. You can cancel it from Home or History until the day starts.
-          </Text>
+          </Txt>
         </View>
       </SheetModal>
     )
@@ -93,7 +96,7 @@ export function ReportAbsenceSheet({ visible, onClose, items, initialChildId, re
       subtitle="Let the driver know your child won't ride, so the bus doesn't wait at your stop."
       onClose={onClose}
       footer={
-        <PrimaryButton
+        <Button
           label={dates.length === 0 ? 'Pick a day' : `Report ${dates.length} day${dates.length === 1 ? '' : 's'}`}
           disabled={dates.length === 0 || saving}
           loading={saving}
@@ -104,26 +107,21 @@ export function ReportAbsenceSheet({ visible, onClose, items, initialChildId, re
       {items.length > 1 && (
         <View>
           <SheetLabel>Child</SheetLabel>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-            {items.map((c) => (
-              <Chip
-                key={c.id}
-                label={c.firstName}
-                icon="person-outline"
-                selected={c.id === childId}
-                onPress={() => {
-                  setChildId(c.id)
-                  setDates([])
-                }}
-              />
-            ))}
-          </View>
+          <SegmentedControl
+            segments={items.map((c) => ({ key: c.id, label: c.firstName }))}
+            value={childId}
+            onChange={(id) => {
+              setChildId(id)
+              setDates([])
+            }}
+            onSurface
+          />
         </View>
       )}
 
       <View>
         <SheetLabel>Which days?</SheetLabel>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.sm }}>
           {days.map((date) => {
             const state = dayState(date)
             return (
@@ -142,36 +140,14 @@ export function ReportAbsenceSheet({ visible, onClose, items, initialChildId, re
 
       <View>
         <SheetLabel>Reason</SheetLabel>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.sm }}>
           {ABSENCE_REASONS.map((r) => (
-            <Chip key={r.value} label={r.label} icon={r.icon} selected={reason === r.value} onPress={() => setReason(r.value)} />
+            <Chip key={r.value} label={r.label} selected={reason === r.value} onPress={() => setReason(r.value)} />
           ))}
         </View>
       </View>
 
-      <View>
-        <SheetLabel>Note for the school (optional)</SheetLabel>
-        <TextInput
-          value={note}
-          onChangeText={setNote}
-          placeholder="For example: back on Thursday"
-          placeholderTextColor={colors.subtle}
-          maxLength={200}
-          multiline
-          style={{
-            minHeight: 64,
-            borderWidth: 1.5,
-            borderColor: colors.border,
-            borderRadius: 14,
-            paddingHorizontal: 14,
-            paddingVertical: 10,
-            fontSize: 14,
-            fontFamily: 'Inter_400Regular',
-            color: colors.dark,
-            textAlignVertical: 'top',
-          }}
-        />
-      </View>
+      <TextField label="Note for the school (optional)" value={note} onChangeText={setNote} placeholder="For example: back on Thursday" maxLength={200} multiline />
 
       {error && <Banner text={error} />}
     </SheetModal>

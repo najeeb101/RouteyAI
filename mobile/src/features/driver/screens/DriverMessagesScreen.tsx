@@ -1,24 +1,30 @@
 import { useState } from 'react'
-import { ScrollView, Text, TextInput, TouchableOpacity, View, KeyboardAvoidingView, Platform } from 'react-native'
+import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, TextInput, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { Ionicons } from '@expo/vector-icons'
+import { CircleCheck, Clock, Megaphone, MessageSquare, Send, type LucideIcon } from 'lucide-react-native'
+import { Banner } from '@/components/primitives/Banner'
+import { Icon } from '@/components/primitives/Icon'
+import { ListSection } from '@/components/primitives/List'
 import { ScreenHeader } from '@/components/primitives/ScreenHeader'
+import { Txt } from '@/components/primitives/Txt'
 import { useDriverContext } from '@/features/driver/context/DriverDataContext'
-import { colors } from '@/lib/colors'
 import { supabase } from '@/lib/supabase'
+import { fonts, gutter, minTouch, radius, space, useTheme, type Palette } from '@/lib/theme'
 import type { RouteUpdateType } from '@/types/route'
 
-const typeMeta: Record<RouteUpdateType, { color: string; bg: string; border: string; icon: 'time' | 'megaphone-outline' | 'checkmark-circle' }> = {
-  warn:  { color: colors.warning, bg: '#FFFBEB', border: 'rgba(245,158,11,0.2)',  icon: 'time' },
-  info:  { color: colors.info,    bg: '#EFF6FF', border: 'rgba(59,130,246,0.2)',  icon: 'megaphone-outline' },
-  ok:    { color: colors.success, bg: '#F0FDF4', border: 'rgba(16,185,129,0.2)', icon: 'checkmark-circle' },
+const typeMeta: Record<RouteUpdateType, { icon: LucideIcon; color: keyof Palette }> = {
+  warn: { icon: Clock, color: 'warningText' },
+  info: { icon: Megaphone, color: 'inkSecondary' },
+  ok: { icon: CircleCheck, color: 'successText' },
 }
 
 export function DriverMessagesScreen() {
+  const t = useTheme()
   const { loading, error, profile, messages, refresh } = useDriverContext()
   const [compose, setCompose] = useState('')
   const [sending, setSending] = useState(false)
   const [sendError, setSendError] = useState<string | null>(null)
+  const canSend = Boolean(compose.trim()) && !sending
 
   async function sendAnnouncement() {
     const text = compose.trim()
@@ -44,128 +50,107 @@ export function DriverMessagesScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: t.canvas }} edges={['top']}>
       <ScreenHeader title="Messages" subtitle={`${profile?.schoolName ?? 'School'} and parents on ${profile?.busName ?? 'your bus'}`} />
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 10 }} showsVerticalScrollIndicator={false}>
-        {error && (
-          <View style={{ borderColor: '#FECACA', borderWidth: 1, backgroundColor: '#FEF2F2', borderRadius: 14, padding: 14 }}>
-            <Text style={{ color: '#B91C1C', fontSize: 12, fontFamily: 'Inter_600SemiBold' }}>{error}</Text>
-          </View>
-        )}
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: gutter, paddingTop: space.xs, paddingBottom: space.xxl, gap: space.lg }} showsVerticalScrollIndicator={false}>
+          {error && <Banner text={error} />}
 
-        {loading && (
-          <View style={{ backgroundColor: colors.surface, borderRadius: 14, borderWidth: 1, borderColor: colors.border, padding: 16 }}>
-            <Text style={{ fontSize: 13, color: colors.subtle, fontFamily: 'Inter_500Medium' }}>Loading messages...</Text>
-          </View>
-        )}
-
-        {!loading && messages.map(message => {
-          const meta = typeMeta[message.type]
-          return (
-            <View
-              key={message.id}
-              style={{
-                backgroundColor: colors.surface,
-                borderRadius: 16,
-                borderWidth: 1,
-                borderColor: colors.border,
-                overflow: 'hidden',
-                shadowColor: colors.dark,
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.04,
-                shadowRadius: 6,
-                elevation: 1,
-              }}
-            >
-              <View style={{ height: 3, backgroundColor: meta.color }} />
-              <View style={{ padding: 14, flexDirection: 'row', gap: 12 }}>
-                <View style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: 18,
-                  backgroundColor: meta.bg,
-                  borderWidth: 1,
-                  borderColor: meta.border,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                }}>
-                  <Ionicons name={meta.icon} size={17} color={meta.color} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 5, gap: 8 }}>
-                    <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 13, color: colors.dark, flex: 1 }}>{message.from}</Text>
-                    <Text style={{ fontSize: 11, color: colors.subtle, fontFamily: 'Inter_400Regular', flexShrink: 0 }}>{message.time}</Text>
-                  </View>
-                  <Text style={{ fontSize: 13, color: colors.muted, fontFamily: 'Inter_400Regular', lineHeight: 19 }}>{message.body}</Text>
-                </View>
-              </View>
+          {loading && (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md, padding: space.lg }}>
+              <ActivityIndicator color={t.brand} />
+              <Txt variant="body" tone="inkSecondary">
+                Loading messages…
+              </Txt>
             </View>
-          )
-        })}
-
-        <View style={{ alignItems: 'center', paddingVertical: 16 }}>
-          {!loading && (
-            <Text style={{ fontSize: 12, color: colors.subtle, fontFamily: 'Inter_400Regular' }}>
-              {messages.length === 0 ? 'No messages yet' : `${messages.length} message${messages.length === 1 ? '' : 's'} total`}
-            </Text>
           )}
-        </View>
-      </ScrollView>
 
-      {/* Compose bar — driver sends announcements to parents on this bus */}
-      <View
-        style={{
-          backgroundColor: colors.surface,
-          borderTopWidth: 1,
-          borderTopColor: colors.border,
-          padding: 12,
-          gap: 8,
-        }}
-      >
-        {sendError && (
-          <Text style={{ fontSize: 11, color: colors.danger, fontFamily: 'Inter_500Medium', paddingHorizontal: 4 }}>{sendError}</Text>
-        )}
-        <View style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-end' }}>
-          <TextInput
-            value={compose}
-            onChangeText={setCompose}
-            placeholder="Send update to parents on this bus…"
-            placeholderTextColor={colors.subtle}
-            multiline
-            style={{
-              flex: 1,
-              backgroundColor: colors.background,
-              borderWidth: 1,
-              borderColor: colors.border,
-              borderRadius: 14,
-              paddingHorizontal: 14,
-              paddingVertical: 10,
-              fontSize: 13,
-              fontFamily: 'Inter_400Regular',
-              color: colors.dark,
-              maxHeight: 80,
-            }}
-          />
-          <TouchableOpacity
-            onPress={sendAnnouncement}
-            disabled={!compose.trim() || sending}
-            activeOpacity={0.8}
-            style={{
-              backgroundColor: compose.trim() && !sending ? colors.primary : colors.borderLight,
-              borderRadius: 14,
-              width: 44,
-              height: 44,
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Ionicons name={sending ? 'ellipsis-horizontal' : 'send'} size={18} color={compose.trim() && !sending ? '#FFFFFF' : colors.subtle} />
-          </TouchableOpacity>
+          {!loading && messages.length === 0 && (
+            <View style={{ alignItems: 'center', paddingTop: space.huge, gap: space.sm, paddingHorizontal: space.xxl }}>
+              <Icon icon={MessageSquare} size={32} color={t.inkTertiary} />
+              <Txt variant="headline">No messages yet</Txt>
+              <Txt variant="body" tone="inkSecondary" align="center">
+                Updates from your school and the ones you send to parents show up here.
+              </Txt>
+            </View>
+          )}
+
+          {!loading && messages.length > 0 && (
+            <ListSection>
+              {messages.map((message) => {
+                const meta = typeMeta[message.type]
+                return (
+                  <View key={message.id} style={{ flexDirection: 'row', gap: space.md, padding: space.lg }}>
+                    <Icon icon={meta.icon} size={21} color={t[meta.color]} />
+                    <View style={{ flex: 1, gap: 2 }}>
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: space.md }}>
+                        <Txt variant="bodyMedium" numberOfLines={1} style={{ flex: 1 }}>
+                          {message.from}
+                        </Txt>
+                        <Txt variant="caption" tone="inkSecondary">
+                          {message.time}
+                        </Txt>
+                      </View>
+                      <Txt variant="body" tone="inkSecondary">
+                        {message.body}
+                      </Txt>
+                    </View>
+                  </View>
+                )
+              })}
+            </ListSection>
+          )}
+        </ScrollView>
+
+        {/* Compose bar: the driver sends updates to parents on this bus */}
+        <View style={{ backgroundColor: t.surface, borderTopWidth: 1, borderTopColor: t.separator, paddingHorizontal: space.md, paddingVertical: space.sm + 2, gap: space.sm }}>
+          {sendError && (
+            <Txt variant="caption" tone="dangerText" style={{ paddingHorizontal: space.xs }}>
+              {sendError}
+            </Txt>
+          )}
+          <View style={{ flexDirection: 'row', gap: space.sm, alignItems: 'flex-end' }}>
+            <TextInput
+              value={compose}
+              onChangeText={setCompose}
+              placeholder="Send an update to parents on this bus"
+              placeholderTextColor={t.inkTertiary}
+              multiline
+              maxFontSizeMultiplier={1.3}
+              accessibilityLabel="Message to parents"
+              style={{
+                flex: 1,
+                minHeight: minTouch,
+                maxHeight: 96,
+                backgroundColor: t.canvas,
+                borderRadius: radius.md,
+                paddingHorizontal: space.md,
+                paddingTop: space.md - 1,
+                paddingBottom: space.md - 1,
+                fontSize: 15,
+                fontFamily: fonts.regular,
+                color: t.ink,
+              }}
+            />
+            <Pressable
+              onPress={sendAnnouncement}
+              disabled={!canSend}
+              accessibilityRole="button"
+              accessibilityLabel="Send"
+              style={({ pressed }) => ({
+                width: minTouch,
+                height: minTouch,
+                borderRadius: radius.md,
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: canSend ? (pressed ? t.brandPressed : t.brand) : t.separator,
+              })}
+            >
+              {sending ? <ActivityIndicator color={t.inkTertiary} size="small" /> : <Icon icon={Send} size={19} color={canSend ? t.onBrand : t.inkTertiary} strokeWidth={2} />}
+            </Pressable>
+          </View>
         </View>
-      </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   )

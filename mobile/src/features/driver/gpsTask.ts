@@ -2,7 +2,7 @@ import * as Location from 'expo-location'
 import * as TaskManager from 'expo-task-manager'
 import { supabase } from '@/lib/supabase'
 import { storage } from '@/lib/storage'
-import { colors } from '@/lib/colors'
+import { BRAND_COLOR } from '@/lib/theme'
 
 /**
  * Driver GPS that keeps running with the screen locked or another app open.
@@ -86,7 +86,7 @@ export async function startBackgroundGps() {
     foregroundService: {
       notificationTitle: 'Route in progress',
       notificationBody: 'Sharing the bus location with parents until you end the route.',
-      notificationColor: colors.primary,
+      notificationColor: BRAND_COLOR,
     },
   })
 }

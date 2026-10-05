@@ -1,31 +1,17 @@
 import type { PropsWithChildren } from 'react'
 import { View, type ViewStyle } from 'react-native'
-import { colors } from '@/lib/colors'
+import { floatingShadow, radius, space, useTheme } from '@/lib/theme'
 
-type CardProps = PropsWithChildren<{
-  style?: ViewStyle
-}>
+type CardProps = PropsWithChildren<{ style?: ViewStyle }>
 
+/** A flat white card on the grey canvas: no border, no shadow. */
 export function Card({ children, style }: CardProps) {
-  return (
-    <View
-      style={[
-        {
-          backgroundColor: colors.surface,
-          borderRadius: 20,
-          borderWidth: 1,
-          borderColor: colors.border,
-          padding: 16,
-          shadowColor: colors.dark,
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.06,
-          shadowRadius: 8,
-          elevation: 2,
-        },
-        style,
-      ]}
-    >
-      {children}
-    </View>
-  )
+  const t = useTheme()
+  return <View style={[{ backgroundColor: t.surface, borderRadius: radius.md, padding: space.lg }, style]}>{children}</View>
+}
+
+/** A card floating over the map (bottom card, chips): larger radius and the app's one shadow. */
+export function FloatingCard({ children, style }: CardProps) {
+  const t = useTheme()
+  return <View style={[{ backgroundColor: t.surface, borderRadius: radius.lg, padding: space.lg }, floatingShadow, style]}>{children}</View>
 }

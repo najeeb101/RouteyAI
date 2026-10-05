@@ -16,7 +16,9 @@ const light = {
   brand: '#1E3A8A',
   brandPressed: '#172E6E',
   brandTint: 'rgba(30, 58, 138, 0.08)',
+  brandTintPressed: 'rgba(30, 58, 138, 0.14)',
   onBrand: '#FFFFFF',
+  onBrandSecondary: 'rgba(255, 255, 255, 0.78)',
   live: '#38BDF8',
   success: '#10B981',
   successText: '#047857',
@@ -27,12 +29,16 @@ const light = {
   danger: '#EF4444',
   dangerText: '#B91C1C',
   dangerTint: '#FEF2F2',
+  dangerTintPressed: '#FEE2E2',
   infoTint: '#EFF6FF',
   infoText: '#1E40AF',
   scrim: 'rgba(15, 23, 42, 0.4)',
 }
 
 export type Palette = typeof light
+
+/** The brand blue for places outside React, such as the Android "Route in progress" notification. */
+export const BRAND_COLOR = light.brand
 
 export const fonts = {
   display: 'SchibstedGrotesk_700Bold',

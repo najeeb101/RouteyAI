@@ -1,21 +1,20 @@
 import { Tabs } from 'expo-router'
+import { Bell, CalendarClock, CircleUser, House, Navigation } from 'lucide-react-native'
 import { TabIcon } from '@/components/navigation/TabIcon'
-import { colors } from '@/lib/colors'
-import { ParentDataProvider } from '@/features/parent/context/ParentDataContext'
 import { tabBarStyle } from '@/components/navigation/tabBarStyle'
+import { ParentDataProvider } from '@/features/parent/context/ParentDataContext'
+import { useTheme } from '@/lib/theme'
 
 export default function ParentLayout() {
+  const t = useTheme()
   return (
     <ParentDataProvider>
-      <Tabs screenOptions={{ headerShown: false, tabBarStyle, tabBarShowLabel: false }}>
-        <Tabs.Screen name="index" options={{ tabBarIcon: ({ focused }) => <TabIcon label="Home" icon="home-outline" activeIcon="home" focused={focused} /> }} />
-        <Tabs.Screen name="map" options={{ tabBarIcon: ({ focused }) => <TabIcon label="Track" icon="navigate-outline" activeIcon="navigate" focused={focused} /> }} />
-        <Tabs.Screen name="history" options={{ tabBarIcon: ({ focused }) => <TabIcon label="History" icon="time-outline" activeIcon="time" focused={focused} /> }} />
-        <Tabs.Screen
-          name="notifications"
-          options={{ tabBarIcon: ({ focused }) => <TabIcon label="Alerts" icon="notifications-outline" activeIcon="notifications" focused={focused} activeColor={colors.primaryLight} /> }}
-        />
-        <Tabs.Screen name="account" options={{ tabBarIcon: ({ focused }) => <TabIcon label="Account" icon="person-circle-outline" activeIcon="person-circle" focused={focused} /> }} />
+      <Tabs screenOptions={{ headerShown: false, tabBarStyle: tabBarStyle(t), tabBarShowLabel: false, sceneStyle: { backgroundColor: t.canvas } }}>
+        <Tabs.Screen name="index" options={{ tabBarIcon: ({ focused }) => <TabIcon label="Home" icon={House} focused={focused} /> }} />
+        <Tabs.Screen name="map" options={{ tabBarIcon: ({ focused }) => <TabIcon label="Track" icon={Navigation} focused={focused} /> }} />
+        <Tabs.Screen name="history" options={{ tabBarIcon: ({ focused }) => <TabIcon label="History" icon={CalendarClock} focused={focused} /> }} />
+        <Tabs.Screen name="notifications" options={{ tabBarIcon: ({ focused }) => <TabIcon label="Alerts" icon={Bell} focused={focused} /> }} />
+        <Tabs.Screen name="account" options={{ tabBarIcon: ({ focused }) => <TabIcon label="Account" icon={CircleUser} focused={focused} /> }} />
       </Tabs>
     </ParentDataProvider>
   )

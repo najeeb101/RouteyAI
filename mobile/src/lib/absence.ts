@@ -1,6 +1,3 @@
-import type { ComponentProps } from 'react'
-import type { Ionicons } from '@expo/vector-icons'
-
 export type AbsenceReason = 'sick' | 'appointment' | 'travel' | 'other'
 
 /** A parent's report that a child won't ride on a day (table `absence_reports`). */
@@ -22,11 +19,11 @@ export type AbsenceReportRow = {
   created_at: string
 }
 
-export const ABSENCE_REASONS: { value: AbsenceReason; label: string; icon: ComponentProps<typeof Ionicons>['name'] }[] = [
-  { value: 'sick', label: 'Sick', icon: 'medkit-outline' },
-  { value: 'appointment', label: 'Appointment', icon: 'calendar-outline' },
-  { value: 'travel', label: 'Travelling', icon: 'airplane-outline' },
-  { value: 'other', label: 'Other', icon: 'ellipsis-horizontal' },
+export const ABSENCE_REASONS: { value: AbsenceReason; label: string }[] = [
+  { value: 'sick', label: 'Sick' },
+  { value: 'appointment', label: 'Appointment' },
+  { value: 'travel', label: 'Travelling' },
+  { value: 'other', label: 'Other' },
 ]
 
 export function reasonLabel(reason: AbsenceReason): string {

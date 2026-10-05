@@ -1,68 +1,52 @@
-import type { ComponentProps } from 'react'
-import { Text, View } from 'react-native'
-import { Ionicons } from '@expo/vector-icons'
-import { colors } from '@/lib/colors'
-
-type IconName = ComponentProps<typeof Ionicons>['name']
+import { View } from 'react-native'
+import type { LucideIcon } from 'lucide-react-native'
+import { Icon } from '@/components/primitives/Icon'
+import { Txt } from '@/components/primitives/Txt'
+import { fonts, radius, space, useTheme } from '@/lib/theme'
 
 type TabIconProps = {
   label: string
-  /** Ionicons name; the filled version is used when the tab is active. */
-  icon: IconName
-  activeIcon?: IconName
+  icon: LucideIcon
   focused: boolean
-  activeColor?: string
   /** Small count bubble, e.g. unread alerts. */
   badge?: number
 }
 
-export function TabIcon({ label, icon, activeIcon, focused, activeColor = colors.primary, badge = 0 }: TabIconProps) {
-  const color = focused ? activeColor : colors.subtle
+/** Tab bar item: Lucide icon over a label, brand colour and a heavier stroke when active. No bubble. */
+export function TabIcon({ label, icon, focused, badge = 0 }: TabIconProps) {
+  const t = useTheme()
+  const color = focused ? t.brand : t.inkTertiary
 
   return (
-    <View style={{ alignItems: 'center', gap: 3, minWidth: 58 }}>
-      <View
-        style={{
-          width: 44,
-          height: 30,
-          borderRadius: 15,
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: focused ? `${activeColor}14` : 'transparent',
-        }}
-      >
-        <Ionicons name={focused ? (activeIcon ?? icon) : icon} size={21} color={color} />
+    <View style={{ alignItems: 'center', gap: space.xs - 1, minWidth: 64 }}>
+      <View>
+        <Icon icon={icon} size={24} color={color} strokeWidth={focused ? 2.2 : 1.75} />
         {badge > 0 && (
           <View
             style={{
               position: 'absolute',
-              top: -2,
-              right: 4,
-              minWidth: 16,
-              height: 16,
-              borderRadius: 8,
+              top: -4,
+              right: -9,
+              minWidth: 17,
+              height: 17,
               paddingHorizontal: 4,
-              backgroundColor: colors.danger,
+              borderRadius: radius.full,
+              backgroundColor: t.danger,
               borderWidth: 2,
-              borderColor: colors.surface,
+              borderColor: t.surface,
               alignItems: 'center',
               justifyContent: 'center',
             }}
           >
-            <Text style={{ color: '#FFFFFF', fontSize: 8, fontFamily: 'Inter_800ExtraBold' }}>{badge > 9 ? '9+' : badge}</Text>
+            <Txt variant="caption" tone="onBrand" style={{ fontSize: 10, lineHeight: 12, fontFamily: fonts.semibold }}>
+              {badge > 9 ? '9+' : badge}
+            </Txt>
           </View>
         )}
       </View>
-      <Text
-        style={{
-          fontSize: 10,
-          color,
-          fontFamily: focused ? 'Inter_700Bold' : 'Inter_500Medium',
-          letterSpacing: 0.2,
-        }}
-      >
+      <Txt variant="caption" color={color} style={{ fontSize: 11, lineHeight: 14, fontFamily: focused ? fonts.semibold : fonts.medium }}>
         {label}
-      </Text>
+      </Txt>
     </View>
   )
 }
