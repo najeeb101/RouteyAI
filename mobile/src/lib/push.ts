@@ -2,15 +2,15 @@ import { Platform } from 'react-native'
 import * as Notifications from 'expo-notifications'
 import * as Device from 'expo-device'
 import Constants from 'expo-constants'
-import * as SecureStore from 'expo-secure-store'
 import { supabase } from '@/lib/supabase'
+import { storage } from '@/lib/storage'
 
 /** Set when the user turns notifications off in Account, so the app doesn't turn them back on at the next launch. */
 const OPT_OUT_KEY = 'routeyai.push-opt-out'
 
 export async function isPushOptedOut(): Promise<boolean> {
   try {
-    return (await SecureStore.getItemAsync(OPT_OUT_KEY)) === '1'
+    return (await storage.getItem(OPT_OUT_KEY)) === '1'
   } catch {
     return false
   }
@@ -19,8 +19,8 @@ export async function isPushOptedOut(): Promise<boolean> {
 /** The Account screen switch: saves the choice, then saves or clears the token. Returns whether push is now on. */
 export async function setPushEnabled(enabled: boolean): Promise<boolean> {
   try {
-    if (enabled) await SecureStore.deleteItemAsync(OPT_OUT_KEY)
-    else await SecureStore.setItemAsync(OPT_OUT_KEY, '1')
+    if (enabled) await storage.removeItem(OPT_OUT_KEY)
+    else await storage.setItem(OPT_OUT_KEY, '1')
   } catch {
     // The choice still applies for this session.
   }

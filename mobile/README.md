@@ -78,3 +78,7 @@ Native changes (a new library, a permission, an `app.json` plugin) still need a 
 ## Trying the app in Expo Go
 
 Without an EAS build (for example on an iPhone before there is an Apple Developer account), run `npx expo start` in `mobile/` and scan the QR code with the phone's camera; it opens in the Expo Go app. Phone and laptop must be on the same Wi-Fi (otherwise `npx expo start --tunnel`). Expo Go has no Mapbox or background-location native code, so the map screens show a placeholder (`src/lib/mapbox.ts`) and the driver's GPS only runs while the app is open. Everything else works.
+
+## Web preview (screenshots only)
+
+`npx expo start --web` renders the app in a browser, for quick design checks and screenshots at phone size. It is not a supported way to use the app: maps show the placeholder (`src/lib/mapbox.web.ts`), storage falls back to `localStorage` (`src/lib/storage.web.ts`), and there's no GPS or push.
