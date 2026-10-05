@@ -1,23 +1,25 @@
-import { useEffect, useState, type ComponentProps } from 'react'
-import { ActivityIndicator, Alert, RefreshControl, ScrollView, Text, TouchableOpacity, View } from 'react-native'
+import { useEffect, useState } from 'react'
+import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { Ionicons } from '@expo/vector-icons'
+import { CalendarClock, Check, CircleHelp, House, Plus, X, type LucideIcon } from 'lucide-react-native'
 import { Banner } from '@/components/primitives/Banner'
 import { Card } from '@/components/primitives/Card'
-import { PrimaryButton } from '@/components/primitives/PrimaryButton'
+import { Icon } from '@/components/primitives/Icon'
+import { ListRow, ListSection } from '@/components/primitives/List'
 import { ScreenHeader } from '@/components/primitives/ScreenHeader'
+import { Stat } from '@/components/primitives/Stat'
+import { Txt } from '@/components/primitives/Txt'
 import { ChildSwitcher } from '@/features/parent/components/ChildSwitcher'
 import { ReportAbsenceSheet } from '@/features/parent/components/ReportAbsenceSheet'
 import { useParentContext } from '@/features/parent/context/ParentDataContext'
 import { HISTORY_DAYS, useChildHistory, type HistoryDay } from '@/features/parent/screens/useChildHistory'
 import { reasonLabel } from '@/lib/absence'
-import { colors } from '@/lib/colors'
 import { dayLabel, timeLabel } from '@/lib/dates'
-
-type IconName = ComponentProps<typeof Ionicons>['name']
+import { gutter, space, useTheme, type Palette } from '@/lib/theme'
 
 /** Past rides and absences for the selected child, plus absences already reported for the coming days. */
 export function ParentHistoryScreen() {
+  const t = useTheme()
   const { children, child, selectChild, statusFor, reports, attendance, today, reportAbsence, cancelAbsence } = useParentContext()
   const { days, loading, error, reload } = useChildHistory(child?.id ?? null)
   const [sheetOpen, setSheetOpen] = useState(false)
@@ -49,77 +51,70 @@ export function ParentHistoryScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['top']}>
-      <ScreenHeader title="History" subtitle={`${first}'s rides over the last ${HISTORY_DAYS} days`} />
+    <SafeAreaView style={{ flex: 1, backgroundColor: t.canvas }} edges={['top']}>
+      <ScreenHeader title="History" subtitle={`${child?.firstName ?? 'Your child'} · last ${HISTORY_DAYS} days`} />
       {children.length > 1 && (
-        <View style={{ backgroundColor: colors.dark, paddingHorizontal: 16, paddingBottom: 16 }}>
+        <View style={{ paddingHorizontal: gutter, paddingBottom: space.md }}>
           <ChildSwitcher items={children} selectedId={child?.id ?? null} statusFor={statusFor} onSelect={selectChild} />
         </View>
       )}
 
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 28 }}
-        refreshControl={<RefreshControl refreshing={loading && days.length > 0} onRefresh={reload} tintColor={colors.primary} />}
+        contentContainerStyle={{ paddingHorizontal: gutter, paddingTop: space.xs, paddingBottom: space.xxxl, gap: space.xxl }}
+        refreshControl={<RefreshControl refreshing={loading && days.length > 0} onRefresh={reload} tintColor={t.brand} />}
         showsVerticalScrollIndicator={false}
       >
         {error && <Banner text={error} />}
 
-        <View style={{ flexDirection: 'row', gap: 10 }}>
-          <Stat value={rides} label="Rides" color={colors.successMid} />
-          <Stat value={absences} label="Absent" color={colors.danger} />
-          <Stat value={reported} label="Reported by you" color="#B45309" />
-        </View>
-
-        <Card style={{ gap: 12 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <Ionicons name="calendar-outline" size={16} color={colors.primaryLight} />
-            <Text style={cardTitle}>Coming up</Text>
+        <Card style={{ flexDirection: 'row' }}>
+          <View style={{ flex: 1 }}>
+            <Stat size="md" value={String(rides)} label="Rides" />
           </View>
-          {upcoming.length === 0 ? (
-            <Text style={{ fontSize: 13, color: colors.muted, fontFamily: 'Inter_400Regular', lineHeight: 19 }}>
-              No absences reported. If {first} won&apos;t ride on a coming day, let the driver know here.
-            </Text>
-          ) : (
-            upcoming.map((r) => (
-              <View key={r.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 13.5, color: colors.dark }}>{dayLabel(r.date, today)}</Text>
-                  <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, color: colors.muted }} numberOfLines={1}>
-                    Staying home · {reasonLabel(r.reason)}
-                    {r.note ? ` · ${r.note}` : ''}
-                  </Text>
-                </View>
-                <TouchableOpacity onPress={() => confirmCancel(r.id, r.date)} style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, borderWidth: 1, borderColor: colors.border }}>
-                  <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 12, color: colors.muted }}>Cancel</Text>
-                </TouchableOpacity>
-              </View>
-            ))
-          )}
-          <PrimaryButton label="Report an absence" icon="add" onPress={() => setSheetOpen(true)} />
+          <View style={{ flex: 1 }}>
+            <Stat size="md" value={String(absences)} label="Absent" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Stat size="md" value={String(reported)} label="Reported by you" />
+          </View>
         </Card>
 
-        <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 12, color: colors.subtle, textTransform: 'uppercase', letterSpacing: 0.8, marginTop: 6, marginLeft: 4 }}>
-          Past days
-        </Text>
+        <ListSection title="Coming up" footer={upcoming.length === 0 ? `If ${first} won't ride on a coming day, let the driver know here.` : undefined}>
+          {upcoming.map((r) => (
+            <ListRow
+              key={r.id}
+              title={dayLabel(r.date, today)}
+              subtitle={`Staying home · ${reasonLabel(r.reason)}${r.note ? ` · ${r.note}` : ''}`}
+              accessory={
+                <Pressable onPress={() => confirmCancel(r.id, r.date)} hitSlop={10} accessibilityRole="button">
+                  <Txt variant="subhead" tone="brand">
+                    Cancel
+                  </Txt>
+                </Pressable>
+              }
+            />
+          ))}
+          <ListRow icon={Plus} title="Report an absence" accent onPress={() => setSheetOpen(true)} />
+        </ListSection>
+
         {loading && days.length === 0 ? (
-          <Card style={{ alignItems: 'center', paddingVertical: 24 }}>
-            <ActivityIndicator color={colors.primary} />
+          <Card style={{ alignItems: 'center', paddingVertical: space.xxl }}>
+            <ActivityIndicator color={t.brand} />
           </Card>
         ) : days.length === 0 ? (
-          <Card style={{ alignItems: 'center', gap: 8, paddingVertical: 26 }}>
-            <Ionicons name="time-outline" size={28} color={colors.subtle} />
-            <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 14, color: colors.dark }}>Nothing yet</Text>
-            <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 13, color: colors.muted, textAlign: 'center' }}>
+          <Card style={{ alignItems: 'center', gap: space.sm, paddingVertical: space.xxl }}>
+            <Icon icon={CalendarClock} size={28} color={t.inkTertiary} />
+            <Txt variant="headline">Nothing yet</Txt>
+            <Txt variant="body" tone="inkSecondary" align="center">
               Each ride shows up here once the driver checks {first} in.
-            </Text>
+            </Txt>
           </Card>
         ) : (
-          <Card style={{ padding: 0, overflow: 'hidden' }}>
-            {days.map((day, i) => (
-              <HistoryRow key={day.date} day={day} today={today} last={i === days.length - 1} />
+          <ListSection title="Past days">
+            {days.map((day) => (
+              <HistoryRow key={day.date} day={day} today={today} />
             ))}
-          </Card>
+          </ListSection>
         )}
       </ScrollView>
 
@@ -137,56 +132,27 @@ export function ParentHistoryScreen() {
   )
 }
 
-function HistoryRow({ day, today, last }: { day: HistoryDay; today: string; last: boolean }) {
-  let icon: IconName = 'help-circle'
-  let color: string = colors.muted
-  let bg: string = colors.borderLight
+function HistoryRow({ day, today }: { day: HistoryDay; today: string }) {
+  const t = useTheme()
+  let icon: LucideIcon = CircleHelp
+  let color: keyof Palette = 'inkTertiary'
   let title = 'No record'
   let detail = ''
   if (day.attendance?.status === 'boarded') {
-    icon = 'checkmark'
-    color = colors.successMid
-    bg = colors.successBg
+    icon = Check
+    color = 'successText'
     title = 'Rode the bus'
     detail = `Boarded at ${timeLabel(day.attendance.at)}`
   } else if (day.report) {
-    icon = 'home'
-    color = '#B45309'
-    bg = colors.warningBg
+    icon = House
+    color = 'warningText'
     title = 'Stayed home'
     detail = `You reported it · ${reasonLabel(day.report.reason)}`
   } else if (day.attendance?.status === 'absent') {
-    icon = 'close'
-    color = colors.danger
-    bg = colors.dangerBg
+    icon = X
+    color = 'dangerText'
     title = 'Absent'
     detail = `Not at the stop · ${timeLabel(day.attendance.at)}`
   }
-  return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 13, borderBottomWidth: last ? 0 : 1, borderBottomColor: colors.borderLight }}>
-      <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: bg, alignItems: 'center', justifyContent: 'center' }}>
-        <Ionicons name={icon} size={17} color={color} />
-      </View>
-      <View style={{ flex: 1 }}>
-        <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 13.5, color: colors.dark }}>{title}</Text>
-        <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, color: colors.muted, marginTop: 1 }} numberOfLines={1}>
-          {detail}
-        </Text>
-      </View>
-      <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 12, color: colors.subtle }}>{dayLabel(day.date, today)}</Text>
-    </View>
-  )
+  return <ListRow leading={<Icon icon={icon} size={21} color={t[color]} strokeWidth={2} />} title={title} subtitle={detail || undefined} value={dayLabel(day.date, today)} />
 }
-
-function Stat({ value, label, color }: { value: number; label: string; color: string }) {
-  return (
-    <View style={{ flex: 1, backgroundColor: colors.surface, borderRadius: 16, borderWidth: 1, borderColor: colors.border, paddingVertical: 12, paddingHorizontal: 10, alignItems: 'center' }}>
-      <Text style={{ fontFamily: 'Inter_800ExtraBold', fontSize: 22, color, letterSpacing: -0.5 }}>{value}</Text>
-      <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 10.5, color: colors.subtle, textAlign: 'center', marginTop: 2 }} numberOfLines={1}>
-        {label}
-      </Text>
-    </View>
-  )
-}
-
-const cardTitle = { fontFamily: 'Inter_700Bold' as const, fontSize: 14.5, color: colors.dark }

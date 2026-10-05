@@ -5,14 +5,13 @@ Mobile: Expo (React Native) | React Native styles | Mapbox RN | EAS
 
 ---
 
-## Current Status Snapshot (2026-10-01)
+## Current Status Snapshot (2026-10-05)
 
-- Completed: Phases 1–10.
-- Nearly done: Phase 11 (custom domain left).
-- Landing page redesign merged to `main` and deployed (2026-10-01).
-- In progress: Phase 13 — landing page live at https://routeyai.vercel.app; Supabase project paused; launch placeholders in `src/lib/siteConfig.ts`.
-- Phase 14 (parent and driver app upgrade) merged; migrations `0013` and `0014` (RLS fixes, see Docs/Claude.md §5) not yet applied to Supabase. After the merge, on `landing-redesign`: school admin Absences page, driver GPS with the screen locked, Mapbox secret out of git.
-- Not started: Phase 12 (store submission). Needs an Expo SDK upgrade first (16 KB page size).
+- Completed: Phases 1–10. Supabase restored; all migrations through `0015` are on production (2026-10-02).
+- Nearly done: Phase 11 (custom domain left), plus the Edge Function caller checks found on 2026-10-05.
+- In progress: Phase 13 — landing page live at https://routeyai.vercel.app; launch placeholders in `src/lib/siteConfig.ts`; no Mapbox token on Vercel yet, so student addresses aren't geocoded on the live site.
+- In progress: Phase 12 (store submission). Expo SDK 57, EAS profiles, OTA updates, icons, Play graphics and store copy are done; next are the device test, the Mapbox `pk.` token, `eas login` and the first EAS builds.
+- Phase 14 (parent and driver app upgrade) done apart from checks on a real phone.
 
 ## Phase 1: Project Setup and Landing Page
 
@@ -135,28 +134,33 @@ Mobile: Expo (React Native) | React Native styles | Mapbox RN | EAS
 - [x] SEO meta tags on all pages
 - [x] Performance audit (Lighthouse) — home page, mobile, local production build (2026-09-30): Performance 92, Accessibility 100, Best Practices 100, SEO 100
 - [ ] Connect custom domain on Vercel
+- [x] **Edge Functions check the caller** (found and fixed 2026-10-05, deployed). Both ran with the service role key and only required a valid JWT, and the public anon key is one: anyone with the web app's public key could push any text to every parent of a school (`send-notification`, `type: announcement`) or re-optimize every bus in every school (`optimize-route` with no `bus_id`). Now `supabase/functions/_shared/caller.ts` identifies the caller: the service role (database triggers, scripts; a token claiming it is confirmed against the Auth admin API, because the runtime's `SUPABASE_SERVICE_ROLE_KEY` is not the same string as the legacy key), or a signed-in user with their roles. `optimize-route`: platform admin, service role, or the school admin of that bus's school. `send-notification`: attendance and announcements only from the service role; `eta_alert` only from the child's parent. Also fixed: "Optimize all" for one school re-planned every school's buses. Tested on production: anon key and a forged service-role JWT get 401, the service key works. Not yet tested with a signed-in school admin or parent (needs the review accounts)
+- [ ] **Apply `0016_lock_optimization_helpers.sql` to production (`pnpm db:push`)**. The four route-optimization helpers from 0009 are SECURITY DEFINER with no caller checks and executable by anon: with only the public key, `get_route_optimization_payload` returns every bus with its students' home coordinates (checked on production 2026-10-05: 13 rows). 0016 makes them service-role only; only the Edge Function uses them. Claude's push was blocked by the auto-mode safety check, so run it yourself
+- [ ] `redeem_invite(p_code, p_user_id)` trusts `p_user_id` instead of `auth.uid()`. Low risk (needs a valid unused invite code), but it can't simply require `auth.uid()`: production has email confirmation on, so the invite page calls it before the new user has a session. Option: allow `p_user_id = auth.uid()`, or a user created in the last few minutes who has no role yet
 
 ## Phase 12: App Store and Play Store Submission
 
 - [x] Mapbox secret token out of git: `app.json`/`eas.json` → `RNMAPBOX_MAPS_DOWNLOAD_TOKEN` in `mobile/.env.local`, read by `mobile/app.config.js` (2026-10-01)
-- [ ] **Revoke the Mapbox secret token** — it sat in `app.json`/`eas.json` in the public repo since Phase 7, so it is still in git history. Builds no longer need it (see the SDK 57 item), so delete it in the Mapbox account rather than rotating, then remove it from `mobile/.env.local` (already commented out)
-- [ ] Public Mapbox `pk.` token for `EXPO_PUBLIC_MAPBOX_TOKEN` (the app map still uses the secret one locally until then): `mobile/.env.local` and `eas env:create --name EXPO_PUBLIC_MAPBOX_TOKEN` for cloud builds. Needed before revoking the secret token
+- [ ] **Revoke the Mapbox secret token** in the Mapbox account (Tokens page): it sat in `app.json`/`eas.json` in the public repo since Phase 7, so it is still in git history. Nothing uses it any more: the public token replaced it everywhere and it was removed from `mobile/.env.local` (2026-10-05)
+- [x] Public Mapbox `pk.` token (2026-10-05): `EXPO_PUBLIC_MAPBOX_TOKEN` in `mobile/.env.local`, `NEXT_PUBLIC_MAPBOX_TOKEN` in `.env.local` and on Vercel (production and preview, type config), `MAPBOX_ACCESS_TOKEN` secret for the Edge Functions (real road distances in route optimization). EAS environment variable `EXPO_PUBLIC_MAPBOX_TOKEN` (development, preview, production) for cloud builds
 - [x] **Expo SDK 51 → 57** (2026-10-02): React Native 0.86, React 19.2, new architecture, `@rnmapbox/maps` 10.3.5 (Mapbox dropped the download token, so `app.config.js` is gone), Reanimated 4.5.1 / Worklets 0.10.1 pinned (Expo Router 57 pulls them in), `babel.config.js` removed (Expo applies its preset). `expo-doctor` 21/21, typecheck clean, `assembleDebug` builds; every native library is 16 KB aligned (`zipalign -P 16` and ELF LOAD segments). Unused storage and overlay permissions blocked. Google Maps was considered instead of Mapbox but needs a Google Cloud billing account
 - [ ] **Test the SDK 57 app on a device**: the JS started on a 16 KB-page Android 16 emulator, but the emulator ran out of memory (dev laptop at ~0.4 GB free RAM) before the first screen. Re-test login, parent map, driver start/end route and background GPS, absence report, Delete account. Close other apps first or use a real phone
 - [ ] Play Console: declare the location foreground service (`FOREGROUND_SERVICE_LOCATION`) with a short video of the driver starting a route
-- [x] EAS build profiles in `eas.json`: shared Supabase env, preview builds an APK, remote app versions, Play internal track (2026-10-02). Not validated by `eas` yet (needs `eas login`)
+- [x] EAS build profiles in `eas.json`: shared Supabase env, preview builds an APK, remote app versions, Play internal track (2026-10-02). Validated with `eas config` (2026-10-05). The CLI signs in with `EXPO_TOKEN` in `mobile/.env.local` (an Expo access token from expo.dev → Account settings → Access tokens)
 - [x] App icon, Android adaptive and notification icons, splash (`mobile/assets/`, built by `scripts/app-icons/build.mjs` from the temp logo; re-run when the final logo lands) (2026-10-02)
 - [ ] iOS bundle ID and signing setup
-- [ ] Android keystore setup (`applicationId` / iOS bundle ID are `com.routeyai.app` in `app.json`; let EAS manage the keystore on the first `eas build`)
+- [x] Android keystore: created and stored by EAS on the first build (2026-10-05). `applicationId` / iOS bundle ID are `com.routeyai.app`
+- [ ] First Android preview build (APK) started 2026-10-05: https://expo.dev/accounts/najeeb101/projects/routeyai/builds/0fcf0610-968c-4747-89a8-bc0d0f3ec971
 - [ ] Run production builds (`eas build --platform all --profile production`)
 - [ ] Internal testing via TestFlight and Play internal track
 - [x] **Account deletion in the app** (Apple 5.1.1(v), Google Play): Account tab → Delete account calls `delete_my_account()` (`0015_delete_account.sql`, tested on the local database for parent, driver and platform admin); web deletion page for Play: `/privacy#delete-account` (2026-10-02). Applied to production
 - [x] Store listing copy for both stores, review notes and privacy answers: [store-listing.md](store-listing.md) (2026-10-02)
-- [ ] App Store and Play screenshots, Play feature graphic
-- [ ] Demo reviewer accounts (parent + driver) on the production database
+- [x] Play feature graphic and 512 px Play icon: `mobile/store/`, built by `scripts/store-graphics/build.mjs` (2026-10-05)
+- [ ] App Store and Play screenshots
+- [ ] Demo reviewer accounts (parent + driver) on the production database: `scripts/review-accounts/setup.mjs` is written (demo school, parent with two children, Bus 1 driver, school admin; re-runnable after reviewers delete an account) but not run against production yet
 - [ ] Submit to App Store review
 - [ ] Submit to Google Play review
-- [ ] Configure OTA updates via `eas update`
+- [x] OTA updates: `expo-updates`, a channel per EAS build profile, `runtimeVersion` follows the app version (2026-10-05). Publishing needs `eas login`; see `mobile/README.md`
 
 ## Phase 13: Landing Page Launch
 
@@ -175,10 +179,10 @@ Full plan: [plans/2026-09-29-landing-page-launch.md](plans/2026-09-29-landing-pa
 - [x] Vercel project `routeyai` created and linked to GitHub; production env vars set (`NEXT_PUBLIC_DEMO_MODE=false`)
 - [x] Fix Vercel production build (Supabase packages aligned, `database.ts` completed) — live at https://routeyai.vercel.app
 - [x] Restore paused Supabase project, then test demo form end to end (2026-10-02: submitted on the live site in headless Chrome, success toast shown, row read back from `demo_requests`; the test row "TEST Claude Code" can be deleted)
-- [ ] Add real `NEXT_PUBLIC_MAPBOX_TOKEN` (`.env.local` has the placeholder) locally and on Vercel
+- [x] Real `NEXT_PUBLIC_MAPBOX_TOKEN` locally and on Vercel (2026-10-05); live student-address geocoding works after the next deploy
 - [x] Set `NEXT_PUBLIC_APP_URL=https://routeyai.vercel.app` on Vercel (production)
 - [ ] Launch placeholders in `src/lib/siteConfig.ts`: set `NEXT_PUBLIC_CONTACT_EMAIL` (routeyai.com has no DNS/MX yet), legal review then `LEGAL_REVIEWED = true`, fill `PLAN_SUPPORT`
-- [ ] Lighthouse ≥ 90 on mobile. Live site, 3 runs (2026-10-02): accessibility, best practices and SEO 100; performance 62, 71, 73 (LCP 2.9–3.5 s, TBT 0.7–1.2 s, CLS 0). Biggest cost is style and layout on the home page (~2.5 s of main thread), then ~1.9 s of script. Trace findings (2026-10-02, 4x CPU, phone viewport): the first two layouts (≈180 and ≈300 ms) lay out all ~1,250 boxes of the page at once; later re-layouts are cheap (9 ms), so it's the amount of content, not one bad section. At hydration the FAQ accordion (Radix) measures all nine answers and framer-motion measures SVG and parallax targets, forcing extra full-document style/layout (60–70 ms frames). The hero cards animate with framer-motion every 1.6 s, including the arrival card that's hidden on phones. Tried `content-visibility: auto` on sections below the hero (per-section placeholder heights); no measurable gain on the dev laptop (54% background CPU makes local runs too noisy), likely because those hydration-time measurements force the skipped sections to lay out anyway. Reverted. Next: measure with PageSpeed Insights (needs an API key; the keyless daily quota ran out), then stop the hidden arrival card animating on phones, defer the FAQ/parallax measurements, and retry `content-visibility`
+- [ ] Lighthouse ≥ 90 on mobile. Live site, 3 runs (2026-10-02): accessibility, best practices and SEO 100; performance 62, 71, 73 (LCP 2.9–3.5 s, TBT 0.7–1.2 s, CLS 0). Biggest cost is style and layout on the home page (~2.5 s of main thread), then ~1.9 s of script. Trace findings (2026-10-02, 4x CPU, phone viewport): the first two layouts (≈180 and ≈300 ms) lay out all ~1,250 boxes of the page at once; later re-layouts are cheap (9 ms), so it's the amount of content, not one bad section. At hydration the FAQ accordion (Radix) measures all nine answers and framer-motion measures SVG and parallax targets, forcing extra full-document style/layout (60–70 ms frames). The hero cards animate with framer-motion every 1.6 s, including the arrival card that's hidden on phones. Tried `content-visibility: auto` on sections below the hero (per-section placeholder heights); no measurable gain on the dev laptop (54% background CPU makes local runs too noisy), likely because those hydration-time measurements force the skipped sections to lay out anyway. Reverted. **2026-10-05:** hydration split into short tasks with a `Suspense` boundary per section (the single hydration task was 1.36 s simulated), FAQ is native `<details name="faq">` (no Radix, answers in the HTML), parallax is a CSS scroll timeline (no framer-motion measuring), the desktop arrival card is no longer rendered on phones, and `content-visibility: auto` is back on the sections below the hero (no hydration-time measuring forces them to lay out any more). Old and new production builds run side by side on the dev laptop, alternating, 3–5 runs each: performance 49–63 → 55–78, TBT 2.5–4.35 s → 0.3–2.75 s, style and layout 5.3–6.4 s → 2.0–4.3 s. Absolute numbers are pessimistic: about 200 ms (real) of every first layout is a cold-start cost of headless Chrome on this Windows laptop (the plain `/privacy` page pays it too), and the local server is HTTP/1.1 without Brotli. LCP is the hero photo; it loads in ~0.2 s but in the simulation waits for script evaluation before it's counted. Next: measure the live site with PageSpeed Insights after the deploy (keyless quota was used up again on 2026-10-05). If it's still under 90, the remaining cost is framer-motion (49 kB gz, used by the nav, hero cards and phone demos) and the 29 kB Radix/zod chunk from the demo form
 
 ## Phase 14: Parent and Driver App Upgrade
 
@@ -206,3 +210,14 @@ Full plan: [plans/2026-10-01-parent-driver-apps.md](plans/2026-10-01-parent-driv
 - [ ] Check the new app map style on a phone in light and dark (previewed with MapLibre; the emulator session had ended)
 - [ ] Test on a real phone with push notifications (needs an EAS build)
 - [x] School admin dashboard: Absences page (`/school/absences`: today, coming up, past 30 days)
+
+## Phase 15: Mobile UI Refresh
+
+Full plan: [plans/2026-10-05-mobile-ui-refresh.md](plans/2026-10-05-mobile-ui-refresh.md)
+
+- [x] Decided (2026-10-05): Lucide icons, light large-title headers, rounded-rectangle buttons, dark mode after the light mode is final
+- [x] Foundations: `theme.ts`, Schibsted Grotesk + Inter, `Txt`, Lucide, `check:design` (2026-10-06)
+- [x] Components, then parent, driver and login screens (2026-10-06, branch `mobile-ui-refresh`): all 14 screens and sheets moved to the tokens; old `colors.ts`, `PrimaryButton`, `StatusPill`, `MetricCard` and the unused `RouteTimeline` removed. `npm run check:design`, typecheck and expo-doctor pass. Checked in the web preview (`npx expo start --web`), not yet on the iPhone
+- [ ] Check every screen on the iPhone in Expo Go, then merge `mobile-ui-refresh`
+- [ ] Landing page phone mockups and store screenshots in the new style
+- [ ] Dark mode (planned in the same document; starts when the light screens are final)

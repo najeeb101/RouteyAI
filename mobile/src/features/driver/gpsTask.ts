@@ -1,8 +1,8 @@
 import * as Location from 'expo-location'
-import * as SecureStore from 'expo-secure-store'
 import * as TaskManager from 'expo-task-manager'
 import { supabase } from '@/lib/supabase'
-import { colors } from '@/lib/colors'
+import { storage } from '@/lib/storage'
+import { BRAND_COLOR } from '@/lib/theme'
 
 /**
  * Driver GPS that keeps running with the screen locked or another app open.
@@ -61,7 +61,7 @@ TaskManager.defineTask<{ locations: Location.LocationObject[] }>(GPS_TASK, async
 })
 
 export async function getRunningTrip(): Promise<RunningTrip | null> {
-  const raw = await SecureStore.getItemAsync(TRIP_KEY)
+  const raw = await storage.getItem(TRIP_KEY)
   if (!raw) return null
   try {
     return JSON.parse(raw) as RunningTrip
@@ -71,7 +71,7 @@ export async function getRunningTrip(): Promise<RunningTrip | null> {
 }
 
 export function saveRunningTrip(trip: RunningTrip) {
-  return SecureStore.setItemAsync(TRIP_KEY, JSON.stringify(trip))
+  return storage.setItem(TRIP_KEY, JSON.stringify(trip))
 }
 
 /** Must be called while the app is on screen: Android won't start a foreground service from the background. */
@@ -86,7 +86,7 @@ export async function startBackgroundGps() {
     foregroundService: {
       notificationTitle: 'Route in progress',
       notificationBody: 'Sharing the bus location with parents until you end the route.',
-      notificationColor: colors.primary,
+      notificationColor: BRAND_COLOR,
     },
   })
 }
@@ -97,6 +97,6 @@ export async function isBackgroundGpsRunning() {
 
 /** Stops the GPS and forgets the trip. Safe to call when nothing is running. */
 export async function stopBackgroundGps() {
-  await SecureStore.deleteItemAsync(TRIP_KEY)
+  await storage.removeItem(TRIP_KEY)
   if (await isBackgroundGpsRunning()) await Location.stopLocationUpdatesAsync(GPS_TASK)
 }

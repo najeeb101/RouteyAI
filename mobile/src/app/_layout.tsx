@@ -1,7 +1,8 @@
 import { Slot } from 'expo-router'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
-import { useFonts, Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold, Inter_800ExtraBold } from '@expo-google-fonts/inter'
+import { useFonts, Inter_400Regular, Inter_500Medium, Inter_600SemiBold } from '@expo-google-fonts/inter'
+import { SchibstedGrotesk_700Bold } from '@expo-google-fonts/schibsted-grotesk'
 import { useEffect } from 'react'
 import * as Notifications from 'expo-notifications'
 import * as SplashScreen from 'expo-splash-screen'
@@ -27,8 +28,8 @@ export default function RootLayout() {
     Inter_400Regular,
     Inter_500Medium,
     Inter_600SemiBold,
-    Inter_700Bold,
-    Inter_800ExtraBold,
+    // Headings and big numbers, the landing page's display face (lib/theme).
+    SchibstedGrotesk_700Bold,
   })
 
   // Save this phone's push token whenever someone is signed in (on launch and right after logging in).

@@ -1,33 +1,27 @@
 import type { ReactNode } from 'react'
-import { Text, View } from 'react-native'
-import { Ionicons } from '@expo/vector-icons'
+import { View } from 'react-native'
+import { CircleAlert, CircleCheck, Info, TriangleAlert, type LucideIcon } from 'lucide-react-native'
+import { Icon } from '@/components/primitives/Icon'
+import { Txt } from '@/components/primitives/Txt'
+import { radius, space, useTheme, type Palette } from '@/lib/theme'
 
-const tones = {
-  danger: { bg: '#FEF2F2', border: '#FECACA', color: '#B91C1C', icon: 'alert-circle' as const },
-  warning: { bg: '#FFFBEB', border: '#FDE68A', color: '#92400E', icon: 'warning' as const },
-  info: { bg: '#EFF6FF', border: '#BFDBFE', color: '#1E40AF', icon: 'information-circle' as const },
-  success: { bg: '#ECFDF5', border: '#A7F3D0', color: '#065F46', icon: 'checkmark-circle' as const },
+const tones: Record<'danger' | 'warning' | 'info' | 'success', { bg: keyof Palette; ink: keyof Palette; icon: LucideIcon }> = {
+  danger: { bg: 'dangerTint', ink: 'dangerText', icon: CircleAlert },
+  warning: { bg: 'warningTint', ink: 'warningText', icon: TriangleAlert },
+  info: { bg: 'infoTint', ink: 'infoText', icon: Info },
+  success: { bg: 'successTint', ink: 'successText', icon: CircleCheck },
 }
 
-/** One-line status or error message, with an optional action on the right. */
+/** One-line status or error message on a tinted background, with an optional text-button action on the right. */
 export function Banner({ text, tone = 'danger', action }: { text: string; tone?: keyof typeof tones; action?: ReactNode }) {
-  const t = tones[tone]
+  const t = useTheme()
+  const { bg, ink, icon } = tones[tone]
   return (
-    <View
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 10,
-        backgroundColor: t.bg,
-        borderWidth: 1,
-        borderColor: t.border,
-        borderRadius: 14,
-        paddingHorizontal: 12,
-        paddingVertical: 10,
-      }}
-    >
-      <Ionicons name={t.icon} size={18} color={t.color} />
-      <Text style={{ flex: 1, color: t.color, fontSize: 12.5, fontFamily: 'Inter_600SemiBold', lineHeight: 18 }}>{text}</Text>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md, backgroundColor: t[bg], borderRadius: radius.md, padding: space.md }}>
+      <Icon icon={icon} size={18} color={t[ink]} />
+      <Txt variant="subhead" color={t[ink]} style={{ flex: 1 }}>
+        {text}
+      </Txt>
       {action}
     </View>
   )

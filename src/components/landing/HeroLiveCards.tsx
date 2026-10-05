@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Bus, CheckCircle2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -27,48 +28,53 @@ export function HeroLiveCards() {
   const notification = step >= BOARDED ? 'boarded' : step >= 1 ? 'arriving' : null
   const eta = ETAS[Math.min(step, ETAS.length - 1)]
   const passed = step >= AT_STOP ? STOPS : Math.min(STOPS - 1, Math.floor(step / 2) + 1)
+  const desktop = useDesktop()
 
   return (
     <div ref={ref} aria-hidden="true" className="pointer-events-none absolute inset-0">
-      {/* Arrival card: desktop only, top right. */}
-      <div
-        className="absolute top-[17%] hidden w-[17.5rem] animate-fade-up motion-reduce:animate-none lg:block"
-        style={{ right: 'max(1.5rem, calc((100% - 72rem) / 2 + 1.5rem))', animationDelay: '700ms' }}
-      >
-        <div className="rounded-2xl border border-border/70 bg-card/95 p-4 shadow-[0_24px_48px_-24px_hsl(var(--brand-ink)/0.55)]">
-          <div className="flex items-center justify-between text-[13px]">
-            <span className="font-semibold text-foreground">Bus 3 · Al Waab</span>
-            <span className="flex items-center gap-1.5 font-medium text-secondary">
-              <span className="h-1.5 w-1.5 rounded-full bg-secondary" />
-              Live
-            </span>
-          </div>
-          <p className="mt-3 text-[13px] text-muted-foreground">
-            {step >= BOARDED ? 'Aisha is on the bus. At school by' : step === AT_STOP ? 'The bus is at your stop' : 'Arriving at your stop in'}
-          </p>
-          <div className="relative mt-0.5 h-11 overflow-hidden font-display text-[2.1rem] font-bold leading-[2.75rem] tracking-tight text-foreground tabular-nums">
-            <AnimatePresence initial={false}>
-              <motion.span
-                key={step >= AT_STOP ? `state-${step >= BOARDED}` : eta}
-                initial={reduceMotion ? false : { y: 28, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                exit={{ y: -28, opacity: 0 }}
-                transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-                className="absolute inset-0"
-              >
-                {step >= BOARDED ? '7:24' : step === AT_STOP ? 'Now' : `${eta} min`}
-              </motion.span>
-            </AnimatePresence>
-          </div>
+      {/*
+        Arrival card: desktop only, top right. Not rendered at all on smaller screens, where CSS used to hide it while
+        it kept re-rendering and animating every 1.6 s.
+      */}
+      {desktop && (
+        <div
+          className="absolute top-[17%] w-[17.5rem] animate-fade-up motion-reduce:animate-none"
+          style={{ right: 'max(1.5rem, calc((100% - 72rem) / 2 + 1.5rem))', animationDelay: '700ms' }}
+        >
+          <div className="rounded-2xl border border-border/70 bg-card/95 p-4 shadow-[0_24px_48px_-24px_hsl(var(--brand-ink)/0.55)]">
+            <div className="flex items-center justify-between text-[13px]">
+              <span className="font-semibold text-foreground">Bus 3 · Al Waab</span>
+              <span className="flex items-center gap-1.5 font-medium text-secondary">
+                <span className="h-1.5 w-1.5 rounded-full bg-secondary" />
+                Live
+              </span>
+            </div>
+            <p className="mt-3 text-[13px] text-muted-foreground">
+              {step >= BOARDED ? 'Aisha is on the bus. At school by' : step === AT_STOP ? 'The bus is at your stop' : 'Arriving at your stop in'}
+            </p>
+            <div className="relative mt-0.5 h-11 overflow-hidden font-display text-[2.1rem] font-bold leading-[2.75rem] tracking-tight text-foreground tabular-nums">
+              <AnimatePresence initial={false}>
+                <motion.span
+                  key={step >= AT_STOP ? `state-${step >= BOARDED}` : eta}
+                  initial={reduceMotion ? false : { y: 28, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: -28, opacity: 0 }}
+                  transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                  className="absolute inset-0"
+                >
+                  {step >= BOARDED ? '7:24' : step === AT_STOP ? 'Now' : `${eta} min`}
+                </motion.span>
+              </AnimatePresence>
+            </div>
 
-          <div className="mt-3 flex items-center">
-            {Array.from({ length: STOPS }, (_, i) => (
-              <span key={i} className="flex flex-1 items-center last:flex-none">
-                <span
-                  className={cn(
-                    'h-2.5 w-2.5 shrink-0 rounded-full border-2 transition-colors duration-500',
-                    i < passed ? 'border-primary bg-primary' : i === STOPS - 1 ? 'border-primary bg-card' : 'border-border bg-card'
-                  )}
+            <div className="mt-3 flex items-center">
+              {Array.from({ length: STOPS }, (_, i) => (
+                <span key={i} className="flex flex-1 items-center last:flex-none">
+                  <span
+                    className={cn(
+                      'h-2.5 w-2.5 shrink-0 rounded-full border-2 transition-colors duration-500',
+                      i < passed ? 'border-primary bg-primary' : i === STOPS - 1 ? 'border-primary bg-card' : 'border-border bg-card'
+      )}
                 />
                 {i < STOPS - 1 && (
                   <span className={cn('h-0.5 flex-1 transition-colors duration-500', i < passed - 1 ? 'bg-primary' : 'bg-border')} />
@@ -79,6 +85,7 @@ export function HeroLiveCards() {
           <p className="mt-2 text-[12px] text-muted-foreground">Your stop: Villa 12, Al Waab St</p>
         </div>
       </div>
+      )}
 
       {/* Push notification: below the bus on desktop, above it at the top of the photo on phones. */}
       <div
@@ -118,4 +125,17 @@ export function HeroLiveCards() {
       </div>
     </div>
   )
+}
+
+/** True from Tailwind's `lg` breakpoint up. False during server render and hydration, so nothing mismatches. */
+function useDesktop() {
+  const [desktop, setDesktop] = useState(false)
+  useEffect(() => {
+    const query = window.matchMedia('(min-width: 1024px)')
+    const update = () => setDesktop(query.matches)
+    update()
+    query.addEventListener('change', update)
+    return () => query.removeEventListener('change', update)
+  }, [])
+  return desktop
 }

@@ -1,3 +1,4 @@
+import { Armchair, Bus, Route, School } from 'lucide-react-native'
 import { AccountScreen } from '@/features/account/AccountScreen'
 import { useDriverContext } from '@/features/driver/context/DriverDataContext'
 
@@ -16,10 +17,10 @@ export function DriverAccountScreen() {
               {
                 title: 'Your bus',
                 rows: [
-                  { icon: 'bus-outline', label: 'Bus', value: profile.busName },
-                  { icon: 'people-outline', label: 'Seats', value: `${profile.capacity}` },
-                  { icon: 'location-outline', label: 'Route', value: `${stops.length} stops · ${totalStudents} students` },
-                  { icon: 'school-outline', label: 'School', value: profile.schoolName },
+                  { icon: Bus, label: 'Bus', value: profile.busName },
+                  { icon: Armchair, label: 'Seats', value: `${profile.capacity}` },
+                  { icon: Route, label: 'Route', value: `${stops.length} stops · ${totalStudents} students` },
+                  { icon: School, label: 'School', value: profile.schoolName },
                 ],
               },
             ]

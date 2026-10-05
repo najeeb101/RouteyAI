@@ -1,6 +1,7 @@
 /// <reference types="https://esm.sh/@supabase/functions-js/src/edge-runtime.d.ts" />
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { getCaller } from '../_shared/caller.ts'
 
 const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send'
 
@@ -9,6 +10,9 @@ const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
+
+const reply = (body: Record<string, unknown>, status: number) =>
+  new Response(JSON.stringify(body), { headers: corsHeaders, status })
 
 type PushMessage = {
   to: string
@@ -72,7 +76,14 @@ Deno.serve(async (req) => {
     if (!supabaseUrl || !serviceKey) throw new Error('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY')
 
     const supabase = createClient(supabaseUrl, serviceKey)
+    const caller = await getCaller(req, supabase, { url: supabaseUrl, serviceKey })
+    if (!caller) return reply({ ok: false, error: 'Sign in required' }, 401)
+
     const body = (await req.json()) as NotifRequest
+    // Attendance and announcement pushes come from the database triggers in 0012, which call with the service role.
+    // The only thing an app may ask for is the "bus arriving" alert for the caller's own child (checked below).
+    if (caller.kind === 'user' && body.type !== 'eta_alert') return reply({ ok: false, error: 'Not allowed' }, 403)
+
     const messages: PushMessage[] = []
 
     if (body.type === 'attendance') {
@@ -158,6 +169,10 @@ Deno.serve(async (req) => {
         .select('name, parent_id')
         .eq('id', body.student_id)
         .maybeSingle()
+
+      if (caller.kind === 'user' && (!student || student.parent_id !== caller.id)) {
+        return reply({ ok: false, error: 'Not allowed' }, 403)
+      }
 
       if (student?.parent_id) {
         const { data: role } = await supabase

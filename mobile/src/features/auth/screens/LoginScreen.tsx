@@ -1,29 +1,24 @@
 import { useState } from 'react'
-import {
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native'
+import { Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
-import { colors } from '@/lib/colors'
+import { Banner } from '@/components/primitives/Banner'
+import { Button } from '@/components/primitives/Button'
+import { TextField } from '@/components/primitives/TextField'
+import { Txt } from '@/components/primitives/Txt'
 import { routes } from '@/lib/navigation/routes'
 import { supabase } from '@/lib/supabase'
+import { space, useTheme } from '@/lib/theme'
+
+const LOGO = require('../../../../assets/splash-icon.png')
 
 export function LoginScreen() {
   const router = useRouter()
+  const t = useTheme()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [emailFocused, setEmailFocused] = useState(false)
-  const [passwordFocused, setPasswordFocused] = useState(false)
 
   async function handleLogin() {
     if (!email.trim() || !password) {
@@ -68,234 +63,79 @@ export function LoginScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.dark }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: t.canvas }}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <ScrollView
-          contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingBottom: 32 }}
+          contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingHorizontal: space.xxl, paddingVertical: space.xxxl, gap: space.xxxl }}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* ── Brand Header ── */}
-          <View style={{ alignItems: 'center', paddingTop: 52, paddingBottom: 36 }}>
-            <View
-              style={{
-                width: 80,
-                height: 80,
-                borderRadius: 24,
-                backgroundColor: colors.primary,
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: 16,
-                shadowColor: colors.accent,
-                shadowOpacity: 0.4,
-                shadowRadius: 20,
-                shadowOffset: { width: 0, height: 6 },
-                borderWidth: 1,
-                borderColor: 'rgba(0,212,255,0.25)',
-              }}
-            >
-              <Text style={{ fontSize: 38 }}>🚌</Text>
-            </View>
-
-            <Text style={{ fontSize: 30, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF', letterSpacing: -0.8 }}>
-              Routey<Text style={{ color: colors.accent }}>AI</Text>
-            </Text>
-            <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', marginTop: 6, fontFamily: 'Inter_400Regular', letterSpacing: 0.2 }}>
-              Smart routing · Real-time tracking
-            </Text>
-
-            <View style={{ flexDirection: 'row', gap: 5, marginTop: 18 }}>
-              {[colors.accent, 'rgba(255,255,255,0.2)', 'rgba(255,255,255,0.1)'].map((c, i) => (
-                <View key={i} style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: c }} />
-              ))}
-            </View>
+          {/* Brand */}
+          <View style={{ alignItems: 'center', gap: space.sm }}>
+            <Image source={LOGO} style={{ width: 76, height: 76 }} accessibilityIgnoresInvertColors accessible={false} />
+            <Txt variant="largeTitle">RouteyAI</Txt>
           </View>
 
-          {/* ── Login Card ── */}
-          <View
-            style={{
-              backgroundColor: colors.surface,
-              borderRadius: 28,
-              padding: 24,
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 16 },
-              shadowOpacity: 0.3,
-              shadowRadius: 32,
-              elevation: 16,
-            }}
-          >
-            <Text style={{ fontSize: 22, fontFamily: 'Inter_800ExtraBold', color: colors.dark, marginBottom: 2, letterSpacing: -0.4 }}>
-              Welcome back
-            </Text>
-            <Text style={{ fontSize: 13, color: colors.muted, marginBottom: 22, fontFamily: 'Inter_400Regular' }}>
-              {"Sign in - you'll be directed to your dashboard automatically"}
-            </Text>
-
-            {/* Email Field */}
-            <View style={{ marginBottom: 14 }}>
-              <Text style={{ fontSize: 10, fontFamily: 'Inter_700Bold', color: colors.subtle, marginBottom: 7, textTransform: 'uppercase', letterSpacing: 1 }}>
-                Email
-              </Text>
-              <View
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  borderWidth: emailFocused ? 1.5 : 1,
-                  borderColor: emailFocused ? colors.primary : colors.border,
-                  borderRadius: 14,
-                  backgroundColor: emailFocused ? '#F8FAFF' : '#FAFAFA',
-                  paddingHorizontal: 14,
-                }}
-              >
-                <Text style={{ fontSize: 16, marginRight: 8, opacity: 0.6 }}>✉️</Text>
-                <TextInput
-                  value={email}
-                  onChangeText={setEmail}
-                  placeholder="you@example.com"
-                  placeholderTextColor={colors.subtle}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  onFocus={() => setEmailFocused(true)}
-                  onBlur={() => setEmailFocused(false)}
-                  style={{ flex: 1, paddingVertical: 13, fontSize: 14, color: colors.dark, fontFamily: 'Inter_400Regular' }}
-                />
-              </View>
+          {/* Sign in */}
+          <View style={{ gap: space.xl }}>
+            <View style={{ gap: space.xs }}>
+              <Txt variant="title">Sign in</Txt>
+              <Txt variant="body" tone="inkSecondary">
+                Use the email and password you chose from your school&apos;s invite.
+              </Txt>
             </View>
 
-            {/* Password Field */}
-            <View style={{ marginBottom: 20 }}>
-              <Text style={{ fontSize: 10, fontFamily: 'Inter_700Bold', color: colors.subtle, marginBottom: 7, textTransform: 'uppercase', letterSpacing: 1 }}>
-                Password
-              </Text>
-              <View
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  borderWidth: passwordFocused ? 1.5 : 1,
-                  borderColor: passwordFocused ? colors.primary : colors.border,
-                  borderRadius: 14,
-                  backgroundColor: passwordFocused ? '#F8FAFF' : '#FAFAFA',
-                  paddingHorizontal: 14,
-                }}
-              >
-                <Text style={{ fontSize: 16, marginRight: 8, opacity: 0.6 }}>🔒</Text>
-                <TextInput
-                  value={password}
-                  onChangeText={setPassword}
-                  placeholder="Password"
-                  placeholderTextColor={colors.subtle}
-                  secureTextEntry={!showPassword}
-                  onFocus={() => setPasswordFocused(true)}
-                  onBlur={() => setPasswordFocused(false)}
-                  style={{ flex: 1, paddingVertical: 13, fontSize: 14, color: colors.dark, fontFamily: 'Inter_400Regular' }}
-                />
-                <TouchableOpacity onPress={() => setShowPassword(v => !v)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                  <Text style={{ color: colors.muted, fontSize: 14, fontFamily: 'Inter_500Medium' }}>
-                    {showPassword ? '🙈' : '👁️'}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
+            <TextField
+              label="Email"
+              value={email}
+              onChangeText={setEmail}
+              placeholder="you@example.com"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoComplete="email"
+              textContentType="emailAddress"
+            />
+            <TextField
+              label="Password"
+              value={password}
+              onChangeText={setPassword}
+              placeholder="Password"
+              secure
+              autoComplete="password"
+              textContentType="password"
+              onSubmitEditing={handleLogin}
+              returnKeyType="go"
+            />
 
-            {/* Error */}
-            {error ? (
-              <View
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'flex-start',
-                  gap: 8,
-                  backgroundColor: colors.dangerBg,
-                  borderWidth: 1,
-                  borderColor: 'rgba(239,68,68,0.25)',
-                  borderRadius: 10,
-                  padding: 10,
-                  marginBottom: 14,
-                }}
-              >
-                <Text style={{ fontSize: 14 }}>⚠️</Text>
-                <Text style={{ color: colors.danger, fontSize: 12, fontFamily: 'Inter_500Medium', flex: 1 }}>{error}</Text>
-              </View>
-            ) : null}
+            {error ? <Banner text={error} /> : null}
 
-            {/* Sign In Button */}
-            <TouchableOpacity
-              onPress={handleLogin}
-              disabled={loading}
-              activeOpacity={0.85}
-              style={{
-                backgroundColor: colors.primary,
-                borderRadius: 16,
-                paddingVertical: 15,
-                alignItems: 'center',
-                justifyContent: 'center',
-                opacity: loading ? 0.75 : 1,
-                shadowColor: colors.primary,
-                shadowOpacity: 0.45,
-                shadowRadius: 16,
-                shadowOffset: { width: 0, height: 6 },
-                elevation: 6,
-              }}
-            >
-              {loading ? (
-                <ActivityIndicator color="#FFFFFF" size="small" />
-              ) : (
-                <Text style={{ color: '#FFFFFF', fontFamily: 'Inter_800ExtraBold', fontSize: 16, letterSpacing: 0.2 }}>
-                  Sign In →
-                </Text>
-              )}
-            </TouchableOpacity>
+            <Button label="Sign in" onPress={handleLogin} loading={loading} />
           </View>
 
-          {/* ── Dev shortcuts: development builds only, never in store builds ── */}
+          {/* Dev shortcuts: development builds only, never in store builds */}
           {__DEV__ && (
-          <View style={{ marginTop: 24 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-              <View style={{ flex: 1, height: 1, backgroundColor: 'rgba(255,255,255,0.08)' }} />
-              <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', fontFamily: 'Inter_500Medium' }}>Dev shortcuts</Text>
-              <View style={{ flex: 1, height: 1, backgroundColor: 'rgba(255,255,255,0.08)' }} />
+            <View style={{ alignItems: 'center', gap: space.sm }}>
+              <Txt variant="caption" tone="inkTertiary">
+                Preview screens without signing in (no data, development only)
+              </Txt>
+              <View style={{ flexDirection: 'row', gap: space.xxl }}>
+                <Pressable onPress={() => router.replace(routes.driverHome)} hitSlop={8} accessibilityRole="button">
+                  <Txt variant="subhead" tone="inkSecondary">
+                    Driver screens
+                  </Txt>
+                </Pressable>
+                <Pressable onPress={() => router.replace(routes.parentHome)} hitSlop={8} accessibilityRole="button">
+                  <Txt variant="subhead" tone="inkSecondary">
+                    Parent screens
+                  </Txt>
+                </Pressable>
+              </View>
             </View>
-            <View style={{ flexDirection: 'row', gap: 10 }}>
-              <TouchableOpacity
-                onPress={() => router.replace(routes.driverHome)}
-                activeOpacity={0.8}
-                style={{
-                  flex: 1,
-                  backgroundColor: 'rgba(16,185,129,0.12)',
-                  borderWidth: 1,
-                  borderColor: 'rgba(16,185,129,0.3)',
-                  borderRadius: 14,
-                  paddingVertical: 12,
-                  alignItems: 'center',
-                  gap: 4,
-                }}
-              >
-                <Text style={{ fontSize: 20 }}>🚌</Text>
-                <Text style={{ color: colors.success, fontFamily: 'Inter_600SemiBold', fontSize: 12 }}>Driver UI</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => router.replace(routes.parentHome)}
-                activeOpacity={0.8}
-                style={{
-                  flex: 1,
-                  backgroundColor: 'rgba(59,130,246,0.12)',
-                  borderWidth: 1,
-                  borderColor: 'rgba(59,130,246,0.3)',
-                  borderRadius: 14,
-                  paddingVertical: 12,
-                  alignItems: 'center',
-                  gap: 4,
-                }}
-              >
-                <Text style={{ fontSize: 20 }}>👨‍👧</Text>
-                <Text style={{ color: colors.info, fontFamily: 'Inter_600SemiBold', fontSize: 12 }}>Parent UI</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
           )}
 
-          <Text style={{ textAlign: 'center', fontSize: 11, color: 'rgba(255,255,255,0.2)', marginTop: 24, fontFamily: 'Inter_400Regular' }}>
+          <Txt variant="caption" tone="inkTertiary" align="center">
             RouteyAI · Doha, Qatar
-          </Text>
+          </Txt>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

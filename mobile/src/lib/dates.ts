@@ -5,6 +5,8 @@
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] as const
+const LONG_WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as const
+const LONG_MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'] as const
 
 export function localDateKey(date: Date = new Date()): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
@@ -51,20 +53,18 @@ export function shortDate(key: string): string {
   return `${WEEKDAYS[date.getDay()]} ${date.getDate()} ${MONTHS[date.getMonth()]}`
 }
 
+/** "Monday 5 October". */
+export function longDate(key: string = localDateKey()): string {
+  const date = dateFromKey(key)
+  return `${LONG_WEEKDAYS[date.getDay()]} ${date.getDate()} ${LONG_MONTHS[date.getMonth()]}`
+}
+
 /** "6:52 AM" from an ISO timestamp. */
 export function timeLabel(iso: string | Date): string {
   const date = typeof iso === 'string' ? new Date(iso) : iso
   const hours = date.getHours()
   const minutes = String(date.getMinutes()).padStart(2, '0')
   return `${hours % 12 || 12}:${minutes} ${hours < 12 ? 'AM' : 'PM'}`
-}
-
-/** "Good morning" / "Good afternoon" / "Good evening". */
-export function greeting(date: Date = new Date()): string {
-  const hour = date.getHours()
-  if (hour < 12) return 'Good morning'
-  if (hour < 17) return 'Good afternoon'
-  return 'Good evening'
 }
 
 /** "1 h 12 min" or "35 min". */

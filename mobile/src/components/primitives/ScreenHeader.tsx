@@ -1,83 +1,48 @@
 import type { ReactNode } from 'react'
-import { Text, TouchableOpacity, View } from 'react-native'
+import { Pressable, View } from 'react-native'
 import { useRouter } from 'expo-router'
-import { Ionicons } from '@expo/vector-icons'
-import { colors } from '@/lib/colors'
+import { ChevronLeft } from 'lucide-react-native'
+import { Icon } from '@/components/primitives/Icon'
+import { Txt } from '@/components/primitives/Txt'
+import { gutter, minTouch, radius, space, useTheme } from '@/lib/theme'
 
 type ScreenHeaderProps = {
-  title?: string
+  title: string
   subtitle?: string
+  /** Shown to the right of the title, e.g. an IconButton. */
   action?: ReactNode
   back?: boolean
 }
 
-export function ScreenHeader({ title = 'RouteyAI', subtitle, action, back = false }: ScreenHeaderProps) {
+/** iOS-style large title on the canvas, with an optional back button above it and an action beside it. */
+export function ScreenHeader({ title, subtitle, action, back = false }: ScreenHeaderProps) {
   const router = useRouter()
-  const isBrand = title === 'RouteyAI'
+  const t = useTheme()
 
   return (
-    <View
-      style={{
-        backgroundColor: colors.dark,
-        paddingHorizontal: 20,
-        paddingTop: 18,
-        paddingBottom: 18,
-        borderBottomWidth: 1,
-        borderBottomColor: 'rgba(255,255,255,0.06)',
-      }}
-    >
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-        {back && (
-          <TouchableOpacity
-            onPress={() => router.back()}
-            accessibilityLabel="Go back"
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: 10,
-              backgroundColor: 'rgba(255,255,255,0.08)',
-              borderWidth: 1,
-              borderColor: 'rgba(255,255,255,0.07)',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Ionicons name="chevron-back" size={20} color="#FFFFFF" />
-          </TouchableOpacity>
-        )}
-
+    <View style={{ paddingHorizontal: gutter, paddingTop: back ? space.xs : space.md, paddingBottom: space.md, backgroundColor: t.canvas }}>
+      {back && (
+        <Pressable
+          onPress={() => router.back()}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+          hitSlop={8}
+          style={({ pressed }) => ({ width: minTouch, height: minTouch, marginLeft: -space.md, alignItems: 'center', justifyContent: 'center', borderRadius: radius.full, opacity: pressed ? 0.5 : 1 })}
+        >
+          <Icon icon={ChevronLeft} size={28} color={t.brand} strokeWidth={2} />
+        </Pressable>
+      )}
+      <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: space.md }}>
         <View style={{ flex: 1 }}>
-          <Text
-            style={{
-              color: '#FFFFFF',
-              fontSize: back ? 16 : 19,
-              fontFamily: 'Inter_800ExtraBold',
-              letterSpacing: -0.4,
-            }}
-            numberOfLines={1}
-          >
-            {isBrand ? (
-              <>Routey<Text style={{ color: colors.accent }}>AI</Text></>
-            ) : (
-              title
-            )}
-          </Text>
+          <Txt variant="largeTitle" numberOfLines={1} accessibilityRole="header">
+            {title}
+          </Txt>
           {subtitle && (
-            <Text
-              style={{
-                color: 'rgba(255,255,255,0.4)',
-                fontSize: 11,
-                fontFamily: 'Inter_400Regular',
-                marginTop: 2,
-                letterSpacing: 0.1,
-              }}
-              numberOfLines={1}
-            >
+            <Txt variant="subhead" tone="inkSecondary" numberOfLines={1} style={{ marginTop: 2 }}>
               {subtitle}
-            </Text>
+            </Txt>
           )}
         </View>
-
         {action}
       </View>
     </View>

@@ -47,7 +47,7 @@ Free for parents and drivers. Schools can book a demo at routeyai.vercel.app.
 
 ## Notes for app review
 
-Both stores need a working sign-in. Create two demo accounts on the production database (one parent with a child on a bus, one driver of that bus) and give reviewers:
+Both stores need a working sign-in. `node scripts/review-accounts/setup.mjs` creates "RouteyAI Demo School" on the database in `.env.local` with a parent (`demo-parent@example.com`, two children on Bus 1) and the Bus 1 driver (`demo-driver@example.com`), plus a school admin for the web dashboard. The shared password is `REVIEW_ACCOUNTS_PASSWORD` in `.env.local` (generated on the first run; never commit it, the repo is public). Re-run the script after a review: reviewers may try Delete account, and the script recreates the user and relinks the children. Give reviewers:
 
 ```
 RouteyAI is used by schools: accounts are created from an invite sent by the school, so please use these demo accounts.
@@ -86,7 +86,7 @@ No ads, no tracking across apps, nothing sold. Data is encrypted in transit.
 |---|---|
 | iPhone screenshots (6.9") | 1320 × 2868, 3 to 10 |
 | Play phone screenshots | 1080 × 1920 or larger 9:16, 2 to 8 |
-| Play feature graphic | 1024 × 500 |
-| App icon | 1024 × 1024, no transparency (App Store); 512 × 512 (Play) |
+| Play feature graphic | 1024 × 500: `mobile/store/feature-graphic.jpg` (`node scripts/store-graphics/build.mjs`) |
+| App icon | 1024 × 1024, no transparency (App Store, from `mobile/assets/icon.png`); 512 × 512 (Play): `mobile/store/play-icon.png` |
 
 Suggested screenshot order: parent live map, child boarded notification, report an absence, driver route with stops, driver check-in, end-of-route summary.
