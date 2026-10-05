@@ -86,7 +86,7 @@ No ads, no tracking across apps, nothing sold. Data is encrypted in transit.
 |---|---|
 | iPhone screenshots (6.9") | 1320 × 2868, 3 to 10 |
 | Play phone screenshots | 1080 × 1920 or larger 9:16, 2 to 8 |
-| Play feature graphic | 1024 × 500 |
-| App icon | 1024 × 1024, no transparency (App Store); 512 × 512 (Play) |
+| Play feature graphic | 1024 × 500: `mobile/store/feature-graphic.jpg` (`node scripts/store-graphics/build.mjs`) |
+| App icon | 1024 × 1024, no transparency (App Store, from `mobile/assets/icon.png`); 512 × 512 (Play): `mobile/store/play-icon.png` |
 
 Suggested screenshot order: parent live map, child boarded notification, report an absence, driver route with stops, driver check-in, end-of-route summary.
