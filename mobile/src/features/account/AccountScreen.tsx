@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import Constants from 'expo-constants'
 import { Bell, FileText, LogOut, Shield, Trash, type LucideIcon } from 'lucide-react-native'
+import { BrandMark } from '@/components/brand/BrandMark'
 import { Avatar } from '@/components/primitives/Avatar'
 import { Card } from '@/components/primitives/Card'
 import { ListRow, ListSection } from '@/components/primitives/List'
@@ -181,9 +182,12 @@ export function AccountScreen({ role, name, email, sections, notificationHint }:
           <ListRow icon={Trash} title={deleting ? 'Deleting account…' : 'Delete account'} destructive onPress={deleting ? undefined : deleteAccount} />
         </ListSection>
 
-        <Txt variant="caption" tone="inkTertiary" align="center">
-          RouteyAI {Constants.expoConfig?.version ?? ''}
-        </Txt>
+        <View style={{ alignItems: 'center', gap: space.sm }}>
+          <BrandMark size={32} />
+          <Txt variant="caption" tone="inkTertiary" align="center">
+            RouteyAI {Constants.expoConfig?.version ?? ''} · Doha, Qatar
+          </Txt>
+        </View>
       </ScrollView>
     </SafeAreaView>
   )

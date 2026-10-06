@@ -150,6 +150,25 @@ Each step lands as its own commit on a `mobile-ui-refresh` branch and is checked
 3. **Primary button shape:** rounded rectangle, radius 12.
 4. **Dark mode:** planned below, built after the light mode is final.
 
+## Identity (2026-10-06)
+
+After checking the light screens on the iPhone, the user liked the fonts and layout but found the app "white
+everywhere" with no RouteyAI signature. The identity comes from the logo (a route line through stop rings, blue to cyan)
+and the landing page (navy footer and safety section, pulsing cyan live dot). The palette itself stays as it is.
+
+| Piece | Where | Code |
+|---|---|---|
+| Logo and name ("Routey" ink, "AI" brand blue, Schibsted Grotesk, like the landing nav) | Above the large title on both Home tabs; logo above the version on Account | `components/brand/BrandMark.tsx`, `ScreenHeader brand` |
+| Navy signature card (`night` #0A1430 with a soft blue glow from the top right) | One per screen: driver's current stop while the route runs, "Ready for the morning run?" before it, route complete; parent's arrival card | `components/brand/SignatureCard.tsx` |
+| Stops on a line (filled when reached, heavier ring for the current stop or the parent's stop) | Inside the signature cards | `components/brand/RouteLine.tsx` |
+| Pulsing cyan "Live" (navy pill on the canvas or map, dot and word on navy) | Driver current stop card, driver Route map, parent arrival card, parent map | `components/brand/LivePill.tsx` |
+| Navy login panel with the logo, white "Routey" + cyan "AI", and the logo's route line drawn beside it | Login | `RouteMotif` in `SignatureCard.tsx` |
+| Stop numbers in rings, filled brand blue when done | Driver Route | `StopBadge` |
+| Navy splash background | Store builds only (Expo Go doesn't show it) | `app.json` |
+
+Rules: one signature card per screen, so it stays special. Text on navy uses `onNight` tones and buttons the `onNight`
+variant (white). The route drawing is only used on the login panel: inside cards it collided with the text.
+
 ## Dark mode (after the light mode is final)
 
 Starts only once every light screen has been checked on the iPhone. Because everything already goes through
@@ -179,6 +198,9 @@ testers ask for it.
 - Splash screen dark variant (`expo-splash-screen` `dark` options: canvas background, same "R" mark).
 - Optional: iOS 18 dark and tinted app icon variants.
 - Shadows are dropped in dark; depth comes from `surfaceRaised`.
+- Identity pieces: the navy signature card would vanish on the near-black canvas, so in dark it keeps `night` but adds a
+  1 pt `nightLine` border and a stronger glow; the login panel and live pill stay as they are; the "AI" in the header
+  lockup uses the lifted brand blue.
 
 **Checks:** every screen in both modes on the iPhone (switch in Control Centre), contrast of text and status colours,
 the map overlays over the dark map style, sheets and the keyboard. Then redraw the dark landing mockups

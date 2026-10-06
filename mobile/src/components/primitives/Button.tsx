@@ -5,7 +5,7 @@ import { Icon } from '@/components/primitives/Icon'
 import { Txt } from '@/components/primitives/Txt'
 import { minTouch, radius, space, useTheme } from '@/lib/theme'
 
-type Variant = 'primary' | 'secondary' | 'plain' | 'destructive'
+type Variant = 'primary' | 'secondary' | 'plain' | 'destructive' | 'onNight'
 
 type ButtonProps = {
   label: string
@@ -21,12 +21,12 @@ type ButtonProps = {
   style?: ViewStyle
 }
 
-/** Rounded-rectangle button: primary (brand fill), secondary (brand tint), plain (text only), destructive. */
+/** Rounded-rectangle button: primary (brand fill), secondary (brand tint), plain (text only), destructive, and onNight (white, for the navy signature card). */
 export function Button({ label, onPress, variant = 'primary', icon, disabled = false, loading = false, haptic = false, compact = false, style }: ButtonProps) {
   const t = useTheme()
-  const fill = { primary: t.brand, secondary: t.brandTint, plain: 'transparent', destructive: t.dangerTint }[variant]
-  const pressedFill = { primary: t.brandPressed, secondary: t.brandTintPressed, plain: t.brandTint, destructive: t.dangerTintPressed }[variant]
-  const ink = disabled ? t.inkTertiary : { primary: t.onBrand, secondary: t.brand, plain: t.brand, destructive: t.dangerText }[variant]
+  const fill = { primary: t.brand, secondary: t.brandTint, plain: 'transparent', destructive: t.dangerTint, onNight: t.onNight }[variant]
+  const pressedFill = { primary: t.brandPressed, secondary: t.brandTintPressed, plain: t.brandTint, destructive: t.dangerTintPressed, onNight: t.onNightPressed }[variant]
+  const ink = disabled ? (variant === 'onNight' ? t.onNightTertiary : t.inkTertiary) : { primary: t.onBrand, secondary: t.brand, plain: t.brand, destructive: t.dangerText, onNight: t.night }[variant]
 
   return (
     <Pressable
@@ -42,7 +42,7 @@ export function Button({ label, onPress, variant = 'primary', icon, disabled = f
           minHeight: compact ? minTouch : 50,
           paddingHorizontal: compact ? space.lg : space.xl,
           borderRadius: radius.md,
-          backgroundColor: disabled && variant !== 'plain' ? t.separator : pressed ? pressedFill : fill,
+          backgroundColor: disabled && variant !== 'plain' ? (variant === 'onNight' ? t.nightLine : t.separator) : pressed ? pressedFill : fill,
           alignItems: 'center',
           justifyContent: 'center',
           flexDirection: 'row',

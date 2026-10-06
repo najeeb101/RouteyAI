@@ -3,6 +3,9 @@ import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, View }
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { Bell, Bus, CalendarClock, CalendarX, MapPin, Megaphone, Navigation, School, TriangleAlert } from 'lucide-react-native'
+import { LivePill } from '@/components/brand/LivePill'
+import { RouteLine } from '@/components/brand/RouteLine'
+import { SignatureCard } from '@/components/brand/SignatureCard'
 import { Banner } from '@/components/primitives/Banner'
 import { Button } from '@/components/primitives/Button'
 import { Card } from '@/components/primitives/Card'
@@ -99,6 +102,7 @@ export function ParentHomeScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: t.canvas }} edges={['top']}>
       <ScreenHeader
+        brand
         title={children.length > 1 ? 'Today' : (child?.firstName ?? 'Today')}
         subtitle={longDate(today)}
         action={<IconButton icon={Bell} label="Open alerts" onPress={() => router.push(routes.parentNotifications)} />}
@@ -129,24 +133,35 @@ export function ParentHomeScreen() {
 
         {child && (
           <>
-            {/* Status and arrival time */}
-            <Card style={{ gap: space.lg }}>
+            {/* Status and arrival time: the navy signature card */}
+            <SignatureCard style={{ gap: space.lg }}>
               <View style={{ gap: space.xs }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.md }}>
-                  <Txt variant="subhead" tone="inkSecondary" numberOfLines={1} style={{ flex: 1 }}>
+                  <Txt variant="subhead" tone="onNightSecondary" numberOfLines={1} style={{ flex: 1 }}>
                     {child.busName ?? 'No bus'} · {context}
                   </Txt>
-                  {live ? <StatusText label="Live" tone="live" /> : <StatusText label={meta.label} tone={meta.tone} />}
+                  {live ? <LivePill onNight /> : <StatusText label={meta.label} tone={meta.tone} onNight />}
                 </View>
-                <Txt variant="display" numberOfLines={1} adjustsFontSizeToFit>
+                <Txt variant="display" tone="onNight" numberOfLines={1} adjustsFontSizeToFit>
                   {big}
                 </Txt>
-                <Txt variant="body" tone="inkSecondary">
+                <Txt variant="body" tone="onNightSecondary">
                   {sub}
                 </Txt>
               </View>
-              <Button label="Track the bus" icon={Navigation} variant="secondary" onPress={() => router.push(routes.parentMap)} />
-            </Card>
+              {live && stopsBefore !== null && (
+                <RouteLine
+                  stops={Math.min(stopsBefore, 5) + 2}
+                  reached={1}
+                  destination
+                  onNight
+                  startLabel={child.busName ?? 'Bus'}
+                  endLabel="Your stop"
+                  accessibilityLabel={stopsBefore === 0 ? 'Your stop is next' : `${stopsBefore} stops before yours`}
+                />
+              )}
+              <Button label="Track the bus" icon={Navigation} variant="onNight" onPress={() => router.push(routes.parentMap)} />
+            </SignatureCard>
 
             <ListSection>
               <ListRow icon={CalendarX} title="Report an absence" accessory="chevron" onPress={() => setSheetOpen(true)} />

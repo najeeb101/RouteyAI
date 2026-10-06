@@ -9,6 +9,7 @@ import { Icon } from '@/components/primitives/Icon'
 import { MapPlaceholder } from '@/components/primitives/MapPlaceholder'
 import { ProgressBar } from '@/components/primitives/ProgressBar'
 import { ScreenHeader } from '@/components/primitives/ScreenHeader'
+import { LivePill } from '@/components/brand/LivePill'
 import { StatusText } from '@/components/primitives/StatusText'
 import { Txt } from '@/components/primitives/Txt'
 import { useDriverContext } from '@/features/driver/context/DriverDataContext'
@@ -97,12 +98,13 @@ export function DriverRouteScreen() {
               <MapPlaceholder compact />
             )}
 
-            <View style={[{ position: 'absolute', left: space.md, bottom: space.md, backgroundColor: t.surface, borderRadius: radius.md, paddingHorizontal: space.md, height: 36, justifyContent: 'center' }, floatingShadow]}>
-              <StatusText
-                label={trip.status === 'active' ? 'Live' : trip.status === 'done' ? 'Finished' : 'Not started'}
-                tone={trip.status === 'active' ? 'live' : trip.status === 'done' ? 'success' : 'neutral'}
-              />
-            </View>
+            {trip.status === 'active' ? (
+              <LivePill style={{ position: 'absolute', left: space.md, bottom: space.md, height: 36 }} floating />
+            ) : (
+              <View style={[{ position: 'absolute', left: space.md, bottom: space.md, backgroundColor: t.surface, borderRadius: radius.md, paddingHorizontal: space.md, height: 36, justifyContent: 'center' }, floatingShadow]}>
+                <StatusText label={trip.status === 'done' ? 'Finished' : 'Not started'} tone={trip.status === 'done' ? 'success' : 'neutral'} />
+              </View>
+            )}
           </View>
         )}
 
@@ -199,6 +201,7 @@ export function DriverRouteScreen() {
   )
 }
 
+/** The stop number in a ring, like the stops on the logo: filled once done, a heavier brand ring for the current stop. */
 function StopBadge({ index, done, current }: { index: number; done: boolean; current: boolean }) {
   const t = useTheme()
   return (
@@ -209,13 +212,15 @@ function StopBadge({ index, done, current }: { index: number; done: boolean; cur
         borderRadius: radius.full,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: done ? t.success : current ? t.brand : t.canvas,
+        borderWidth: done ? 0 : current ? 3 : 2,
+        borderColor: current ? t.brand : t.separator,
+        backgroundColor: done ? t.brand : t.surface,
       }}
     >
       {done ? (
         <Icon icon={Check} size={16} color={t.onBrand} strokeWidth={2.5} />
       ) : (
-        <Txt variant="subhead" tone={current ? 'onBrand' : 'inkSecondary'} style={{ fontFamily: fonts.semibold }}>
+        <Txt variant="subhead" tone={current ? 'brand' : 'inkSecondary'} style={{ fontFamily: fonts.semibold }}>
           {index + 1}
         </Txt>
       )}
