@@ -409,6 +409,26 @@ Found while testing the apps against a local database. The policies above show t
   A new SECURITY DEFINER function without its own role check must `REVOKE ALL ... FROM PUBLIC, anon, authenticated`:
   Supabase grants anon and authenticated EXECUTE on new functions by default.
 
+### Two runs a day (0017_two_runs.sql, 2026-10-06)
+
+Every bus does a morning run (homes → school) and an afternoon run (school → homes, the same stops in reverse).
+Plan: [plans/2026-10-06-two-runs-per-day.md](plans/2026-10-06-two-runs-per-day.md).
+
+- `students.stop_order` is the bus's stop chain in **morning** order; the afternoon is the chain reversed.
+  `routes` has a `morning` and an `afternoon` row per bus (`UNIQUE(bus_id, run)`), saved together by
+  `save_route_plan` (service role), with `plan_version` going up only when the order changes. Routes never change by
+  themselves: optimize-route only reorders when a school admin asks and the new plan is clearly better.
+- `bus_runs` (bus, Qatar date, run, the run's students in driving order at start, started/ended) is written only by
+  `start_run(p_run)` and `end_run()`; drivers, parents, school and platform admins read it. One run open per bus.
+  Ending the morning run marks everyone still on board `dropped_off` (arrived at school).
+- `attendance` is per student, day and run (`UNIQUE(student_id, date, run)`); statuses `boarded`, `absent`,
+  `dropped_off` (+ `dropped_off_at`; `created_at` is the boarding time). Drivers use `mark_attendance(p_student_id,
+  p_status)`, which checks the bus, the running run and the step. Their direct-write policy goes in 0018.
+- `absence_reports.runs`: `both` (default), `morning` or `afternoon`.
+- The attendance trigger sends `run` and `previous_status`, skips undo taps, and sends drop-offs as type `drop_off`.
+- Checks: `supabase/tests/0017_two_runs.sql` (local database). The local Postgres image crashes when a superuser
+  session switches to anon/authenticated and hits "permission denied" on a function, so those checks read the catalog.
+
 ### Account deletion (0015_delete_account.sql, 2026-10-02)
 
 - `delete_my_account()` deletes the caller's `auth.users` row (App Store and Play require in-app deletion);

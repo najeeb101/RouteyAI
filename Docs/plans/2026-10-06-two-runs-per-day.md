@@ -1,6 +1,6 @@
 # Two runs a day: morning pickup and afternoon drop-off
 
-Status: plan, waiting for approval (2026-10-06). Builds on the mobile UI refresh (merged in PR #4).
+Status: approved 2026-10-06; step 1 (database and route rules) done on branch `two-runs`, waiting for the production push. Builds on the mobile UI refresh (merged in PR #4).
 
 ## The rules
 
@@ -72,12 +72,12 @@ The planner gets three modes. Only `optimize` can reorder existing stops, and on
 |---|---|---|---|
 | `refresh` | Once after this update; if Mapbox is changed | Order unchanged | Map lines and times for both runs |
 | `update` | Straight after a school admin adds, removes or moves a child, or changes an address | Order unchanged. A new child goes where they add the least driving (or joins an existing stop at the same address); a removed child's stop goes if nobody else uses it | Right away; the dashboard says what changed ("Omar added between stops 3 and 4") |
-| `optimize` (one bus) | School admin presses Re-optimize | Re-planned | **Proposal only.** The dashboard shows minutes and km saved and how many stops move. If it saves less than 10% and less than 5 minutes a run, the current route is kept ("Your route is already good") |
+| `optimize` (one bus) | School admin presses Re-optimize | Re-planned | **Proposal only.** The dashboard shows minutes and km saved and how many stops move. Unless it saves at least 5 minutes a run, or at least 10% and 2 minutes, the current route is kept ("Your route is already good") |
 | `optimize` (whole school) | School admin presses Optimize all | Re-planned; children can move between buses | **Proposal only**, listing every child who would change bus, applied only when the admin confirms |
 
 - **Major change hint, never automatic.** After each `update`, the planner also works out what a fresh plan would give.
-  If that would save at least 10% or 5 minutes a run, the Routes page shows "Re-optimizing would save about 6 minutes
-  a run". The admin decides.
+  If that would save at least 5 minutes a run (or 10% and 2 minutes), the Routes page shows "Re-optimizing would save
+  about 6 minutes a run". The admin decides. The 2-minute floor stops a short route from flagging a 1-minute saving.
 - **Daily absences never touch the route.** A stop where nobody rides today shows "No one today" and the driver skips
   it; the order stays.
 - **Map lines:** the planner asks Mapbox Directions once per direction (two requests per bus), because Doha's one-way
@@ -155,14 +155,21 @@ run and skip undo taps.
 
 `src/types/database.ts`, Docs/Claude.md §5 and CLAUDE.md are updated with all of this.
 
+**Privacy fix (found in step 1, older than this work):** a parent can read their child's bus route, and its
+`waypoints` list the home coordinates of every child on that bus (checked locally: a parent of 3 children could read
+26 homes). The app only draws the parent's own stop, but the data is reachable with the parent's login. No real
+parents use the app yet. Fix, with the new parent app: parents read the route through a function that returns only
+the line, their own child's stop and how many stops come before it; the parent's read access to `routes` is removed
+in 0018. `bus_runs.stops` only holds student ids and order, never homes, for the same reason.
+
 ### Apps and dashboard
 
 - **Shared run logic:** `mobile/src/lib/runs.ts` with the pure functions above. The web pages use the same rules
   (copied into `src/lib/runs.ts`, since the web and the app don't share code today).
 - **Driver app:** loads the stops from the running run (or from the route rows before a run starts), and gets live
   updates of `bus_runs`, `attendance` and `absence_reports` as today. Remembers the run in the saved running trip.
-- **Parent app:** loads both route rows and today's runs for the bus, works out the card from the shared functions,
-  and uses the running run's stops for the map line and the arrival time.
+- **Parent app:** loads today's runs for the bus and its child's route through the new parent function (line, own
+  stop, stops before it), works out the card from the shared functions, and measures the arrival time along the line.
 - **Dashboard:** run shown on each bus, Morning / Afternoon switch on the Routes page, proposals with "Apply" or "Keep
   current route", "Not on the route yet" for any child without a stop.
 
@@ -221,13 +228,14 @@ older web driver and parent pages follow the same rules.
 2. **Edge Functions.** `optimize-route` (three modes, both directions, one-transaction save) and `send-notification`
    (run-aware alerts, still accepting today's messages). Deployed.
 3. **Existing routes.** Run `refresh` on every bus: the same chain of stops, with map lines and times for both runs.
-   Nothing is re-planned.
-4. **Driver app, then parent app,** checked in the browser preview with the demo accounts through a full simulated
-   day.
+   Nothing is re-planned. Done when the new apps go live, because today's apps read whichever route row is newest.
+4. **Driver app, then parent app** (including the privacy fix), checked in the browser preview with the demo
+   accounts through a full simulated day.
 5. **School dashboard.**
 6. **You test on the iPhone** in Expo Go (GPS sends while the app is open; I can follow the demo bus as the demo parent
    in the browser preview while you drive it). Then merge.
-7. **Clean-up migration 0018** (old `set_bus_active`, old `save_optimized_route`, drivers' direct attendance writes), and
+7. **Clean-up migration 0018** (old `set_bus_active`, old `save_optimized_route`, drivers' direct attendance writes,
+   parents' direct read of `routes`), and
    docs: task.md, Docs/Claude.md, store listing and landing page copy where they only mention mornings.
 
 ## Decisions for you

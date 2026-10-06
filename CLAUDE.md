@@ -25,6 +25,7 @@ pnpm typecheck        # tsc --noEmit
 pnpm db:types         # regenerate src/types/database.ts from Supabase schema
 pnpm db:reset         # supabase db reset (runs all migrations + seed)
 pnpm db:push          # push local migrations to remote Supabase
+pnpm test:logic       # route planning rules (supabase/functions/_shared/*.test.ts, Node's test runner)
 
 # Mobile (cd mobile/)
 npx expo start        # start Expo dev server
@@ -69,7 +70,8 @@ routeyai/
 │       ├── components/brand/       # BrandMark, SignatureCard (navy card), RouteLine, LivePill
 │       └── lib/supabase.ts
 ├── supabase/
-│   ├── migrations/           # 0001_schema.sql … 0016_lock_optimization_helpers.sql
+│   ├── migrations/           # 0001_schema.sql … 0017_two_runs.sql
+│   ├── tests/                # SQL checks per migration, run against the local database
 │   ├── functions/
 │   │   ├── optimize-route/index.ts     # Edge Function: K-Means + TSP
 │   │   └── send-notification/index.ts  # Edge Function: Expo push

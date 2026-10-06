@@ -12,6 +12,7 @@ Mobile: Expo (React Native) | React Native styles | Mapbox RN | EAS
 - In progress: Phase 13 — landing page live at https://routeyai.vercel.app; launch placeholders in `src/lib/siteConfig.ts`; no Mapbox token on Vercel yet, so student addresses aren't geocoded on the live site.
 - In progress: Phase 12 (store submission). Expo SDK 57, EAS profiles, OTA updates, icons, Play graphics and store copy are done; next are the device test, the Mapbox `pk.` token, `eas login` and the first EAS builds.
 - Phase 14 (parent and driver app upgrade) done apart from checks on a real phone.
+- 2026-10-06: Phase 15 light mode and identity merged (PR #4). Phase 16 (two runs a day) started: step 1 done on branch `two-runs`; `0017` still to push to production (`0016` is already there).
 
 ## Phase 1: Project Setup and Landing Page
 
@@ -218,6 +219,19 @@ Full plan: [plans/2026-10-05-mobile-ui-refresh.md](plans/2026-10-05-mobile-ui-re
 - [x] Decided (2026-10-05): Lucide icons, light large-title headers, rounded-rectangle buttons, dark mode after the light mode is final
 - [x] Foundations: `theme.ts`, Schibsted Grotesk + Inter, `Txt`, Lucide, `check:design` (2026-10-06)
 - [x] Components, then parent, driver and login screens (2026-10-06, branch `mobile-ui-refresh`): all 14 screens and sheets moved to the tokens; old `colors.ts`, `PrimaryButton`, `StatusPill`, `MetricCard` and the unused `RouteTimeline` removed. `npm run check:design`, typecheck and expo-doctor pass. Checked in the web preview (`npx expo start --web`), not yet on the iPhone
-- [ ] Check every screen on the iPhone in Expo Go, then merge `mobile-ui-refresh`
+- [x] Checked on the iPhone in Expo Go; RouteyAI identity added (logo header, navy signature card, stop line, live pill, navy login). Merged in PR #4 (2026-10-06)
 - [ ] Landing page phone mockups and store screenshots in the new style
 - [ ] Dark mode (planned in the same document; starts when the light screens are final)
+
+## Phase 16: Two Runs a Day
+
+Full plan: [plans/2026-10-06-two-runs-per-day.md](plans/2026-10-06-two-runs-per-day.md). Every bus does a morning pickup run and an afternoon drop-off run (the same stops in reverse). Routes never change by themselves.
+
+- [x] Step 1 (2026-10-06, branch `two-runs`): `0017_two_runs.sql` (`bus_runs`, attendance per run with `dropped_off`, absence reports per run, a morning and an afternoon route row, `start_run` / `end_run` / `mark_attendance`, `save_route_plan`), the route rules in `supabase/functions/_shared/routePlan.ts` with tests (`pnpm test:logic`), and database checks per role (`supabase/tests/0017_two_runs.sql`). Applied locally
+- [ ] Push 0017 to production (`supabase db push`)
+- [ ] Step 2: `optimize-route` (refresh / update / optimize as a proposal, both directions, Mapbox leg times) and `send-notification` (run-aware alerts)
+- [ ] Step 3: refresh existing routes (decide first whether the morning direction flips)
+- [ ] Step 4: driver app, then parent app
+- [ ] Step 5: school dashboard
+- [ ] Step 6: iPhone test in Expo Go, merge
+- [ ] Step 7: clean-up migration 0018, docs, store and landing copy

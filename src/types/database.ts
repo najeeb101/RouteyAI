@@ -7,7 +7,11 @@ export type Json =
   | Json[]
 
 export type Role = 'platform_admin' | 'school_admin' | 'driver' | 'parent'
-export type AttendanceStatus = 'boarded' | 'absent'
+export type AttendanceStatus = 'boarded' | 'absent' | 'dropped_off'
+/** The two runs every bus does each school day (0017_two_runs.sql). */
+export type Run = 'morning' | 'afternoon'
+/** Which rides an absence report covers. */
+export type AbsenceRuns = 'both' | Run
 export type InviteRole = 'school_admin' | 'driver' | 'parent'
 export type AbsenceReason = 'sick' | 'appointment' | 'travel' | 'other'
 
@@ -22,6 +26,38 @@ export interface RouteWaypoint {
   student_id: string
   stop_order: number
   eta_offset_min: number
+}
+
+/** One student in a run's snapshot of the route, in driving order (bus_runs.stops). */
+export type RunStop = {
+  student_id: string
+  position: number
+}
+
+/** A bus's morning or afternoon run on one day (0017_two_runs.sql). Written only by start_run / end_run. */
+export type BusRun = {
+  id: string
+  bus_id: string
+  school_id: string
+  date: string
+  run: Run
+  stops: RunStop[]
+  plan_version: number
+  started_at: string
+  ended_at: string | null
+}
+
+export type AttendanceRecord = {
+  id: string
+  student_id: string | null
+  bus_id: string | null
+  status: AttendanceStatus | null
+  date: string
+  run: Run
+  /** When the student left the bus: at home (afternoon) or at school when the morning run ended. */
+  dropped_off_at: string | null
+  /** The boarding time. */
+  created_at: string
 }
 
 export interface Database {
@@ -164,6 +200,9 @@ export interface Database {
           total_distance_km: number | null
           total_duration_min: number | null
           encoded_polyline: string | null
+          run: Run
+          plan_version: number
+          suggestion: Json | null
           optimized_at: string
           created_at: string
         }
@@ -171,6 +210,9 @@ export interface Database {
           id?: string
           school_id: string
           bus_id: string
+          run?: Run
+          plan_version?: number
+          suggestion?: Json | null
           waypoints?: RouteWaypoint[]
           total_distance_km?: number | null
           total_duration_min?: number | null
@@ -186,6 +228,9 @@ export interface Database {
           total_distance_km?: number | null
           total_duration_min?: number | null
           encoded_polyline?: string | null
+          run?: Run
+          plan_version?: number
+          suggestion?: Json | null
           optimized_at?: string
         }
         Relationships: []
@@ -244,20 +289,15 @@ export interface Database {
         Relationships: []
       }
       attendance: {
-        Row: {
-          id: string
-          student_id: string | null
-          bus_id: string | null
-          status: AttendanceStatus | null
-          date: string
-          created_at: string
-        }
+        Row: AttendanceRecord
         Insert: {
           id?: string
           student_id?: string | null
           bus_id?: string | null
           status?: AttendanceStatus | null
           date?: string
+          run?: Run
+          dropped_off_at?: string | null
           created_at?: string
         }
         Update: {
@@ -266,7 +306,16 @@ export interface Database {
           bus_id?: string | null
           status?: AttendanceStatus | null
           date?: string
+          run?: Run
+          dropped_off_at?: string | null
         }
+        Relationships: []
+      }
+      bus_runs: {
+        Row: BusRun
+        // No writes from the apps: only start_run and end_run.
+        Insert: Record<string, never>
+        Update: Record<string, never>
         Relationships: []
       }
       invites: {
@@ -317,6 +366,7 @@ export interface Database {
           date: string
           reason: AbsenceReason
           note: string | null
+          runs: AbsenceRuns
           reported_by: string | null
           created_at: string
         }
@@ -328,6 +378,7 @@ export interface Database {
           date: string
           reason?: AbsenceReason
           note?: string | null
+          runs?: AbsenceRuns
           reported_by?: string | null
           created_at?: string
         }
@@ -338,6 +389,7 @@ export interface Database {
           date?: string
           reason?: AbsenceReason
           note?: string | null
+          runs?: AbsenceRuns
         }
         Relationships: []
       }
@@ -384,6 +436,11 @@ export interface Database {
         Returns: { code: string; role: InviteRole; school_id: string | null; expires_at: string; used_at: string | null }[]
       }
       set_bus_active: { Args: { p_active: boolean }; Returns: undefined }
+      // 0017_two_runs.sql (drivers, own bus only)
+      start_run: { Args: { p_run: Run }; Returns: BusRun }
+      end_run: { Args: Record<PropertyKey, never>; Returns: BusRun | null }
+      /** p_status null undoes Board or Absent; 'boarded' also undoes a drop-off. */
+      mark_attendance: { Args: { p_student_id: string; p_status: AttendanceStatus | null }; Returns: AttendanceRecord | null }
       // 0015_delete_account.sql
       delete_my_account: { Args: Record<PropertyKey, never>; Returns: undefined }
       // 0005_admin_helpers.sql
