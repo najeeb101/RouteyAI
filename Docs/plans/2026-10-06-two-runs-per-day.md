@@ -23,11 +23,14 @@ Status: approved 2026-10-06; step 1 (database and route rules) done on branch `t
    (nearest stop first). The driver app follows that list, so the morning run starts next to the school, ends at the
    farthest stop, then drives back with every child on board. The map line and arrival times leave out that drive back.
    That order is the right one for the afternoon (leaving school).
-3. **Routes already only change on purpose.** The only things that re-plan are the dashboard's Recalculate (one bus)
-   and Optimize all (every bus, which can also move children to other buses). Both are pressed by a school admin.
-4. **New or moved children have no place.** A child added to a bus gets no stop number and appears at the end of the
-   driver's list, with no point on the map, until someone presses Recalculate (which re-plans everyone). A child moved
-   to another bus keeps the stop number from the old bus.
+3. **Routes re-plan themselves today (corrected while planning step 2).** The Students page calls `optimize-route` for
+   the whole school after **every** child added, moved to another bus or removed (`triggerOptimization` in
+   `StudentsTable.tsx`). That re-runs the bus assignment for every child in the school and re-plans every route. So
+   one new child can reshuffle every bus, move other children to different buses, and overrule a "Change bus" the
+   admin just made. The Routes page's Recalculate (one bus) and Optimize all do the same on purpose. An earlier
+   version of this plan said routes only changed on purpose; that was wrong.
+4. **Editing an address doesn't move the stop.** "Edit student" saves the new address text but not its map location
+   (`home_location`), so the route keeps going to the old place.
 
 ## Architecture
 
@@ -220,18 +223,85 @@ The map shows the running run's line in its direction. Past rides show both runs
 re-planning as a proposal, and the "would save…" hint. The Absences page shows which rides each report covers. The
 older web driver and parent pages follow the same rules.
 
+## Step 2 in detail: route planner and notifications
+
+Planned 2026-10-06, not built yet. Needs 0017 in production.
+
+### `optimize-route`: two actions
+
+| Request | What it does | Who |
+|---|---|---|
+| `{ action: 'update', bus_id or school_id }` | Keeps each bus's order. Drops children who left, slots in children who joined or moved house (`updateChain`), rebuilds both runs' lines and times, saves. A bus with no changes and both runs already saved is left alone (no Mapbox call, no new version). | School admin (own school), platform admin, service role |
+| `{ action: 'optimize', bus_id }` | Plans the bus from scratch (`planChain`) and compares it with the current route using Mapbox times for both runs. **Saves nothing.** Returns minutes and km per run now and proposed, minutes saved, students who would change place, and whether it is clearly better. | Same |
+| `{ action: 'optimize', bus_id, apply: true, chain }` | Saves the proposed order the admin accepted. Refused if it isn't clearly better, or if the bus's children changed since the proposal ("The bus changed, review again"). | Same |
+| `{ action: 'optimize', school_id }`, then `apply: true, assignments` | Optimize all: proposes which children move to which bus (the current K-means assignment) and the routes that would give, listing every child who changes bus. Applied only with the admin's confirmation; then each changed bus is planned from scratch. | Same |
+| `{ action: 'update', reverse: true }` | Service role only, once, if decision 0 is yes: flips each bus's saved order so the morning ends at the school. | Service role |
+| No `action` (what today's dashboard sends) | Treated as `update`. Today's Students page stops reshuffling the school straight away; Recalculate and Optimize all only refresh until the Routes page gets the proposal screen (step 5). | As today |
+
+How a bus is planned:
+
+1. Read the bus with `get_route_plan_payload` (school, children, homes, saved order) and the morning route's
+   waypoints (where each child lived when the order was saved, to spot a house move).
+2. Work out the order with the pure functions from step 1 (`updateChain`, or `planChain` for a proposal).
+3. Ask Mapbox Directions for the morning path (stops then school) and the afternoon path (school then stops).
+   Children at the same spot are sent once. Mapbox takes 25 points per request, so a bus with more than 24 stops is
+   split into overlapping requests whose lines are joined (new pure helpers: polyline decode, encode and join,
+   precision 5 like the app's `decodePolyline`). Without Mapbox, straight lines at 30 km/h as today.
+4. Times per stop from Mapbox's leg durations (`runWaypoints`).
+5. After an update with changes, a quick straight-line check of a fresh plan: if it would be clearly better, save the
+   "Re-optimizing would save about N minutes a run" hint; otherwise clear it. Never applied.
+6. Save with `save_route_plan` (both runs, one transaction). If a child moved bus in the meantime the save is refused;
+   the bus is read again and retried once.
+
+Response, per bus: plan version, whether anything changed, who was added, removed or moved (names), minutes and km per
+run, and the hint. The dashboard can then say "Omar added between stops 3 and 4" or "No changes".
+
+### `send-notification`: alerts for both runs
+
+- Accepts the new trigger messages (`attendance` with `run` and `previous_status`, `drop_off`) and today's messages
+  (no `run` means the morning), so the order of deploys doesn't matter.
+- Wording from the notifications table above, with times in Qatar time ("7:25 AM", as in the app), the school's name
+  for "arrived at school" and the child's address for "dropped off". The texts come from one pure function, tested
+  line by line against that table.
+- **ETA alert** (sent by the parent app): the function finds the bus's running run itself. Morning: only while the
+  child is still waiting to be picked up. Afternoon: only while the child is on board. No running run, no alert. Until
+  0018, a bus marked active by today's driver app (no run record) counts as a morning run, so today's app keeps
+  working.
+- `dry_run: true` (service role only) returns the messages without sending them, to check the wording against
+  production data safely.
+- Duplicate ETA alerts are stopped in the parent app (remembered per child, day and run on the phone, so an app
+  restart doesn't resend); no new table.
+
+### Tests for step 2
+
+- Node tests (`pnpm test:logic`, also under Deno): polyline helpers and joining, splitting long routes, planning a
+  bus with a fake Mapbox (no change returns the same order and no new version; a newcomer slots in; a proposal that
+  isn't clearly better is refused on apply; a stale proposal is refused), and every row of the notification table.
+- Local end-to-end with `supabase functions serve` against the local database: `update` on the seed buses leaves the
+  order untouched and adds the afternoon row; a moved child is re-slotted; `optimize` returns a proposal and saves
+  nothing; the old dashboard request is treated as `update`.
+
+### Going live
+
+Built and tested locally first. It goes live as one release with step 3 (existing routes) and the new apps, right
+before your iPhone test, so the old apps never meet the new routes: deploy `send-notification`, deploy
+`optimize-route`, refresh the routes, then you test in Expo Go against production. Only the demo school exists, so
+nothing changes for anyone else.
+
 ## Order of work
 
 1. **Database and route logic.** Write 0017 and the pure route functions (chain → morning and afternoon order,
    slotting in a new child, the "clearly better" check) with tests, run the migration on the local database with the
    seed data, and check each role's access. You push 0017 to production; nobody sees a change yet.
-2. **Edge Functions.** `optimize-route` (three modes, both directions, one-transaction save) and `send-notification`
-   (run-aware alerts, still accepting today's messages). Deployed.
+2. **Edge Functions.** `optimize-route` (`update`, and `optimize` as a proposal; both directions; one-transaction
+   save) and `send-notification` (run-aware alerts, still accepting today's messages). Built and tested locally; they
+   go live with steps 3 and 4 (see "Going live" above).
 3. **Existing routes.** Run `refresh` on every bus: the same chain of stops, with map lines and times for both runs.
    Nothing is re-planned. Done when the new apps go live, because today's apps read whichever route row is newest.
 4. **Driver app, then parent app** (including the privacy fix), checked in the browser preview with the demo
    accounts through a full simulated day.
-5. **School dashboard.**
+5. **School dashboard.** Includes the Students page calling `update` only for the buses that changed, and "Edit
+   student" saving the new address's map location.
 6. **You test on the iPhone** in Expo Go (GPS sends while the app is open; I can follow the demo bus as the demo parent
    in the browser preview while you drive it). Then merge.
 7. **Clean-up migration 0018** (old `set_bus_active`, old `save_optimized_route`, drivers' direct attendance writes,

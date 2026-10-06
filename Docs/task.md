@@ -229,7 +229,7 @@ Full plan: [plans/2026-10-06-two-runs-per-day.md](plans/2026-10-06-two-runs-per-
 
 - [x] Step 1 (2026-10-06, branch `two-runs`): `0017_two_runs.sql` (`bus_runs`, attendance per run with `dropped_off`, absence reports per run, a morning and an afternoon route row, `start_run` / `end_run` / `mark_attendance`, `save_route_plan`), the route rules in `supabase/functions/_shared/routePlan.ts` with tests (`pnpm test:logic`), and database checks per role (`supabase/tests/0017_two_runs.sql`). Applied locally
 - [ ] Push 0017 to production (`supabase db push`)
-- [ ] Step 2: `optimize-route` (refresh / update / optimize as a proposal, both directions, Mapbox leg times) and `send-notification` (run-aware alerts)
+- [ ] Step 2 (planned in detail 2026-10-06, not built): `optimize-route` (`update`, and `optimize` as a proposal; both directions; Mapbox leg times) and `send-notification` (run-aware alerts). Goes live together with steps 3 and 4
 - [ ] Step 3: refresh existing routes (decide first whether the morning direction flips)
 - [ ] Step 4: driver app, then parent app
 - [ ] Step 5: school dashboard
