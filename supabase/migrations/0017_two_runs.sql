@@ -1,5 +1,5 @@
 -- Two runs a day: the morning pickup run (homes → school) and the afternoon drop-off run (school → homes, the same
--- stops in reverse). Plan: Docs/plans/2026-10-06-two-runs-per-day.md.
+-- stops in reverse). Plan: Docs/plans/two-runs-a-day.md.
 --
 -- Add-only, so the apps and Edge Functions running today keep working while the rest rolls out. New columns have
 -- defaults (every existing row is the morning run) and the old functions stay; save_optimized_route, which today's

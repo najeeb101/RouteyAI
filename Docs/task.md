@@ -12,7 +12,7 @@ Mobile: Expo (React Native) | React Native styles | Mapbox RN | EAS
 - In progress: Phase 13 — landing page live at https://routeyai.vercel.app; launch placeholders in `src/lib/siteConfig.ts`; no Mapbox token on Vercel yet, so student addresses aren't geocoded on the live site.
 - In progress: Phase 12 (store submission). Expo SDK 57, EAS profiles, OTA updates, icons, Play graphics and store copy are done; next are the device test, the Mapbox `pk.` token, `eas login` and the first EAS builds.
 - Phase 14 (parent and driver app upgrade) done apart from checks on a real phone.
-- 2026-10-06: Phase 15 light mode and identity merged (PR #4). Phase 16 (two runs a day) started: step 1 done on branch `two-runs`; `0017` still to push to production (`0016` is already there).
+- 2026-10-06: Phase 15 light mode and identity merged (PR #4). Phase 16 (two runs a day) started: step 1 is on production. Verified `0017`'s `run` columns are live and `0016` rejects anonymous route-helper calls with `401`.
 
 ## Phase 1: Project Setup and Landing Page
 
@@ -136,7 +136,7 @@ Mobile: Expo (React Native) | React Native styles | Mapbox RN | EAS
 - [x] Performance audit (Lighthouse) — home page, mobile, local production build (2026-09-30): Performance 92, Accessibility 100, Best Practices 100, SEO 100
 - [ ] Connect custom domain on Vercel
 - [x] **Edge Functions check the caller** (found and fixed 2026-10-05, deployed). Both ran with the service role key and only required a valid JWT, and the public anon key is one: anyone with the web app's public key could push any text to every parent of a school (`send-notification`, `type: announcement`) or re-optimize every bus in every school (`optimize-route` with no `bus_id`). Now `supabase/functions/_shared/caller.ts` identifies the caller: the service role (database triggers, scripts; a token claiming it is confirmed against the Auth admin API, because the runtime's `SUPABASE_SERVICE_ROLE_KEY` is not the same string as the legacy key), or a signed-in user with their roles. `optimize-route`: platform admin, service role, or the school admin of that bus's school. `send-notification`: attendance and announcements only from the service role; `eta_alert` only from the child's parent. Also fixed: "Optimize all" for one school re-planned every school's buses. Tested on production: anon key and a forged service-role JWT get 401, the service key works. Not yet tested with a signed-in school admin or parent (needs the review accounts)
-- [ ] **Apply `0016_lock_optimization_helpers.sql` to production (`pnpm db:push`)**. The four route-optimization helpers from 0009 are SECURITY DEFINER with no caller checks and executable by anon: with only the public key, `get_route_optimization_payload` returns every bus with its students' home coordinates (checked on production 2026-10-05: 13 rows). 0016 makes them service-role only; only the Edge Function uses them. Claude's push was blocked by the auto-mode safety check, so run it yourself
+- [x] **`0016_lock_optimization_helpers.sql` is on production**. The four route-optimization helpers from 0009 are now service-role only. Verified 2026-10-06: an anonymous request to `get_route_optimization_payload` receives `401`.
 - [ ] `redeem_invite(p_code, p_user_id)` trusts `p_user_id` instead of `auth.uid()`. Low risk (needs a valid unused invite code), but it can't simply require `auth.uid()`: production has email confirmation on, so the invite page calls it before the new user has a session. Option: allow `p_user_id = auth.uid()`, or a user created in the last few minutes who has no role yet
 
 ## Phase 12: App Store and Play Store Submission
@@ -228,7 +228,7 @@ Full plan: [plans/mobile-ui-refresh.md](plans/mobile-ui-refresh.md)
 Full plan: [plans/two-runs-a-day.md](plans/two-runs-a-day.md). Every bus does a morning pickup run and an afternoon drop-off run (the same stops in reverse). Routes never change by themselves.
 
 - [x] Step 1 (2026-10-06, branch `two-runs`): `0017_two_runs.sql` (`bus_runs`, attendance per run with `dropped_off`, absence reports per run, a morning and an afternoon route row, `start_run` / `end_run` / `mark_attendance`, `save_route_plan`), the route rules in `supabase/functions/_shared/routePlan.ts` with tests (`pnpm test:logic`), and database checks per role (`supabase/tests/0017_two_runs.sql`). Applied locally
-- [ ] Push 0017 to production (`supabase db push`)
+- [x] `0017_two_runs.sql` is on production (verified 2026-10-06: `routes.run` and `attendance.run` are available)
 - [ ] Step 2 (planned in detail 2026-10-06, not built): `optimize-route` (`update`, and `optimize` as a proposal; both directions; Mapbox leg times) and `send-notification` (run-aware alerts). Goes live together with steps 3 and 4
 - [ ] Step 3: refresh existing routes (decide first whether the morning direction flips)
 - [ ] Step 4: driver app, then parent app
