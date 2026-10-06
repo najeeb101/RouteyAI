@@ -49,8 +49,8 @@ routeyai/
 │   │   └── page.tsx          # landing page (Server Component)
 │   ├── components/
 │   │   ├── ui/               # shadcn/ui primitives
-│   │   ├── dashboard/        # Sidebar, TopBar, StatsCard, DataTable
-│   │   ├── maps/             # SVG map previews (FleetMapSvg, RouteMapSvg, ParentMapSvg)
+│   │   ├── dashboard/        # DashboardShell (SideNav, TopBar), PageHeader, Panel, StatsCard, SignatureCard, Modal, ActionButton, …
+│   │   ├── maps/             # FleetMap (Mapbox GL, load via DynamicFleetMap), ParentMapSvg
 │   │   └── landing/          # landing page sections + client islands (nav, modal, demo form)
 │   ├── hooks/useAuth.ts
 │   ├── lib/
@@ -70,7 +70,7 @@ routeyai/
 │       ├── components/brand/       # BrandMark, SignatureCard (navy card), RouteLine, LivePill
 │       └── lib/supabase.ts
 ├── supabase/
-│   ├── migrations/           # 0001_schema.sql … 0018_parent_route.sql
+│   ├── migrations/           # 0001_schema.sql … 0019_auth_email_text.sql
 │   ├── tests/                # SQL checks per migration, run against the local database
 │   ├── functions/
 │   │   ├── optimize-route/index.ts     # Edge Function: route planner (update; optimize as a proposal)
@@ -105,6 +105,8 @@ Post-login redirect is role-based. RLS policies differ per role per table — se
 ## Design System
 
 Karwa / Qatar Metro aesthetic — deep blue `#1E3A8A` primary, white/slate backgrounds, Inter font, map-centric layouts. Mobile-first for driver and parent; desktop-first for admin dashboards. Full token table in Docs/Claude.md §3.1.
+
+The admin dashboards (`/school`, `/admin`) use the mobile app's tokens (`mobile/src/lib/theme.ts`) as Tailwind colours (`ink`, `ink-2`, `canvas`, `line`, `brand`, `night`, `live`, `ok` / `warn` / `bad` with `-text` and `-tint`), Schibsted Grotesk headings (`font-display`) and the components in `src/components/dashboard/`. One navy `SignatureCard` per page, flat white cards, status as a coloured dot plus words, no uppercase labels, the landing page's easing (`ease-swift`, `animate-rise`). The map uses the apps' style (`src/lib/mapStyle.ts`, a copy of the mobile one).
 
 ## Conventions
 

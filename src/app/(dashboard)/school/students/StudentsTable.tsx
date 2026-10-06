@@ -1,9 +1,28 @@
 'use client'
 
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useCallback, useState } from 'react'
 import { toast } from 'sonner'
+import { ArrowRightLeft, Check, Copy, Ellipsis, Mail, Pencil, Plus, Search, Trash2, Users } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
 import type { Database } from '@/types/database'
+import { updateBuses } from '@/lib/dashboard/planner'
+import { describeUpdates } from '@/lib/dashboard/plannerText'
+import { ActionButton } from '@/components/dashboard/ActionButton'
+import { EmptyState } from '@/components/dashboard/EmptyState'
+import { Field, inputClass } from '@/components/dashboard/Field'
+import { Modal } from '@/components/dashboard/Modal'
+import { Notice } from '@/components/dashboard/Notice'
+import { PageHeader } from '@/components/dashboard/PageHeader'
+import { Panel } from '@/components/dashboard/Panel'
+import { Badge } from '@/components/dashboard/StatusText'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import type { BusRow } from '../buses/BusesTable'
 
 export type StudentRow = {
@@ -16,6 +35,8 @@ export type StudentRow = {
   stop_order: number | null
   created_at: string
 }
+
+type Filter = 'all' | 'not-on-route' | 'no-bus'
 
 async function geocodeAddress(address: string): Promise<{ lat: number; lng: number; geocoded: boolean }> {
   const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN
@@ -32,144 +53,102 @@ async function geocodeAddress(address: string): Promise<{ lat: number; lng: numb
   }
 }
 
-function CloseBtn({ onClick }: { onClick: () => void }) {
-  return (
-    <button onClick={onClick} className="w-7 h-7 bg-[#F1F5F9] rounded-lg flex items-center justify-center text-[#64748B] hover:bg-[#E2E8F0] transition-colors">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-      </svg>
-    </button>
-  )
+const initialsOf = (name: string) => name.split(/\s+/).filter(Boolean).slice(0, 2).map((n) => n[0]?.toUpperCase()).join('')
+
+/**
+ * After a child is added, moved, re-addressed or removed, their bus's route takes the change in (optimize-route
+ * `update`): the child slots in where they add the least driving and every other stop keeps its place. Routes are
+ * never re-planned from here. One toast says what was saved, then what the route did.
+ */
+async function slotIn(title: string, busIds: (string | null | undefined)[], child: { id: string; name: string }) {
+  const ids = busIds.filter((id): id is string => Boolean(id))
+  if (ids.length === 0) {
+    toast.success(title, { description: 'Not on a bus, so no route changed.' })
+    return
+  }
+  const toastId = toast.loading(title, { description: 'Updating the route…' })
+  const res = await updateBuses(ids)
+  if (!res.ok) {
+    toast.warning(title, {
+      id: toastId,
+      description: `Saved, but the route wasn’t updated: ${res.message} Press Update for the bus on the Routes page.`,
+    })
+    return
+  }
+  toast.success(title, { id: toastId, description: describeUpdates(res.data, new Map([[child.id, child.name]])) })
 }
 
-function RowMenu({ onEdit, onChangeBus, onInviteParent, onRemove }: {
-  onEdit: () => void
-  onChangeBus: () => void
-  onInviteParent: () => void
-  onRemove: () => void
-}) {
-  const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [])
-
-  return (
-    <div ref={ref} className="relative">
-      <button
-        onClick={() => setOpen(v => !v)}
-        className="w-8 h-8 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg flex items-center justify-center hover:bg-[#F1F5F9] transition-colors"
-      >
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" strokeLinecap="round">
-          <circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>
-        </svg>
-      </button>
-      {open && (
-        <div className="absolute right-0 top-9 w-44 bg-white rounded-xl border border-[#E2E8F0] shadow-[0_8px_24px_-4px_rgb(0_0_0/0.12)] z-20 overflow-hidden">
-          <button onClick={() => { setOpen(false); onEdit() }} className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-[13px] text-[#0F172A] hover:bg-[#F8FAFC] text-left">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
-              <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
-            </svg>
-            Edit Student
-          </button>
-          <button onClick={() => { setOpen(false); onChangeBus() }} className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-[13px] text-[#0F172A] hover:bg-[#F8FAFC] text-left">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M8 6v6"/><path d="M15 6v6"/><path d="M2 12h19.6"/>
-              <path d="M18 18h3s.5-1.7.8-4.3c.3-2.7.2-7.7.2-7.7H2S1.7 7 2 9.7c.3 2.6.8 4.3.8 4.3H5"/>
-              <circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/>
-            </svg>
-            Change Bus
-          </button>
-          <button onClick={() => { setOpen(false); onInviteParent() }} className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-[13px] text-[#0F172A] hover:bg-[#F8FAFC] text-left">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-              <polyline points="22,6 12,13 2,6"/>
-            </svg>
-            Invite Parent
-          </button>
-          <div className="h-px bg-[#F1F5F9] mx-2" />
-          <button onClick={() => { setOpen(false); onRemove() }} className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-[13px] text-[#EF4444] hover:bg-[#FEF2F2] text-left">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
-              <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
-            </svg>
-            Remove
-          </button>
-        </div>
-      )}
-    </div>
-  )
-}
-
-export default function StudentsTable({
-  initialStudents,
-  buses,
-}: {
-  initialStudents: StudentRow[]
-  buses: BusRow[]
-}) {
+export default function StudentsTable({ initialStudents, buses }: { initialStudents: StudentRow[]; buses: BusRow[] }) {
   const supabase = createClient()
 
   const [students, setStudents] = useState<StudentRow[]>(initialStudents)
-  const [search,   setSearch]   = useState('')
-  const [loading,  setLoading]  = useState(false)
-  const [error,    setError]    = useState<string | null>(null)
+  const [search, setSearch] = useState('')
+  const [filter, setFilter] = useState<Filter>('all')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  // Modal state
-  const [addOpen,          setAddOpen]          = useState(false)
-  const [editStudent,      setEditStudent]      = useState<StudentRow | null>(null)
+  const [addOpen, setAddOpen] = useState(false)
+  const [editStudent, setEditStudent] = useState<StudentRow | null>(null)
   const [changeBusStudent, setChangeBusStudent] = useState<StudentRow | null>(null)
-  const [deleteStudent,    setDeleteStudent]    = useState<StudentRow | null>(null)
-  const [inviteStudent,    setInviteStudent]    = useState<StudentRow | null>(null)
-  const [inviteLink,       setInviteLink]       = useState<string | null>(null)
-  const [copied,           setCopied]           = useState(false)
+  const [deleteStudent, setDeleteStudent] = useState<StudentRow | null>(null)
+  const [inviteStudent, setInviteStudent] = useState<StudentRow | null>(null)
+  const [inviteLink, setInviteLink] = useState<string | null>(null)
+  const [copied, setCopied] = useState(false)
 
-  // Add form
-  const [addName,    setAddName]    = useState('')
+  const [addName, setAddName] = useState('')
   const [addAddress, setAddAddress] = useState('')
-  const [addBusId,   setAddBusId]   = useState('')
-
-  // Edit form
-  const [editName,    setEditName]    = useState('')
+  const [addBusId, setAddBusId] = useState('')
+  const [editName, setEditName] = useState('')
   const [editAddress, setEditAddress] = useState('')
-
-  // Change bus
   const [newBusId, setNewBusId] = useState('')
 
-  const filtered = students.filter(s =>
-    s.name.toLowerCase().includes(search.toLowerCase()) ||
-    (s.bus_name ?? '').toLowerCase().includes(search.toLowerCase()) ||
-    s.home_address.toLowerCase().includes(search.toLowerCase())
-  )
+  const busName = (id: string) => buses.find((b) => b.id === id)?.name ?? 'the bus'
+  const busColor = (id: string | null) => buses.find((b) => b.id === id)?.color ?? '#94A3B8'
+
+  const notOnRoute = students.filter((s) => s.bus_id && s.stop_order === null).length
+  const noBus = students.filter((s) => !s.bus_id).length
+  const q = search.trim().toLowerCase()
+  const filtered = students.filter((s) => {
+    if (filter === 'not-on-route' && !(s.bus_id && s.stop_order === null)) return false
+    if (filter === 'no-bus' && s.bus_id) return false
+    return !q || s.name.toLowerCase().includes(q) || (s.bus_name ?? '').toLowerCase().includes(q) || s.home_address.toLowerCase().includes(q)
+  })
 
   const refetch = useCallback(async () => {
-    const { data } = await supabase.rpc('get_students_with_bus')
+    const { data, error: err } = await supabase.rpc('get_students_with_bus')
+    if (err) console.error('Students:', err.message)
     const rows = (data ?? null) as StudentRow[] | null
     if (rows) setStudents(rows)
     return rows ?? []
   }, [supabase])
 
-  // Changes here never re-plan a route: the child waits as "Not on route" until the admin recalculates that bus.
-  const notOnRouteToast = (title: string, busName: string | null) => {
-    if (busName) toast.success(title, { description: `Press Recalculate for ${busName} on the Routes page to add the stop.` })
-    else toast.success(title, { description: 'Not on a bus yet.' })
+  const close = () => {
+    setError(null)
+    setAddOpen(false)
+    setEditStudent(null)
+    setChangeBusStudent(null)
+    setDeleteStudent(null)
+  }
+
+  const openAdd = () => {
+    setAddName('')
+    setAddAddress('')
+    setAddBusId('')
+    setError(null)
+    setAddOpen(true)
   }
 
   const openEdit = (s: StudentRow) => {
     setEditStudent(s)
     setEditName(s.name)
     setEditAddress(s.home_address)
+    setError(null)
   }
 
   const openChangeBus = (s: StudentRow) => {
     setChangeBusStudent(s)
     setNewBusId(s.bus_id ?? buses[0]?.id ?? '')
+    setError(null)
   }
 
   const handleAdd = async () => {
@@ -178,28 +157,28 @@ export default function StudentsTable({
     const name = addName.trim()
     const { lat, lng, geocoded } = await geocodeAddress(addAddress)
     const { data: newId, error: err } = await supabase.rpc('add_student', {
-      p_name:         name,
+      p_name: name,
       p_home_address: addAddress.trim(),
-      p_lat:          lat,
-      p_lng:          lng,
-      p_bus_id:       addBusId || null,
+      p_lat: lat,
+      p_lng: lng,
+      p_bus_id: addBusId || null,
     })
     setLoading(false)
     if (err) { setError(err.message); return }
-    setAddOpen(false)
-    setAddName(''); setAddAddress(''); setAddBusId('')
-    const added = (await refetch()).find(s => s.id === newId)
-    notOnRouteToast(added?.bus_name ? `${name} added to ${added.bus_name}` : `${name} added`, added?.bus_name ?? null)
+    close()
+    const added = (await refetch()).find((s) => s.id === newId)
     if (!geocoded) {
       toast.warning('Address not found on the map', {
         description: `${name}'s stop is at the centre of Doha for now. Edit the address with the area or street to fix it.`,
       })
     }
+    await slotIn(added?.bus_name ? `${name} added to ${added.bus_name}` : `${name} added`, [added?.bus_id], { id: String(newId), name })
+    await refetch()
   }
 
   const handleEdit = async () => {
     if (!editStudent) return
-    const name    = editName.trim()    || editStudent.name
+    const name = editName.trim() || editStudent.name
     const address = editAddress.trim() || editStudent.home_address
     const addressChanged = address !== editStudent.home_address
     setLoading(true); setError(null)
@@ -219,33 +198,38 @@ export default function StudentsTable({
         return
       }
       update.home_location = `SRID=4326;POINT(${lng} ${lat})`
+      // Off the route until the planner gives the new home a stop, so a failed update still shows "Not on route".
       update.stop_order = null
     }
 
     const { error: err } = await supabase.from('students').update(update).eq('id', editStudent.id)
     setLoading(false)
     if (err) { setError(err.message); return }
-    setEditStudent(null)
+    const busId = editStudent.bus_id
+    close()
     await refetch()
-    if (addressChanged && editStudent.bus_name) notOnRouteToast(`${name}'s address updated`, editStudent.bus_name)
-    else toast.success('Student updated')
+    // The planner sees the child lost their place on the route and gives only them a new stop.
+    if (!addressChanged) toast.success('Student updated')
+    else {
+      await slotIn(`${name}'s address updated`, [busId], { id: editStudent.id, name })
+      await refetch()
+    }
   }
 
   const handleChangeBus = async () => {
     if (!changeBusStudent) return
     const busId = newBusId || null
-    if (busId === changeBusStudent.bus_id) { setChangeBusStudent(null); return }
+    const fromBusId = changeBusStudent.bus_id
+    if (busId === fromBusId) { close(); return }
     setLoading(true); setError(null)
     // The old stop number belongs to the old bus's route.
-    const { error: err } = await supabase
-      .from('students')
-      .update({ bus_id: busId, stop_order: null })
-      .eq('id', changeBusStudent.id)
+    const { error: err } = await supabase.from('students').update({ bus_id: busId, stop_order: null }).eq('id', changeBusStudent.id)
     setLoading(false)
     if (err) { setError(err.message); return }
-    const busName = buses.find(b => b.id === busId)?.name ?? null
-    notOnRouteToast(busName ? `${changeBusStudent.name} moved to ${busName}` : `${changeBusStudent.name} taken off the bus`, busName)
-    setChangeBusStudent(null)
+    const name = changeBusStudent.name
+    close()
+    await refetch()
+    await slotIn(busId ? `${name} moved to ${busName(busId)}` : `${name} taken off the bus`, [fromBusId, busId], { id: changeBusStudent.id, name })
     await refetch()
   }
 
@@ -255,17 +239,16 @@ export default function StudentsTable({
     const { error: err } = await supabase.from('students').delete().eq('id', deleteStudent.id)
     setLoading(false)
     if (err) { setError(err.message); return }
-    setDeleteStudent(null)
-    toast.success('Student removed')
+    const { id, name, bus_id } = deleteStudent
+    close()
     await refetch()
+    await slotIn(`${name} removed`, [bus_id], { id, name })
   }
 
   const handleGenerateParentInvite = async () => {
     if (!inviteStudent) return
     setLoading(true); setError(null)
-    const { data: code, error: err } = await supabase.rpc('generate_parent_invite', {
-      p_student_id: inviteStudent.id,
-    })
+    const { data: code, error: err } = await supabase.rpc('generate_parent_invite', { p_student_id: inviteStudent.id })
     setLoading(false)
     if (err) { setError(err.message); return }
     setInviteLink(`${window.location.origin}/invite/${code}`)
@@ -273,8 +256,8 @@ export default function StudentsTable({
 
   const closeInvite = () => {
     setInviteStudent(null)
-    setInviteLink(null)
     setCopied(false)
+    setError(null)
   }
 
   const handleCopy = () => {
@@ -284,331 +267,251 @@ export default function StudentsTable({
     setTimeout(() => setCopied(false), 2000)
   }
 
+  const filters: { value: Filter; label: string; count: number }[] = [
+    { value: 'all', label: 'All', count: students.length },
+    { value: 'not-on-route', label: 'Not on a route', count: notOnRoute },
+    { value: 'no-bus', label: 'No bus', count: noBus },
+  ]
+
   return (
-    <div className="p-7 max-w-[1280px]">
-      {error && (
-        <div className="mb-4 px-4 py-3 bg-[#FEF2F2] border border-[#FEE2E2] text-[#DC2626] text-sm rounded-xl">
-          {error}
-        </div>
-      )}
+    <>
+      <PageHeader
+        title="Students"
+        subtitle={`${students.length} student${students.length === 1 ? '' : 's'} · ${students.length - noBus} on a bus`}
+        actions={<ActionButton onClick={openAdd}><Plus /> Add student</ActionButton>}
+      />
 
-      <div className="flex justify-between items-start mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-[#0F172A] leading-tight">Student Roster</h1>
-          <p className="text-sm text-[#64748B] mt-0.5">{students.length} student{students.length !== 1 ? 's' : ''} registered</p>
-        </div>
-        <button
-          onClick={() => setAddOpen(true)}
-          className="flex items-center gap-2 bg-[#1E3A8A] text-white rounded-xl px-4 py-2.5 text-sm font-semibold hover:bg-[#1e40af] transition-colors"
-        >
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-          </svg>
-          Add Student
-        </button>
-      </div>
-
-      <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-[0_1px_2px_0_rgb(0_0_0/0.04)] p-5">
-        <div className="relative mb-4">
-          <svg className="absolute left-3 top-1/2 -translate-y-1/2 opacity-40" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0F172A" strokeWidth="2" strokeLinecap="round">
-            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-          </svg>
-          <input
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Search by name, bus or address…"
-            className="w-full border border-[#E2E8F0] rounded-xl py-2.5 pl-9 pr-3 text-[13px] text-[#0F172A] bg-[#FAFAFA] outline-none focus:border-[#3B82F6] transition-colors"
-          />
+      <Panel step={1} bodyClassName="p-0">
+        <div className="flex flex-wrap items-center gap-3 border-b border-line px-5 py-4">
+          <div className="relative min-w-[220px] flex-1">
+            <Search size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-3" aria-hidden="true" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search by name, bus or address"
+              aria-label="Search students"
+              className={cn(inputClass, 'pl-10')}
+            />
+          </div>
+          <div className="flex gap-1.5" role="group" aria-label="Show">
+            {filters.map((f) => (
+              <button
+                key={f.value}
+                onClick={() => setFilter(f.value)}
+                aria-pressed={filter === f.value}
+                className={cn(
+                  'h-9 rounded-xl px-3 text-[13px] font-medium transition-colors duration-150',
+                  filter === f.value ? 'bg-brand text-white' : 'bg-canvas text-ink-2 hover:text-ink',
+                )}
+              >
+                {f.label} <span className={cn('tabular-nums', filter === f.value ? 'text-white/70' : 'text-ink-3')}>{f.count}</span>
+              </button>
+            ))}
+          </div>
         </div>
 
         {filtered.length === 0 ? (
-          <div className="py-16 text-center text-sm text-[#94A3B8]">
-            {students.length === 0
-              ? 'No students yet. Add your first student to get started.'
-              : 'No students match your search.'}
-          </div>
+          <EmptyState icon={Users} title={students.length === 0 ? 'No students yet' : 'No students match'}>
+            {students.length === 0 ? 'Add your first student to put them on a bus.' : 'Try another name, or show all students.'}
+          </EmptyState>
         ) : (
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="bg-[#F8FAFC]">
-                {['Student', 'Home Address', 'Bus', 'Stop Order', ''].map(h => (
-                  <th key={h} className="px-3.5 py-2.5 text-left text-[11px] font-bold text-[#64748B] uppercase tracking-wide border-b border-[#E2E8F0]">
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map(s => {
-                const initials = s.name.split(' ').map(n => n[0] ?? '').join('')
-                return (
-                  <tr key={s.id} className="border-b border-[#F1F5F9] hover:bg-[#F8FAFC] transition-colors">
-                    <td className="px-3.5 py-3">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-full bg-[#EFF6FF] border border-[#BFDBFE] flex items-center justify-center text-[13px] font-bold text-[#1E3A8A] shrink-0">
-                          {initials}
-                        </div>
-                        <span className="text-sm font-semibold text-[#0F172A]">{s.name}</span>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[720px] border-collapse">
+              <thead>
+                <tr className="text-left text-[13px] text-ink-2">
+                  <th className="px-5 py-3 font-medium">Student</th>
+                  <th className="px-3 py-3 font-medium">Home address</th>
+                  <th className="px-3 py-3 font-medium">Bus</th>
+                  <th className="px-3 py-3 font-medium">Stop</th>
+                  <th className="w-14 px-5 py-3"><span className="sr-only">Actions</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((s, i) => (
+                  <tr
+                    key={s.id}
+                    className="border-t border-line transition-colors hover:bg-canvas/60 animate-rise motion-reduce:animate-none"
+                    style={{ animationDelay: `${Math.min(i, 15) * 25}ms` }}
+                  >
+                    <td className="px-5 py-3">
+                      <div className="flex items-center gap-3">
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-tint text-xs font-semibold text-brand">{initialsOf(s.name)}</span>
+                        <span className="text-sm font-semibold text-ink">{s.name}</span>
                       </div>
                     </td>
-                    <td className="px-3.5 py-3 text-[13px] text-[#64748B] max-w-[200px] truncate">{s.home_address}</td>
-                    <td className="px-3.5 py-3 text-[13px] font-medium text-[#0F172A]">{s.bus_name ?? <span className="text-[#94A3B8]">Unassigned</span>}</td>
-                    <td className="px-3.5 py-3 text-[13px] text-[#64748B]">
-                      {s.stop_order ?? (s.bus_id
-                        ? <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[#FFFBEB] text-[#B45309] border border-[#FDE68A] whitespace-nowrap">Not on route</span>
-                        : <span className="text-[#94A3B8]">—</span>)}
+                    <td className="max-w-[260px] truncate px-3 py-3 text-[13px] text-ink-2" title={s.home_address}>{s.home_address}</td>
+                    <td className="px-3 py-3 text-[13px]">
+                      {s.bus_name ? (
+                        <span className="inline-flex items-center gap-2 font-medium text-ink">
+                          <span className="h-2 w-2 rounded-full" style={{ background: busColor(s.bus_id) }} aria-hidden="true" />
+                          {s.bus_name}
+                        </span>
+                      ) : (
+                        <span className="text-ink-3">No bus</span>
+                      )}
                     </td>
-                    <td className="px-3.5 py-3">
-                      <RowMenu
-                        onEdit={() => openEdit(s)}
-                        onChangeBus={() => openChangeBus(s)}
-                        onInviteParent={() => { setInviteStudent(s); setInviteLink(null) }}
-                        onRemove={() => setDeleteStudent(s)}
-                      />
+                    <td className="px-3 py-3 text-[13px] tabular-nums text-ink-2">
+                      {s.stop_order ?? (s.bus_id ? <Badge tone="warning">Not on route</Badge> : <span className="text-ink-3">—</span>)}
+                    </td>
+                    <td className="px-5 py-3 text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger
+                          aria-label={`Actions for ${s.name}`}
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-ink-2 transition-colors hover:bg-canvas hover:text-ink data-[state=open]:bg-canvas"
+                        >
+                          <Ellipsis size={18} />
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48 rounded-xl border-line p-1.5 shadow-[0_12px_32px_-8px_rgba(15,23,42,0.18)]">
+                          <DropdownMenuItem onSelect={() => openEdit(s)} className="rounded-lg px-2.5 py-2 text-[13px] focus:bg-canvas"><Pencil /> Edit student</DropdownMenuItem>
+                          <DropdownMenuItem onSelect={() => openChangeBus(s)} className="rounded-lg px-2.5 py-2 text-[13px] focus:bg-canvas"><ArrowRightLeft /> Change bus</DropdownMenuItem>
+                          <DropdownMenuItem onSelect={() => { setInviteStudent(s); setInviteLink(null); setError(null) }} className="rounded-lg px-2.5 py-2 text-[13px] focus:bg-canvas"><Mail /> Invite parent</DropdownMenuItem>
+                          <DropdownMenuSeparator className="bg-line" />
+                          <DropdownMenuItem onSelect={() => { setDeleteStudent(s); setError(null) }} className="rounded-lg px-2.5 py-2 text-[13px] text-bad-text focus:bg-bad-tint focus:text-bad-text"><Trash2 /> Remove</DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </td>
                   </tr>
-                )
-              })}
-            </tbody>
-          </table>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
-      </div>
+      </Panel>
 
-      {/* ── Add Student Modal ── */}
-      {addOpen && (
-        <div className="fixed inset-0 bg-[#0F172A]/45 backdrop-blur-sm flex items-center justify-center z-50" onClick={() => setAddOpen(false)}>
-          <div className="bg-white rounded-2xl p-6 w-[480px] shadow-[0_20px_60px_-15px_rgb(0_0_0/0.3)]" onClick={e => e.stopPropagation()}>
-            <div className="flex justify-between items-center mb-5">
-              <span className="text-lg font-bold text-[#0F172A]">Add New Student</span>
-              <CloseBtn onClick={() => setAddOpen(false)} />
-            </div>
-            <div className="flex flex-col gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-[#0F172A] mb-1.5">Full Name</label>
-                <input
-                  value={addName}
-                  onChange={e => setAddName(e.target.value)}
-                  type="text"
-                  placeholder="e.g. Sarah Abdullah"
-                  className="w-full border border-[#E2E8F0] rounded-xl py-2.5 px-3 text-sm text-[#0F172A] bg-[#FAFAFA] outline-none focus:border-[#3B82F6] transition-colors"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-[#0F172A] mb-1.5">Home Address</label>
-                <input
-                  value={addAddress}
-                  onChange={e => setAddAddress(e.target.value)}
-                  type="text"
-                  placeholder="Full address for geocoding…"
-                  className="w-full border border-[#E2E8F0] rounded-xl py-2.5 px-3 text-sm text-[#0F172A] bg-[#FAFAFA] outline-none focus:border-[#3B82F6] transition-colors"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-[#0F172A] mb-1.5">Assign to Bus</label>
-                <select
-                  value={addBusId}
-                  onChange={e => setAddBusId(e.target.value)}
-                  className="w-full border border-[#E2E8F0] rounded-xl py-2.5 px-3 text-sm text-[#0F172A] bg-[#FAFAFA] outline-none"
-                >
-                  <option value="">Auto-assign (smart placement)</option>
-                  {buses.map(b => {
-                    const isFull = b.student_count >= b.capacity
-                    return (
-                      <option key={b.id} value={b.id} disabled={isFull}>
-                        {b.name} ({b.student_count}/{b.capacity}){isFull ? ' · FULL' : ''}
-                      </option>
-                    )
-                  })}
-                </select>
-              </div>
-              <div className="bg-[#EFF6FF] border border-[#BFDBFE] rounded-xl px-3 py-2.5 flex items-start gap-2">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1E3A8A" strokeWidth="2" strokeLinecap="round" className="shrink-0 mt-0.5">
-                  <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-                </svg>
-                <p className="text-xs text-[#1E3A8A]">The address is placed on the map as the pickup point. Other children&apos;s stops don&apos;t move: the new stop joins the route when you press Recalculate for that bus on the Routes page.</p>
-              </div>
-              <div className="flex gap-2 justify-end mt-1">
-                <button onClick={() => setAddOpen(false)} className="bg-[#F8FAFC] text-[#64748B] border border-[#E2E8F0] rounded-lg px-4 py-2 text-sm font-medium">Cancel</button>
-                <button
-                  onClick={handleAdd}
-                  disabled={!addName.trim() || !addAddress.trim() || loading}
-                  className="bg-[#1E3A8A] text-white rounded-lg px-4 py-2 text-sm font-semibold disabled:opacity-60 flex items-center gap-2"
-                >
-                  {loading && <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-                  Add Student
-                </button>
-              </div>
-            </div>
-          </div>
+      <Modal
+        open={addOpen}
+        onClose={close}
+        dismissible={!loading}
+        title="Add a student"
+        description="Their home becomes their stop. It slots into the bus's route where it adds the least driving; nobody else's stop moves."
+        footer={
+          <>
+            <ActionButton variant="plain" onClick={close} disabled={loading}>Cancel</ActionButton>
+            <ActionButton onClick={handleAdd} loading={loading} disabled={!addName.trim() || !addAddress.trim()}>Add student</ActionButton>
+          </>
+        }
+      >
+        <div className="flex flex-col gap-4">
+          {error && <Notice tone="danger">{error}</Notice>}
+          <Field label="Full name" htmlFor="add-name">
+            <input id="add-name" value={addName} onChange={(e) => setAddName(e.target.value)} placeholder="Sarah Abdullah" className={inputClass} autoFocus />
+          </Field>
+          <Field label="Home address" htmlFor="add-address" hint="Include the area or street so the map finds the right place.">
+            <input id="add-address" value={addAddress} onChange={(e) => setAddAddress(e.target.value)} placeholder="Street 12, Al Waab, Doha" className={inputClass} />
+          </Field>
+          <Field label="Bus" htmlFor="add-bus">
+            <select id="add-bus" value={addBusId} onChange={(e) => setAddBusId(e.target.value)} className={inputClass}>
+              <option value="">Nearest bus with space</option>
+              {buses.map((b) => {
+                const full = b.student_count >= b.capacity
+                return <option key={b.id} value={b.id} disabled={full}>{b.name} ({b.student_count}/{b.capacity}){full ? ', full' : ''}</option>
+              })}
+            </select>
+          </Field>
         </div>
-      )}
+      </Modal>
 
-      {/* ── Edit Student Modal ── */}
-      {editStudent && (
-        <div className="fixed inset-0 bg-[#0F172A]/45 backdrop-blur-sm flex items-center justify-center z-50" onClick={() => setEditStudent(null)}>
-          <div className="bg-white rounded-2xl p-6 w-[460px] shadow-[0_20px_60px_-15px_rgb(0_0_0/0.3)]" onClick={e => e.stopPropagation()}>
-            <div className="flex justify-between items-center mb-5">
-              <span className="text-lg font-bold text-[#0F172A]">Edit Student</span>
-              <CloseBtn onClick={() => setEditStudent(null)} />
-            </div>
-            <div className="flex flex-col gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-[#0F172A] mb-1.5">Full Name</label>
-                <input value={editName} onChange={e => setEditName(e.target.value)} type="text" className="w-full border border-[#E2E8F0] rounded-xl py-2.5 px-3 text-sm text-[#0F172A] bg-[#FAFAFA] outline-none focus:border-[#3B82F6] transition-colors" />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-[#0F172A] mb-1.5">Home Address</label>
-                <input value={editAddress} onChange={e => setEditAddress(e.target.value)} type="text" className="w-full border border-[#E2E8F0] rounded-xl py-2.5 px-3 text-sm text-[#0F172A] bg-[#FAFAFA] outline-none focus:border-[#3B82F6] transition-colors" />
-              </div>
-              <div className="flex gap-2 justify-end mt-1">
-                <button onClick={() => setEditStudent(null)} className="bg-[#F8FAFC] text-[#64748B] border border-[#E2E8F0] rounded-lg px-4 py-2 text-sm font-medium">Cancel</button>
-                <button
-                  onClick={handleEdit}
-                  disabled={loading}
-                  className="bg-[#1E3A8A] text-white rounded-lg px-4 py-2 text-sm font-semibold disabled:opacity-60 flex items-center gap-2"
-                >
-                  {loading && <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-                  Save Changes
-                </button>
-              </div>
-            </div>
-          </div>
+      <Modal
+        open={editStudent !== null}
+        onClose={close}
+        dismissible={!loading}
+        title="Edit student"
+        description={editStudent?.bus_name ? `A new address gives ${editStudent.name} a new stop on ${editStudent.bus_name}. Other stops stay where they are.` : undefined}
+        footer={
+          <>
+            <ActionButton variant="plain" onClick={close} disabled={loading}>Cancel</ActionButton>
+            <ActionButton onClick={handleEdit} loading={loading}>Save</ActionButton>
+          </>
+        }
+      >
+        <div className="flex flex-col gap-4">
+          {error && <Notice tone="danger">{error}</Notice>}
+          <Field label="Full name" htmlFor="edit-name">
+            <input id="edit-name" value={editName} onChange={(e) => setEditName(e.target.value)} className={inputClass} />
+          </Field>
+          <Field label="Home address" htmlFor="edit-address">
+            <input id="edit-address" value={editAddress} onChange={(e) => setEditAddress(e.target.value)} className={inputClass} />
+          </Field>
         </div>
-      )}
+      </Modal>
 
-      {/* ── Change Bus Modal ── */}
-      {changeBusStudent && (
-        <div className="fixed inset-0 bg-[#0F172A]/45 backdrop-blur-sm flex items-center justify-center z-50" onClick={() => setChangeBusStudent(null)}>
-          <div className="bg-white rounded-2xl p-6 w-[420px] shadow-[0_20px_60px_-15px_rgb(0_0_0/0.3)]" onClick={e => e.stopPropagation()}>
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-lg font-bold text-[#0F172A]">Change Bus</span>
-              <CloseBtn onClick={() => setChangeBusStudent(null)} />
-            </div>
-            <p className="text-sm text-[#64748B] mb-5">
-              {changeBusStudent.name} · currently on{' '}
-              <span className="font-semibold text-[#0F172A]">{changeBusStudent.bus_name ?? 'no bus'}</span>
-            </p>
-            <div className="flex flex-col gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-[#0F172A] mb-1.5">New Bus Assignment</label>
-                <select
-                  value={newBusId}
-                  onChange={e => setNewBusId(e.target.value)}
-                  className="w-full border border-[#E2E8F0] rounded-xl py-2.5 px-3 text-sm text-[#0F172A] bg-[#FAFAFA] outline-none"
-                >
-                  <option value="">Unassigned</option>
-                  {buses.map(b => {
-                    const isFull = b.student_count >= b.capacity && b.id !== changeBusStudent.bus_id
-                    return (
-                      <option key={b.id} value={b.id} disabled={isFull}>
-                        {b.name} ({b.student_count}/{b.capacity}){isFull ? ' · FULL' : ''}
-                      </option>
-                    )
-                  })}
-                </select>
-              </div>
-              <div className="flex gap-2 justify-end mt-1">
-                <button onClick={() => setChangeBusStudent(null)} className="bg-[#F8FAFC] text-[#64748B] border border-[#E2E8F0] rounded-lg px-4 py-2 text-sm font-medium">Cancel</button>
-                <button
-                  onClick={handleChangeBus}
-                  disabled={loading}
-                  className="bg-[#1E3A8A] text-white rounded-lg px-4 py-2 text-sm font-semibold disabled:opacity-60 flex items-center gap-2"
-                >
-                  {loading && <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-                  Reassign
-                </button>
-              </div>
-            </div>
-          </div>
+      <Modal
+        open={changeBusStudent !== null}
+        onClose={close}
+        dismissible={!loading}
+        title="Change bus"
+        description={changeBusStudent ? `${changeBusStudent.name} is on ${changeBusStudent.bus_name ?? 'no bus'}. They leave that route and slot into the new bus's route.` : undefined}
+        footer={
+          <>
+            <ActionButton variant="plain" onClick={close} disabled={loading}>Cancel</ActionButton>
+            <ActionButton onClick={handleChangeBus} loading={loading}>Move</ActionButton>
+          </>
+        }
+      >
+        <div className="flex flex-col gap-4">
+          {error && <Notice tone="danger">{error}</Notice>}
+          <Field label="New bus" htmlFor="change-bus">
+            <select id="change-bus" value={newBusId} onChange={(e) => setNewBusId(e.target.value)} className={inputClass}>
+              <option value="">No bus</option>
+              {buses.map((b) => {
+                const full = b.student_count >= b.capacity && b.id !== changeBusStudent?.bus_id
+                return <option key={b.id} value={b.id} disabled={full}>{b.name} ({b.student_count}/{b.capacity}){full ? ', full' : ''}</option>
+              })}
+            </select>
+          </Field>
         </div>
-      )}
+      </Modal>
 
-      {/* ── Invite Parent Modal ── */}
-      {inviteStudent && (
-        <div className="fixed inset-0 bg-[#0F172A]/45 backdrop-blur-sm flex items-center justify-center z-50" onClick={closeInvite}>
-          <div className="bg-white rounded-2xl p-6 w-[460px] shadow-[0_20px_60px_-15px_rgb(0_0_0/0.3)]" onClick={e => e.stopPropagation()}>
-            {inviteLink ? (
-              <>
-                <div className="flex justify-between items-center mb-4">
-                  <span className="text-lg font-bold text-[#0F172A]">Parent Invite Link</span>
-                  <CloseBtn onClick={closeInvite} />
-                </div>
-                <p className="text-sm text-[#64748B] mb-4">
-                  Share this with <span className="font-semibold text-[#0F172A]">{inviteStudent.name}&apos;s</span> parent. When they sign up, they will be automatically linked to their child.
-                </p>
-                <div className="flex items-center gap-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl px-3 py-2.5 mb-4">
-                  <span className="flex-1 text-[12px] text-[#0F172A] truncate font-mono">{inviteLink}</span>
-                  <button
-                    onClick={handleCopy}
-                    className="shrink-0 flex items-center gap-1.5 bg-[#1E3A8A] text-white rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors hover:bg-[#1e40af]"
-                  >
-                    {copied ? (
-                      <><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>Copied</>
-                    ) : (
-                      <><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>Copy</>
-                    )}
-                  </button>
-                </div>
-                <p className="text-[11px] text-[#94A3B8]">Link expires in 7 days · Single use</p>
-              </>
-            ) : (
-              <>
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-lg font-bold text-[#0F172A]">Invite Parent</span>
-                  <CloseBtn onClick={closeInvite} />
-                </div>
-                <p className="text-sm text-[#64748B] mb-5">{inviteStudent.name}</p>
-                <div className="bg-[#EFF6FF] border border-[#BFDBFE] rounded-xl px-4 py-3 mb-5 text-sm text-[#1E3A8A]">
-                  Generate a one-time invite link. The parent clicks it, creates an account, and is automatically linked to {inviteStudent.name} for live bus tracking.
-                </div>
-                <div className="flex gap-2 justify-end">
-                  <button onClick={closeInvite} className="bg-[#F8FAFC] text-[#64748B] border border-[#E2E8F0] rounded-lg px-4 py-2 text-sm font-medium">Cancel</button>
-                  <button
-                    onClick={handleGenerateParentInvite}
-                    disabled={loading}
-                    className="bg-[#1E3A8A] text-white rounded-lg px-4 py-2 text-sm font-semibold flex items-center gap-2 disabled:opacity-60"
-                  >
-                    {loading
-                      ? <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      : <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-                    }
-                    Generate Invite Link
-                  </button>
-                </div>
-              </>
-            )}
+      <Modal
+        open={inviteStudent !== null}
+        onClose={closeInvite}
+        title={inviteLink ? 'Invite link ready' : 'Invite a parent'}
+        description={
+          inviteLink
+            ? `Send it to ${inviteStudent?.name ?? 'the student'}'s parent. When they sign up, they are linked to their child.`
+            : `A one-time link. The parent opens it, creates an account and follows ${inviteStudent?.name ?? 'their child'}'s bus in the app.`
+        }
+        footer={
+          inviteLink ? (
+            <ActionButton onClick={closeInvite}>Done</ActionButton>
+          ) : (
+            <>
+              <ActionButton variant="plain" onClick={closeInvite}>Cancel</ActionButton>
+              <ActionButton onClick={handleGenerateParentInvite} loading={loading}>{!loading && <Mail />} Create link</ActionButton>
+            </>
+          )
+        }
+      >
+        {error && <Notice tone="danger">{error}</Notice>}
+        {inviteLink && (
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2 rounded-xl bg-canvas p-1.5 pl-3.5 animate-in fade-in-0 slide-in-from-bottom-1 duration-300">
+              <span className="min-w-0 flex-1 truncate font-mono text-xs text-ink">{inviteLink}</span>
+              <ActionButton size="sm" variant={copied ? 'secondary' : 'primary'} onClick={handleCopy}>
+                {copied ? <><Check /> Copied</> : <><Copy /> Copy</>}
+              </ActionButton>
+            </div>
+            <p className="text-xs text-ink-2">Works once and expires in 7 days.</p>
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
 
-      {/* ── Delete Confirmation ── */}
-      {deleteStudent && (
-        <div className="fixed inset-0 bg-[#0F172A]/45 backdrop-blur-sm flex items-center justify-center z-50" onClick={() => setDeleteStudent(null)}>
-          <div className="bg-white rounded-2xl p-6 w-[400px] shadow-[0_20px_60px_-15px_rgb(0_0_0/0.3)]" onClick={e => e.stopPropagation()}>
-            <div className="w-11 h-11 rounded-xl bg-[#FEF2F2] border border-[#FEE2E2] flex items-center justify-center mb-4">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2" strokeLinecap="round">
-                <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
-                <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
-              </svg>
-            </div>
-            <h2 className="text-lg font-bold text-[#0F172A] mb-1">Remove {deleteStudent.name}?</h2>
-            <p className="text-sm text-[#64748B] mb-5">
-              This will remove the student from the roster{deleteStudent.bus_name ? ` and unassign them from ${deleteStudent.bus_name}` : ''}.
-            </p>
-            <div className="flex gap-2 justify-end">
-              <button onClick={() => setDeleteStudent(null)} className="bg-[#F8FAFC] text-[#64748B] border border-[#E2E8F0] rounded-lg px-4 py-2 text-sm font-medium">Cancel</button>
-              <button
-                onClick={handleDelete}
-                disabled={loading}
-                className="bg-[#EF4444] text-white rounded-lg px-4 py-2 text-sm font-semibold disabled:opacity-60 flex items-center gap-2"
-              >
-                {loading && <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-                Remove Student
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+      <Modal
+        open={deleteStudent !== null}
+        onClose={close}
+        dismissible={!loading}
+        width="sm"
+        title={`Remove ${deleteStudent?.name ?? 'student'}?`}
+        description={`They leave the roster${deleteStudent?.bus_name ? ` and ${deleteStudent.bus_name}'s route` : ''}. Their parent loses access to the bus.`}
+        footer={
+          <>
+            <ActionButton variant="plain" onClick={close} disabled={loading}>Cancel</ActionButton>
+            <ActionButton variant="danger" onClick={handleDelete} loading={loading}>Remove</ActionButton>
+          </>
+        }
+      >
+        {error && <Notice tone="danger">{error}</Notice>}
+      </Modal>
+    </>
   )
 }

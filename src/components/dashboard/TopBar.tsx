@@ -2,75 +2,53 @@
 
 import { useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { Menu } from 'lucide-react'
+import { RouteyLogo } from '@/components/RouteyLogo'
+import { activeItem, type NavSection } from './SideNav'
 
-const LABELS: Record<string, string> = {
-  '/school': 'Overview',
-  '/school/routes': 'Routes',
-  '/school/students': 'Students',
-  '/school/absences': 'Absences',
-  '/school/buses': 'Fleet',
-  '/school/analytics': 'Analytics',
-}
+const qatarClock = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Qatar', weekday: 'short', day: 'numeric', month: 'short' })
+const qatarTime = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Qatar', hour: 'numeric', minute: '2-digit' })
 
-export function TopBar() {
-  const supabase = createClient()
+/**
+ * The thin bar above each page: where you are, and the time in Qatar, which decides which run the buses are on. On
+ * small screens it carries the logo and the menu button.
+ */
+export function TopBar({ section, place, onMenu }: { section: NavSection; place: string; onMenu: () => void }) {
   const pathname = usePathname()
-  const label = LABELS[pathname] ?? 'Dashboard'
-  const [fullName, setFullName] = useState('School Admin')
-  const [email, setEmail] = useState('—')
-  const [initials, setInitials] = useState('SA')
+  const page = activeItem(section, pathname)?.label ?? 'Dashboard'
+  const [now, setNow] = useState<Date | null>(null)
 
   useEffect(() => {
-    let mounted = true
-
-    async function loadProfile() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!mounted || !user) return
-
-      const rawName =
-        (user.user_metadata?.full_name as string | undefined) ??
-        (user.user_metadata?.name as string | undefined) ??
-        null
-      const displayName = rawName?.trim() || 'School Admin'
-      const displayEmail = user.email ?? '—'
-      const parts = displayName.split(/\s+/).filter(Boolean)
-      const computedInitials = (parts[0]?.[0] ?? 'S') + (parts[1]?.[0] ?? 'A')
-
-      setFullName(displayName)
-      setEmail(displayEmail)
-      setInitials(computedInitials.toUpperCase())
-    }
-
-    loadProfile()
-    return () => { mounted = false }
-  }, [supabase])
+    setNow(new Date())
+    const id = setInterval(() => setNow(new Date()), 30_000)
+    return () => clearInterval(id)
+  }, [])
 
   return (
-    <header className="h-14 bg-white border-b border-[#E2E8F0] flex items-center justify-between px-6 shrink-0">
-      <span className="text-[15px] font-semibold text-[#0F172A]">{label}</span>
+    <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 border-b border-line/80 bg-canvas/85 px-5 backdrop-blur-md lg:px-8">
+      <button
+        onClick={onMenu}
+        aria-label="Open menu"
+        className="-ml-2 flex h-9 w-9 items-center justify-center rounded-lg text-ink transition-colors hover:bg-white lg:hidden"
+      >
+        <Menu size={20} />
+      </button>
+      <span className="lg:hidden"><RouteyLogo size={24} /></span>
 
-      <div className="flex items-center gap-3">
-        {/* Notification bell */}
-        <button className="relative w-8 h-8 flex items-center justify-center bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" strokeLinecap="round">
-            <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" />
-            <path d="M13.73 21a2 2 0 01-3.46 0" />
-          </svg>
-          <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-red-500 rounded-full border border-white" />
-        </button>
+      <p className="min-w-0 truncate text-[13px] text-ink-2">
+        <span className="hidden sm:inline">{place}</span>
+        <span className="hidden px-1.5 text-ink-3 sm:inline">/</span>
+        <span className="font-medium text-ink">{page}</span>
+      </p>
 
-        {/* User badge */}
-        <div className="flex items-center gap-2 px-2.5 py-1 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl">
-          <div className="w-7 h-7 rounded-full bg-[#1E3A8A] flex items-center justify-center text-xs font-bold text-white">
-            {initials}
-          </div>
-          <div>
-            <div className="text-xs font-semibold text-[#0F172A] leading-none">{fullName}</div>
-            <div className="text-[10px] text-[#94A3B8] leading-none mt-0.5">{email}</div>
-          </div>
-        </div>
-      </div>
+      <p className="ml-auto shrink-0 text-[13px] tabular-nums text-ink-2" suppressHydrationWarning>
+        {now ? (
+          <>
+            <span className="hidden sm:inline">{qatarClock.format(now)} · </span>
+            {qatarTime.format(now)} <span className="hidden text-ink-3 md:inline">Qatar</span>
+          </>
+        ) : null}
+      </p>
     </header>
   )
 }

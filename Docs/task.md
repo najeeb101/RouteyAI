@@ -232,9 +232,9 @@ Full plan: [plans/two-runs-a-day.md](plans/two-runs-a-day.md). Every bus does a 
 - [x] Step 2 (2026-10-06, branch `two-runs`, not deployed): `optimize-route` (`update`, and `optimize` as a proposal; both directions; Mapbox leg times; Optimize all clusters start from the current buses) and `send-notification` (run-aware alerts, `dry_run`). Logic in `supabase/functions/_shared/`; 49 logic tests and 35 local end-to-end checks pass. Goes live together with steps 3 and 4
 - [ ] Step 3: refresh existing routes, flipping the morning direction once so it ends at the school (decided 2026-10-06). Rehearsed on the local database 2026-10-06; runs on production at go-live (see "Going live" in the plan)
 - [x] Step 4 (2026-10-06, branch `two-runs`, not deployed): driver app (picks the run, `start_run` / `end_run` / `mark_attendance`, afternoon boarding at school and drop-offs, end-of-afternoon safety check), parent app (card for every moment of the day, "Which rides?" absences, history per run), shared rules in `mobile/src/lib/runs.ts`, and the privacy fix `0018_parent_route.sql` used by both parent apps. 22 checks in the web preview through a simulated day, 11 database checks, 59 logic tests
-- [ ] Step 5: school dashboard
+- [x] Step 5 (2026-10-06, branch `two-runs`, not deployed): school dashboard rebuilt on the app and landing page design (navy side bar, signature card, flat cards, Schibsted headings, real Mapbox map, animations). Routes page: one card per bus, Morning / Afternoon switch, Update (slot changes in), Re-plan and Re-plan all as proposals you apply or keep, the "could save" hint. Students page slots each change into the route (fix 1B). Overview follows the day live (runs, check-ins, bus positions) and flags children not marked dropped off. Fleet shows each bus's run; Absences shows which rides; Analytics uses real runs and check-ins; the web driver page uses the run functions. `0019_auth_email_text.sql` fixes the bus and school lists on Postgres 17. 13 end-to-end checks on the local stack
 - [ ] Step 6: iPhone test in Expo Go, merge
-- [ ] Step 7: clean-up migration 0019 (also drops the parent read on `routes`, fix 3), docs, store and landing copy
+- [ ] Step 7: clean-up migration 0020 (also drops the parent read on `routes`, fix 3), docs, store and landing copy
 
 ## Fixes
 
@@ -242,5 +242,5 @@ Full plan: [plans/fixes.md](plans/fixes.md). Older problems found while planning
 
 - [x] 1A: the Students page stops re-planning every route in the school after each change; Optimize all asks first; buses without a route get Plan route (2026-10-06, PR #5 from `fixes`, waiting to be merged)
 - [x] 2: "Edit student" saves the new address's map location (same PR; needs `NEXT_PUBLIC_MAPBOX_TOKEN` on Vercel)
-- [ ] 1B: new children slot into the route without moving anyone (`update` built in two-runs step 2; the Students page calls it in step 5)
-- [x] 3: parents read only the route line and their own child's stop (`0018_parent_route.sql`, built with two-runs step 4, not deployed; 0019 drops the old read before the first real parent)
+- [x] 1B: new children slot into the route without moving anyone (`update` built in two-runs step 2; the Students page calls it since step 5, 2026-10-06)
+- [x] 3: parents read only the route line and their own child's stop (`0018_parent_route.sql`, built with two-runs step 4, not deployed; 0020 drops the old read before the first real parent)

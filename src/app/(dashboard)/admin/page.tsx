@@ -32,7 +32,7 @@ export default async function AdminOverviewPage() {
   const schools = (schoolsResult.data ?? []) as SchoolRow[]
 
   return (
-    <div className="p-7 max-w-[1280px]">
+    <div>
       {/* Header */}
       <div className="flex justify-between items-start mb-6">
         <div>
@@ -59,49 +59,21 @@ export default async function AdminOverviewPage() {
           label="Total Schools"
           value={String(stats?.school_count ?? '—')}
           sub={`${schools.length} registered`}
-          color="#1E3A8A"
-          icon={
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1E3A8A" strokeWidth="1.75" strokeLinecap="round">
-              <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
-              <polyline points="9 22 9 12 15 12 15 22"/>
-            </svg>
-          }
         />
         <StatsCard
           label="Total Buses"
           value={String(stats?.bus_count ?? '—')}
           sub="Across all schools"
-          color="#3B82F6"
-          icon={
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M8 6v6"/><path d="M15 6v6"/><path d="M2 12h19.6"/>
-              <path d="M18 18h3s.5-1.7.8-4.3c.3-2.7.2-7.7.2-7.7H2S1.7 7 2 9.7c.3 2.6.8 4.3.8 4.3H5"/>
-              <circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/>
-            </svg>
-          }
         />
         <StatsCard
           label="Total Students"
           value={String(stats?.student_count ?? '—')}
           sub="Across all schools"
-          color="#10B981"
-          icon={
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="1.75" strokeLinecap="round">
-              <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/>
-              <path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>
-            </svg>
-          }
         />
         <StatsCard
           label="School Admins"
           value={String(stats?.admin_count ?? '—')}
           sub="All verified"
-          color="#8B5CF6"
-          icon={
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" strokeWidth="1.75" strokeLinecap="round">
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-            </svg>
-          }
         />
       </div>
 

@@ -110,7 +110,7 @@ export default function SchoolsTable({ initialSchools }: { initialSchools: Schoo
   }
 
   return (
-    <div className="p-7 max-w-[1280px]">
+    <div>
       {/* Header */}
       <div className="flex justify-between items-start mb-6">
         <div>

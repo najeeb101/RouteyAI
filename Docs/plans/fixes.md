@@ -1,7 +1,7 @@
 # Fixes
 
 Status: planned 2026-10-06. 1A and 2 built and tested the same day (PR #5 from branch `fixes`, waiting to be
-merged); 3 built on `two-runs` with the new parent apps (not deployed); 1B comes with the dashboard (two-runs step 5). Three problems found while planning [two runs a day](two-runs-a-day.md),
+merged); 3 built on `two-runs` with the new parent apps (not deployed); 1B built with the dashboard (two-runs step 5, 2026-10-06, not deployed). Three problems found while planning [two runs a day](two-runs-a-day.md),
 all older than that work. Only the demo school uses production and no real parents have the app, so none of them has
 reached anyone yet.
 
@@ -100,16 +100,16 @@ stop to draw the line and to measure the arrival time stop by stop (:358). The w
 - No line when the route has no road line from Mapbox: the fallback is drawn straight from stop to stop, so its corners
   are the homes. The parent then sees the bus, the school and their own stop only.
 - Both parent apps use them; the web parent page numbers the other stops without naming them.
-- Migration 0019 (the clean-up) removes the parent's read access to `routes`. `bus_runs.stops` already holds only
+- Migration 0020 (the clean-up) removes the parent's read access to `routes`. `bus_runs.stops` already holds only
   student ids and their order, never homes.
 
 **When.** With the new parent app in two-runs step 4: that rebuild changes the same screens, and the function needs the
-run. 0018 goes to production with the new apps; 0019 must be on production before the first real parent is invited,
+run. 0018 goes to production with the new apps; 0020 must be on production before the first real parent is invited,
 so it blocks store submission (Phase 12).
 
 **Check.** `supabase/tests/0018_parent_route.sql` (11 checks, pass locally): the parent gets the line, their own stop
 and counts, and no other child's id or home; stops are counted by address; another parent, a driver and anonymous
-callers are refused; progress is live only with a recent GPS point and a running run. Still to add with 0019: a
+callers are refused; progress is live only with a recent GPS point and a running run. Still to add with 0020: a
 parent reading `routes` gets no rows.
 
 ## Order
