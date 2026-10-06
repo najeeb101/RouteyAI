@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase/client'
+import type { Database } from '@/types/database'
 import type { BusRow } from '../buses/BusesTable'
 
 export type StudentRow = {
@@ -128,7 +129,6 @@ export default function StudentsTable({
   const [inviteStudent,    setInviteStudent]    = useState<StudentRow | null>(null)
   const [inviteLink,       setInviteLink]       = useState<string | null>(null)
   const [copied,           setCopied]           = useState(false)
-  const [geocodeWarning,   setGeocodeWarning]   = useState(false)
 
   // Add form
   const [addName,    setAddName]    = useState('')
@@ -150,15 +150,16 @@ export default function StudentsTable({
 
   const refetch = useCallback(async () => {
     const { data } = await supabase.rpc('get_students_with_bus')
-    if (data) setStudents(data as StudentRow[])
+    const rows = (data ?? null) as StudentRow[] | null
+    if (rows) setStudents(rows)
+    return rows ?? []
   }, [supabase])
 
-  const triggerOptimization = useCallback(async (schoolId?: string) => {
-    if (!schoolId) return
-    await supabase.functions.invoke('optimize-route', {
-      body: { school_id: schoolId },
-    })
-  }, [supabase])
+  // Changes here never re-plan a route: the child waits as "Not on route" until the admin recalculates that bus.
+  const notOnRouteToast = (title: string, busName: string | null) => {
+    if (busName) toast.success(title, { description: `Press Recalculate for ${busName} on the Routes page to add the stop.` })
+    else toast.success(title, { description: 'Not on a bus yet.' })
+  }
 
   const openEdit = (s: StudentRow) => {
     setEditStudent(s)
@@ -173,11 +174,11 @@ export default function StudentsTable({
 
   const handleAdd = async () => {
     if (!addName.trim() || !addAddress.trim()) return
-    setLoading(true); setError(null); setGeocodeWarning(false)
+    setLoading(true); setError(null)
+    const name = addName.trim()
     const { lat, lng, geocoded } = await geocodeAddress(addAddress)
-    if (!geocoded) setGeocodeWarning(true)
-    const { error: err } = await supabase.rpc('add_student', {
-      p_name:         addName.trim(),
+    const { data: newId, error: err } = await supabase.rpc('add_student', {
+      p_name:         name,
       p_home_address: addAddress.trim(),
       p_lat:          lat,
       p_lng:          lng,
@@ -187,40 +188,64 @@ export default function StudentsTable({
     if (err) { setError(err.message); return }
     setAddOpen(false)
     setAddName(''); setAddAddress(''); setAddBusId('')
-    toast.success('Student added')
-    await triggerOptimization(students[0]?.school_id)
-    await refetch()
+    const added = (await refetch()).find(s => s.id === newId)
+    notOnRouteToast(added?.bus_name ? `${name} added to ${added.bus_name}` : `${name} added`, added?.bus_name ?? null)
+    if (!geocoded) {
+      toast.warning('Address not found on the map', {
+        description: `${name}'s stop is at the centre of Doha for now. Edit the address with the area or street to fix it.`,
+      })
+    }
   }
 
   const handleEdit = async () => {
     if (!editStudent) return
+    const name    = editName.trim()    || editStudent.name
+    const address = editAddress.trim() || editStudent.home_address
+    const addressChanged = address !== editStudent.home_address
     setLoading(true); setError(null)
-    const { error: err } = await supabase
-      .from('students')
-      .update({
-        name:         editName.trim()    || editStudent.name,
-        home_address: editAddress.trim() || editStudent.home_address,
-      })
-      .eq('id', editStudent.id)
+
+    const update: Database['public']['Tables']['students']['Update'] = { name, home_address: address }
+    if (addressChanged) {
+      // The stop has to move with the address; never save new text with the old point.
+      if (!process.env.NEXT_PUBLIC_MAPBOX_TOKEN) {
+        setLoading(false)
+        setError("Address lookup isn't set up on this site yet, so the address can't be changed.")
+        return
+      }
+      const { lat, lng, geocoded } = await geocodeAddress(address)
+      if (!geocoded) {
+        setLoading(false)
+        setError("We couldn't find that address on the map. Try adding the area or street.")
+        return
+      }
+      update.home_location = `SRID=4326;POINT(${lng} ${lat})`
+      update.stop_order = null
+    }
+
+    const { error: err } = await supabase.from('students').update(update).eq('id', editStudent.id)
     setLoading(false)
     if (err) { setError(err.message); return }
     setEditStudent(null)
-    toast.success('Student updated')
     await refetch()
+    if (addressChanged && editStudent.bus_name) notOnRouteToast(`${name}'s address updated`, editStudent.bus_name)
+    else toast.success('Student updated')
   }
 
   const handleChangeBus = async () => {
     if (!changeBusStudent) return
+    const busId = newBusId || null
+    if (busId === changeBusStudent.bus_id) { setChangeBusStudent(null); return }
     setLoading(true); setError(null)
+    // The old stop number belongs to the old bus's route.
     const { error: err } = await supabase
       .from('students')
-      .update({ bus_id: newBusId || null })
+      .update({ bus_id: busId, stop_order: null })
       .eq('id', changeBusStudent.id)
     setLoading(false)
     if (err) { setError(err.message); return }
-    await triggerOptimization(changeBusStudent.school_id)
+    const busName = buses.find(b => b.id === busId)?.name ?? null
+    notOnRouteToast(busName ? `${changeBusStudent.name} moved to ${busName}` : `${changeBusStudent.name} taken off the bus`, busName)
     setChangeBusStudent(null)
-    toast.success('Bus reassigned')
     await refetch()
   }
 
@@ -230,7 +255,6 @@ export default function StudentsTable({
     const { error: err } = await supabase.from('students').delete().eq('id', deleteStudent.id)
     setLoading(false)
     if (err) { setError(err.message); return }
-    await triggerOptimization(deleteStudent.school_id)
     setDeleteStudent(null)
     toast.success('Student removed')
     await refetch()
@@ -329,7 +353,11 @@ export default function StudentsTable({
                     </td>
                     <td className="px-3.5 py-3 text-[13px] text-[#64748B] max-w-[200px] truncate">{s.home_address}</td>
                     <td className="px-3.5 py-3 text-[13px] font-medium text-[#0F172A]">{s.bus_name ?? <span className="text-[#94A3B8]">Unassigned</span>}</td>
-                    <td className="px-3.5 py-3 text-[13px] text-[#64748B]">{s.stop_order ?? <span className="text-[#94A3B8]">—</span>}</td>
+                    <td className="px-3.5 py-3 text-[13px] text-[#64748B]">
+                      {s.stop_order ?? (s.bus_id
+                        ? <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[#FFFBEB] text-[#B45309] border border-[#FDE68A] whitespace-nowrap">Not on route</span>
+                        : <span className="text-[#94A3B8]">—</span>)}
+                    </td>
                     <td className="px-3.5 py-3">
                       <RowMenu
                         onEdit={() => openEdit(s)}
@@ -348,11 +376,11 @@ export default function StudentsTable({
 
       {/* ── Add Student Modal ── */}
       {addOpen && (
-        <div className="fixed inset-0 bg-[#0F172A]/45 backdrop-blur-sm flex items-center justify-center z-50" onClick={() => { setAddOpen(false); setGeocodeWarning(false) }}>
+        <div className="fixed inset-0 bg-[#0F172A]/45 backdrop-blur-sm flex items-center justify-center z-50" onClick={() => setAddOpen(false)}>
           <div className="bg-white rounded-2xl p-6 w-[480px] shadow-[0_20px_60px_-15px_rgb(0_0_0/0.3)]" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-5">
               <span className="text-lg font-bold text-[#0F172A]">Add New Student</span>
-              <CloseBtn onClick={() => { setAddOpen(false); setGeocodeWarning(false) }} />
+              <CloseBtn onClick={() => setAddOpen(false)} />
             </div>
             <div className="flex flex-col gap-4">
               <div>
@@ -397,19 +425,10 @@ export default function StudentsTable({
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1E3A8A" strokeWidth="2" strokeLinecap="round" className="shrink-0 mt-0.5">
                   <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
                 </svg>
-                <p className="text-xs text-[#1E3A8A]">The address will be geocoded via Mapbox to record the exact pickup location for route optimization.</p>
+                <p className="text-xs text-[#1E3A8A]">The address is placed on the map as the pickup point. Other children&apos;s stops don&apos;t move: the new stop joins the route when you press Recalculate for that bus on the Routes page.</p>
               </div>
-              {geocodeWarning && (
-                <div className="px-3 py-2.5 bg-[#FFFBEB] border border-[#FDE68A] text-[#92400E] text-xs rounded-xl flex items-start gap-2">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="shrink-0 mt-0.5">
-                    <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
-                    <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-                  </svg>
-                  Address could not be geocoded — student saved with approximate Qatar coordinates. Re-add with a more specific address for accurate route distances.
-                </div>
-              )}
               <div className="flex gap-2 justify-end mt-1">
-                <button onClick={() => { setAddOpen(false); setGeocodeWarning(false) }} className="bg-[#F8FAFC] text-[#64748B] border border-[#E2E8F0] rounded-lg px-4 py-2 text-sm font-medium">Cancel</button>
+                <button onClick={() => setAddOpen(false)} className="bg-[#F8FAFC] text-[#64748B] border border-[#E2E8F0] rounded-lg px-4 py-2 text-sm font-medium">Cancel</button>
                 <button
                   onClick={handleAdd}
                   disabled={!addName.trim() || !addAddress.trim() || loading}
