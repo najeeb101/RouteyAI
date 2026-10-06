@@ -28,6 +28,22 @@ export interface RouteWaypoint {
   eta_offset_min: number
 }
 
+/** get_parent_route (0018): one run of a child's bus with only the line and the child's own stop. */
+export type ParentRoute = {
+  run: Run
+  encoded_polyline: string | null
+  stop: { lat: number; lng: number; eta_offset_min: number | null } | null
+  stops_before: number | null
+  stops_total: number
+  school: { lat: number; lng: number } | null
+  plan_version: number
+}
+
+/** get_parent_bus_progress (0018): where the bus is on the running run, from its latest GPS point. */
+export type ParentBusProgress =
+  | { run: Run; live: false }
+  | { run: Run; live: true; located_at: string; stops_before: number | null; minutes_to_stop: number | null; minutes_to_school: number | null }
+
 /** One student in a run's snapshot of the route, in driving order (bus_runs.stops). */
 export type RunStop = {
   student_id: string
@@ -441,6 +457,9 @@ export interface Database {
       end_run: { Args: Record<PropertyKey, never>; Returns: BusRun | null }
       /** p_status null undoes Board or Absent; 'boarded' also undoes a drop-off. */
       mark_attendance: { Args: { p_student_id: string; p_status: AttendanceStatus | null }; Returns: AttendanceRecord | null }
+      // 0018_parent_route.sql (parents, own children only): the route without other children's homes
+      get_parent_route: { Args: { p_student_id: string; p_run: Run }; Returns: ParentRoute | null }
+      get_parent_bus_progress: { Args: { p_student_id: string }; Returns: ParentBusProgress | null }
       // 0015_delete_account.sql
       delete_my_account: { Args: Record<PropertyKey, never>; Returns: undefined }
       // 0005_admin_helpers.sql

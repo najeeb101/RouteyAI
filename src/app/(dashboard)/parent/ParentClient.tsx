@@ -4,14 +4,15 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { RouteyLogo } from '@/components/RouteyLogo'
-import type { RouteWaypoint } from '@/types/database'
-import type { ParentChildData, ParentBusStudent } from './page'
+import type { AttendanceStatus, ParentRoute, Run } from '@/types/database'
+import type { ParentChildData } from './page'
 
 type Props = {
   child: ParentChildData | null
-  waypoints: RouteWaypoint[]
-  busStudents: ParentBusStudent[]
-  attendanceStatus: 'boarded' | 'absent' | null
+  /** From get_parent_route: the line, the child's own stop and stop counts, never other children's homes. */
+  route: ParentRoute | null
+  run: Run
+  attendanceStatus: AttendanceStatus | null
   busId: string | null
 }
 
@@ -26,7 +27,7 @@ type TimelineStop = {
   current: boolean
 }
 
-export default function ParentClient({ child, waypoints, busStudents, attendanceStatus, busId }: Props) {
+export default function ParentClient({ child, route, run, attendanceStatus }: Props) {
   const supabase = createClient()
   const router = useRouter()
   const [busPos, setBusPos] = useState<BusPos>({ x: 200, y: 65 })
@@ -52,42 +53,48 @@ export default function ParentClient({ child, waypoints, busStudents, attendance
         'postgres_changes',
         { event: '*', schema: 'public', table: 'attendance', filter: `student_id=eq.${child.id}` },
         (payload) => {
-          const status = (payload.new as { status?: string })?.status
-          if (status === 'boarded' || status === 'absent') setLiveStatus(status)
+          const row = payload.new as { status?: AttendanceStatus; run?: Run } | undefined
+          if (row?.run === run && row.status) setLiveStatus(row.status)
         },
       )
       .subscribe()
     return () => { supabase.removeChannel(channel) }
-  }, [child?.id, supabase])
+  }, [child?.id, run, supabase])
 
   const initials = child
     ? child.name.split(' ').map(n => n[0] ?? '').join('').slice(0, 2).toUpperCase()
     : '?'
 
-  // Build timeline from real route waypoints
-  const sortedWaypoints = [...waypoints].sort((a, b) => a.stop_order - b.stop_order)
-  const childStopOrder = child?.stop_order ?? null
-
-  const timelineStops: TimelineStop[] = [
-    ...sortedWaypoints.map(wp => {
-      const student = busStudents.find(s => s.id === wp.student_id)
-      const isChild = wp.student_id === child?.id
-      // Mark stops up to and including child's stop as done when child has boarded
-      const done = liveStatus === 'boarded' && childStopOrder !== null
-        ? wp.stop_order <= childStopOrder
-        : false
-      const current = liveStatus !== 'boarded' && childStopOrder !== null && wp.stop_order === childStopOrder
-      return {
-        key: wp.student_id,
-        label: student?.home_address ?? `Stop ${wp.stop_order}`,
-        isChild,
-        isSchool: false,
-        done,
-        current,
-      }
-    }),
-    { key: 'school', label: 'School (Drop-off)', isChild: false, isSchool: true, done: false, current: false },
-  ]
+  // The stop list from the counts only: stops before the child's, the child's, the rest, and the school (last in the
+  // morning, first in the afternoon). Other stops are numbered, not named.
+  const morning = run === 'morning'
+  const before = route?.stops_before ?? null
+  const total = route?.stops_total ?? 0
+  const onBus = liveStatus === 'boarded' || liveStatus === 'dropped_off'
+  const stop = (key: string, label: string, isChild = false): TimelineStop => ({ key, label, isChild, isSchool: false, done: false, current: false })
+  const homeStops: TimelineStop[] = before === null ? [] : [
+    ...Array.from({ length: before }, (_, i) => stop(`b${i}`, `Stop ${i + 1}`)),
+    stop('child', child?.home_address ?? 'Your stop', true),
+    ...Array.from({ length: Math.max(0, total - before - 1) }, (_, i) => stop(`a${i}`, `Stop ${before + 2 + i}`)),
+  ].map((s, i) => {
+    const childIndex = before ?? 0
+    if (morning) return { ...s, done: onBus && i <= childIndex, current: !onBus && s.isChild }
+    return { ...s, done: liveStatus === 'dropped_off' && i <= childIndex, current: liveStatus === 'boarded' && s.isChild }
+  })
+  const school: TimelineStop = {
+    key: 'school',
+    label: morning ? 'School (Drop-off)' : 'School (Pick-up)',
+    isChild: false,
+    isSchool: true,
+    done: morning ? liveStatus === 'dropped_off' : onBus,
+    current: false,
+  }
+  const timelineStops: TimelineStop[] = homeStops.length === 0 ? [] : morning ? [...homeStops, school] : [school, ...homeStops]
+  const statusLabel = liveStatus === 'boarded' ? 'Boarded'
+    : liveStatus === 'absent' ? 'Absent'
+    : liveStatus === 'dropped_off' ? (morning ? 'At school' : 'Home')
+    : 'Awaiting'
+  const statusTone = liveStatus === 'absent' ? 'absent' : liveStatus ? 'boarded' : null
 
   // ── No child linked ───────────────────────────────────────────────────────
   if (!child) {
@@ -156,21 +163,21 @@ export default function ParentClient({ child, waypoints, busStudents, attendance
             </div>
           </div>
           <div className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 ${
-            liveStatus === 'boarded' ? 'bg-[#10B981]/20'
-            : liveStatus === 'absent' ? 'bg-[#EF4444]/20'
+            statusTone === 'boarded' ? 'bg-[#10B981]/20'
+            : statusTone === 'absent' ? 'bg-[#EF4444]/20'
             : 'bg-white/10'
           }`}>
             <span className={`w-1.5 h-1.5 rounded-full ${
-              liveStatus === 'boarded' ? 'bg-[#10B981]'
-              : liveStatus === 'absent' ? 'bg-[#EF4444]'
+              statusTone === 'boarded' ? 'bg-[#10B981]'
+              : statusTone === 'absent' ? 'bg-[#EF4444]'
               : 'bg-white/40'
             }`} />
             <span className={`text-[11px] font-bold ${
-              liveStatus === 'boarded' ? 'text-[#10B981]'
-              : liveStatus === 'absent' ? 'text-[#EF4444]'
+              statusTone === 'boarded' ? 'text-[#10B981]'
+              : statusTone === 'absent' ? 'text-[#EF4444]'
               : 'text-white/60'
             }`}>
-              {liveStatus === 'boarded' ? 'Boarded' : liveStatus === 'absent' ? 'Absent' : 'Awaiting'}
+              {statusLabel}
             </span>
           </div>
         </div>
@@ -218,7 +225,7 @@ export default function ParentClient({ child, waypoints, busStudents, attendance
           Live
         </div>
         <div className="absolute bottom-2.5 left-2.5 bg-[#1E3A8A]/90 backdrop-blur-sm rounded-lg px-3 py-1.5">
-          <div className="text-[10px] text-white/60 font-semibold uppercase tracking-wide">ETA to School</div>
+          <div className="text-[10px] text-white/60 font-semibold uppercase tracking-wide">{morning ? 'Morning run' : 'Afternoon run'}</div>
           <div className="text-[#00D4FF] font-bold text-sm">En route</div>
         </div>
       </div>
@@ -230,9 +237,9 @@ export default function ParentClient({ child, waypoints, busStudents, attendance
           <div className="grid grid-cols-2 gap-3">
             {([
               ['Bus', child.bus_name ? `Bus ${child.bus_name}` : '—'],
-              ['Stops', waypoints.length > 0 ? `${waypoints.length} stops` : '—'],
-              ['Your stop', child.stop_order != null ? `Stop ${child.stop_order}` : '—'],
-              ['Status', liveStatus === 'boarded' ? 'On board' : liveStatus === 'absent' ? 'Absent today' : 'Awaiting pick-up'],
+              ['Stops', total > 0 ? `${total} stops` : '—'],
+              ['Your stop', before !== null ? `Stop ${before + 1}` : '—'],
+              ['Status', liveStatus === 'boarded' ? 'On board' : liveStatus === 'absent' ? 'Absent' : liveStatus === 'dropped_off' ? (morning ? 'At school' : 'Home') : morning ? 'Awaiting pick-up' : 'At school'],
             ] as const).map(([l, v]) => (
               <div key={l} className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl px-3 py-2.5">
                 <div className="text-[10px] text-[#94A3B8] font-semibold uppercase tracking-wide mb-0.5">{l}</div>

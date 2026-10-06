@@ -1,7 +1,8 @@
 # Two runs a day: morning pickup and afternoon drop-off
 
-Status: approved 2026-10-06; step 1 (database and route rules) done on branch `two-runs` and on production; step 2
-(route planner and notifications) built and tested locally on `two-runs`, not deployed. Builds on the mobile UI refresh (merged in PR #4). Older problems found along the way are planned
+Status: approved 2026-10-06; step 1 (database and route rules) done on branch `two-runs` and on production; steps 2 to
+4 (route planner and notifications, existing routes, driver and parent apps) built and tested locally on `two-runs`,
+not deployed: they go live together right before your iPhone test (see "Going live"). Builds on the mobile UI refresh (merged in PR #4). Older problems found along the way are planned
 separately in [fixes.md](fixes.md).
 
 ## The rules
@@ -121,7 +122,7 @@ drop-offs only come from ending the run.
 ### Database (migration `0017_two_runs.sql`)
 
 The migration only **adds**: new columns have defaults and the old functions stay, so the current apps keep working
-while the rest is rolled out. A later `0018` removes the old pieces once nothing uses them.
+while the rest is rolled out. A later clean-up migration (`0019`) removes the old pieces once nothing uses them.
 
 **New table `bus_runs`**
 
@@ -144,7 +145,7 @@ only by `start_run` / `end_run`. Added to realtime so the parent app sees a run 
 
 **`attendance`:** new `run` column (`'morning'` for existing rows), unique rule `(student_id, date, run)`, new status
 `dropped_off` with a `dropped_off_at` time (`created_at` stays the boarding time). Drivers write through
-`mark_attendance(p_student_id, p_status)`, which finds the running run. Their direct-write policy goes in 0018.
+`mark_attendance(p_student_id, p_status)`, which finds the running run. Their direct-write policy goes in 0019.
 
 **`absence_reports`:** new `runs` column: `'both'` (default and every existing report), `'morning'` or
 `'afternoon'`. Still one report per child per day.
@@ -163,18 +164,27 @@ run and skip undo taps.
 
 **Privacy fix (found in step 1, older than this work):** a parent can read the home location of every child on their
 child's bus through the route's `waypoints`. It is fixed with the new parent app in step 4: parents read the route
-through `get_parent_route`, which returns only the line and their own child's stop, and 0018 removes their read access
-to `routes`. Details in [fixes.md](fixes.md#3-a-parent-can-read-every-home-on-the-bus). `bus_runs.stops` only holds
+through `get_parent_route` (migration `0018_parent_route.sql`), which returns only the line and their own child's stop,
+and 0019 removes their read access to `routes`. Details in [fixes.md](fixes.md#3-a-parent-can-read-every-home-on-the-bus). `bus_runs.stops` only holds
 student ids and order, never homes, for the same reason.
 
 ### Apps and dashboard
 
-- **Shared run logic:** `mobile/src/lib/runs.ts` with the pure functions above. The web pages use the same rules
-  (copied into `src/lib/runs.ts`, since the web and the app don't share code today).
-- **Driver app:** loads the stops from the running run (or from the route rows before a run starts), and gets live
-  updates of `bus_runs`, `attendance` and `absence_reports` as today. Remembers the run in the saved running trip.
-- **Parent app:** loads today's runs for the bus and its child's route through the new parent function (line, own
-  stop, stops before it), works out the card from the shared functions, and measures the arrival time along the line.
+- **Shared run logic:** `mobile/src/lib/runs.ts` (built in step 4, tested with `pnpm test:logic`): which run the
+  driver is on, the stop order for each run, the parent's card for every moment of the day and its words, and the
+  history line. The web pages will copy the rules they need into `src/lib/runs.ts` in step 5.
+- **Driver app:** reads today's `bus_runs` and picks the run itself; starts and ends it with `start_run` / `end_run`
+  and checks children in with `mark_attendance` (the database is the truth, so a reopened app picks the run back up,
+  or stops GPS the database has ended). Stops come from the running run's saved order. Live updates of `bus_runs`,
+  `attendance` and `absence_reports`. Shows "Your route changed" when the plan version moved since the last run.
+- **Parent app:** loads today's runs and check-ins per run, reads the route through `get_parent_route` (line, own stop,
+  school) and the live position through `get_parent_bus_progress` (stops before yours, minutes to the stop or to
+  school). The database works that out from every stop, counting children at one address as one stop, so the phone
+  never needs other homes; the arrival time follows the stops at 25 km/h as before. The "bus almost there" alert is
+  remembered per child, day and run on the phone. A child left on the bus by "End anyway" shows "Not confirmed",
+  never "Home".
+- **Web parent page:** reads the route through `get_parent_route` too, follows the right run, and numbers the other
+  stops without naming them.
 - **Dashboard:** run shown on each bus, Morning / Afternoon switch on the Routes page, proposals with "Apply" or "Keep
   current route", "Not on the route yet" for any child without a stop.
 
@@ -271,7 +281,7 @@ run, and the hint. The dashboard can then say "Omar added between stops 3 and 4"
   line by line against that table.
 - **ETA alert** (sent by the parent app): the function finds the bus's running run itself. Morning: only while the
   child is still waiting to be picked up. Afternoon: only while the child is on board. No running run, no alert. Until
-  0018, a bus marked active by today's driver app (no run record) counts as a morning run, so today's app keeps
+  0019, a bus marked active by today's driver app (no run record) counts as a morning run, so today's app keeps
   working.
 - `dry_run: true` (service role only) returns the messages without sending them, to check the wording against
   production data safely.
@@ -298,9 +308,16 @@ Done 2026-10-06:
 ### Going live
 
 Built and tested locally first. It goes live as one release with step 3 (existing routes) and the new apps, right
-before your iPhone test, so the old apps never meet the new routes: deploy `send-notification`, deploy
-`optimize-route`, refresh the routes, then you test in Expo Go against production. Only the demo school exists, so
-nothing changes for anyone else.
+before your iPhone test, so the old apps never meet the new routes. Only the demo school exists, so nothing changes for
+anyone else. In order:
+
+1. `npx supabase db push` (adds `0018_parent_route.sql`).
+2. `npx supabase functions deploy optimize-route send-notification`.
+3. Step 3: `optimize-route` with `{ "action": "update", "reverse": true }` and the service role key, once. It flips
+   each bus's morning so it ends at the school and saves both runs; buses that already have both runs are skipped.
+4. You open the new apps in Expo Go (`mobile/.env.local` points at production) and drive a run.
+
+The website changes (fixes 1A and 2, PR #5, and the web parent page) go out when `two-runs` is merged.
 
 ## Order of work
 
@@ -312,14 +329,18 @@ nothing changes for anyone else.
    tested locally; they go live with steps 3 and 4 (see "Going live" above).
 3. **Existing routes.** Run `update` with `reverse: true` once on every bus: the same chain of stops, flipped so the
    morning ends at the school (decision 0), with map lines and times for both runs. Nothing is re-planned. Done when
-   the new apps go live, because today's apps read whichever route row is newest.
+   the new apps go live, because today's apps read whichever route row is newest. Rehearsed on the local database
+   2026-10-06: every bus got both runs with Mapbox road lines.
 4. **Driver app, then parent app** (including the privacy fix, fix 3 in [fixes.md](fixes.md)), checked in the
-   browser preview with the demo accounts through a full simulated day.
+   browser preview with the demo accounts through a full simulated day. Done 2026-10-06: 22 checks in the web preview
+   with the demo driver and a parent of two children on the bus (morning pickups and an absence, the parent's arrival
+   time, the morning ending at school, boarding at school, a drop-off, ending the afternoon with a child still on board,
+   the absence sheet and history), 11 database checks for 0018, and 59 logic tests.
 5. **School dashboard.** Includes the Students page calling `update` only for the buses that changed (fix 1B). "Edit
    student" already saves the new address's map location by then (fix 2).
 6. **You test on the iPhone** in Expo Go (GPS sends while the app is open; I can follow the demo bus as the demo parent
    in the browser preview while you drive it). Then merge.
-7. **Clean-up migration 0018** (old `set_bus_active`, old `save_optimized_route`, drivers' direct attendance writes,
+7. **Clean-up migration 0019** (old `set_bus_active`, old `save_optimized_route`, drivers' direct attendance writes,
    parents' direct read of `routes`), and
    docs: task.md, Docs/Claude.md, store listing and landing page copy where they only mention mornings.
 

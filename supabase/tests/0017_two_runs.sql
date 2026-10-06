@@ -52,8 +52,10 @@ BEGIN
   ASSERT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'routes_bus_id_run_key'), 'routes unique (bus_id, run)';
   ASSERT NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'routes_bus_id_key'), 'old routes unique gone';
   ASSERT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'attendance_student_id_date_run_key'), 'attendance unique per run';
-  ASSERT (SELECT bool_and(run = 'morning') FROM routes), 'existing routes are the morning run';
-  ASSERT (SELECT bool_and(runs = 'both') FROM absence_reports), 'existing absence reports cover both rides';
+  -- Rows from before 0017 become the morning run and cover both rides (checked on the defaults, so this also holds
+  -- after routes have been re-planned with both runs).
+  ASSERT (SELECT column_default FROM information_schema.columns WHERE table_name = 'routes' AND column_name = 'run') LIKE '''morning''%', 'existing routes are the morning run';
+  ASSERT (SELECT column_default FROM information_schema.columns WHERE table_name = 'absence_reports' AND column_name = 'runs') LIKE '''both''%', 'existing absence reports cover both rides';
   ASSERT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND tablename = 'bus_runs'), 'bus_runs in realtime';
   RAISE NOTICE 'ok: structure';
 END;
@@ -109,7 +111,7 @@ BEGIN
   first_pos := (r.stops->0->>'student_id')::UUID;
   last_pos := (r.stops->13->>'student_id')::UUID;
   ASSERT first_pos = current_setting('t.first')::UUID AND last_pos = current_setting('t.last')::UUID, 'morning follows the chain';
-  ASSERT r.plan_version = 1, 'remembers the route version';
+  ASSERT r.plan_version = COALESCE((SELECT MAX(plan_version) FROM routes WHERE bus_id = r.bus_id), 0), 'remembers the route version';
   RAISE NOTICE 'ok: driver starts the morning run with the chain in morning order';
 END;
 $$;

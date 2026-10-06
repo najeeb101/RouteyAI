@@ -15,6 +15,7 @@ import { useParentContext } from '@/features/parent/context/ParentDataContext'
 import { HISTORY_DAYS, useChildHistory, type HistoryDay } from '@/features/parent/screens/useChildHistory'
 import { reasonLabel } from '@/lib/absence'
 import { dayLabel, timeLabel } from '@/lib/dates'
+import { historyLine, RIDES_LABEL, type Run } from '@/lib/runs'
 import { gutter, space, useTheme, type Palette } from '@/lib/theme'
 
 /** Past rides and absences for the selected child, plus absences already reported for the coming days. */
@@ -32,8 +33,9 @@ export function ParentHistoryScreen() {
 
   const first = child?.firstName ?? 'your child'
   const upcoming = reports.filter((r) => r.studentId === child?.id && r.date > today)
-  const rides = days.filter((d) => d.attendance?.status === 'boarded').length
-  const absences = days.filter((d) => d.attendance?.status === 'absent' || (d.report && !d.attendance)).length
+  const runs: Run[] = ['morning', 'afternoon']
+  const rides = days.reduce((n, d) => n + runs.filter((r) => d.marks[r]?.status === 'boarded' || d.marks[r]?.status === 'dropped_off').length, 0)
+  const absences = days.reduce((n, d) => n + runs.filter((r) => d.marks[r]?.status === 'absent').length, 0)
   const reported = days.filter((d) => d.report).length
 
   function confirmCancel(reportId: string, date: string) {
@@ -84,7 +86,7 @@ export function ParentHistoryScreen() {
             <ListRow
               key={r.id}
               title={dayLabel(r.date, today)}
-              subtitle={`Staying home · ${reasonLabel(r.reason)}${r.note ? ` · ${r.note}` : ''}`}
+              subtitle={`Staying home · ${RIDES_LABEL[r.runs]} · ${reasonLabel(r.reason)}${r.note ? ` · ${r.note}` : ''}`}
               accessory={
                 <Pressable onPress={() => confirmCancel(r.id, r.date)} hitSlop={10} accessibilityRole="button">
                   <Txt variant="subhead" tone="brand">
@@ -134,25 +136,15 @@ export function ParentHistoryScreen() {
 
 function HistoryRow({ day, today }: { day: HistoryDay; today: string }) {
   const t = useTheme()
-  let icon: LucideIcon = CircleHelp
-  let color: keyof Palette = 'inkTertiary'
-  let title = 'No record'
-  let detail = ''
-  if (day.attendance?.status === 'boarded') {
-    icon = Check
-    color = 'successText'
-    title = 'Rode the bus'
-    detail = `Boarded at ${timeLabel(day.attendance.at)}`
-  } else if (day.report) {
-    icon = House
-    color = 'warningText'
-    title = 'Stayed home'
-    detail = `You reported it · ${reasonLabel(day.report.reason)}`
-  } else if (day.attendance?.status === 'absent') {
-    icon = X
-    color = 'dangerText'
-    title = 'Absent'
-    detail = `Not at the stop · ${timeLabel(day.attendance.at)}`
+  const line = historyLine(day.marks, day.report?.runs ?? null, timeLabel)
+  const look: Record<typeof line.tone, { icon: LucideIcon; color: keyof Palette }> = {
+    success: { icon: Check, color: 'successText' },
+    warning: { icon: House, color: 'warningText' },
+    danger: { icon: X, color: 'dangerText' },
+    neutral: { icon: CircleHelp, color: 'inkTertiary' },
+    none: { icon: CircleHelp, color: 'inkTertiary' },
   }
-  return <ListRow leading={<Icon icon={icon} size={21} color={t[color]} strokeWidth={2} />} title={title} subtitle={detail || undefined} value={dayLabel(day.date, today)} />
+  const { icon, color } = look[line.tone]
+  const detail = day.report && line.tone === 'warning' ? `${line.detail} · ${reasonLabel(day.report.reason)}` : line.detail
+  return <ListRow leading={<Icon icon={icon} size={21} color={t[color]} strokeWidth={2} />} title={line.title} subtitle={detail || undefined} value={dayLabel(day.date, today)} />
 }

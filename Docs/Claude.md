@@ -423,7 +423,7 @@ Plan: [plans/two-runs-a-day.md](plans/two-runs-a-day.md).
   Ending the morning run marks everyone still on board `dropped_off` (arrived at school).
 - `attendance` is per student, day and run (`UNIQUE(student_id, date, run)`); statuses `boarded`, `absent`,
   `dropped_off` (+ `dropped_off_at`; `created_at` is the boarding time). Drivers use `mark_attendance(p_student_id,
-  p_status)`, which checks the bus, the running run and the step. Their direct-write policy goes in 0018.
+  p_status)`, which checks the bus, the running run and the step. Their direct-write policy goes in 0019.
 - `absence_reports.runs`: `both` (default), `morning` or `afternoon`.
 - The attendance trigger sends `run` and `previous_status`, skips undo taps, and sends drop-offs as type `drop_off`.
 - `optimize-route` (step 2, built on `two-runs`, not deployed): `update` (also any request without `action`) keeps
@@ -440,6 +440,15 @@ Plan: [plans/two-runs-a-day.md](plans/two-runs-a-day.md).
   import pulled in).
 - Checks: `supabase/tests/0017_two_runs.sql` (local database). The local Postgres image crashes when a superuser
   session switches to anon/authenticated and hits "permission denied" on a function, so those checks read the catalog.
+
+### Parent route without other homes (0018_parent_route.sql, 2026-10-06)
+
+- `get_parent_route(p_student_id, p_run)`: the road line (NULL without a Mapbox line), the child's own stop, stops
+  before it and in total, and the school. `get_parent_bus_progress(p_student_id)`: on the running run, from the bus's
+  latest GPS point (under 3 minutes old), stops before the child's and minutes to their stop and (morning) to school.
+  Both check the caller is the child's parent; stops are counted by address. Both parent apps use them.
+- The parent policy on `routes` (whose waypoints hold every child's home) is dropped in 0019.
+- Checks: `supabase/tests/0018_parent_route.sql` (local database; execute rights read from the catalog, as for 0017).
 
 ### Account deletion (0015_delete_account.sql, 2026-10-02)
 

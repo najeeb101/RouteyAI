@@ -1,7 +1,7 @@
 # Fixes
 
 Status: planned 2026-10-06. 1A and 2 built and tested the same day (PR #5 from branch `fixes`, waiting to be
-merged); 1B and 3 come with two runs a day. Three problems found while planning [two runs a day](two-runs-a-day.md),
+merged); 3 built on `two-runs` with the new parent apps (not deployed); 1B comes with the dashboard (two-runs step 5). Three problems found while planning [two runs a day](two-runs-a-day.md),
 all older than that work. Only the demo school uses production and no real parents have the app, so none of them has
 reached anyone yet.
 
@@ -87,25 +87,30 @@ already hidden; only the locations leak.
 stop to draw the line and to measure the arrival time stop by stop (:358). The web parent page
 (`src/app/(dashboard)/parent/page.tsx:62`) lists every stop in its timeline.
 
-**Fix.**
+**Fix (built 2026-10-06 on `two-runs`, `supabase/migrations/0018_parent_route.sql`).**
 
-- A database function `get_parent_route(p_student_id, p_run)` checks that the caller is that child's parent and
-  returns only the road line, the child's own stop, how many stops come before it, and the planned minutes to it.
-  SECURITY DEFINER with the 0016 treatment (`REVOKE ALL … FROM PUBLIC, anon`, then granted to `authenticated`).
+- `get_parent_route(p_student_id, p_run)` checks that the caller is that child's parent and returns only the road line,
+  the child's own stop, how many stops come before it and in total, and the school. SECURITY DEFINER with the 0016
+  treatment (`REVOKE ALL … FROM PUBLIC, anon`, then granted to `authenticated`).
+- `get_parent_bus_progress(p_student_id)` does what the app used to do with every stop, in the database: from the
+  bus's latest GPS point on the running run, the stops before the child's and the minutes to their stop (and in the
+  morning to school), at 25 km/h along the stops. Changed from the plan, which measured along the line in the app:
+  that couldn't say how many stops are left without knowing where the other stops are.
+- Stops are counted by address, as the driver app groups them, so children at one address are one stop.
 - No line when the route has no road line from Mapbox: the fallback is drawn straight from stop to stop, so its corners
-  are the homes. The parent then sees the bus and their own stop only.
-- Both parent apps switch to it. The mobile app measures the arrival time along the line instead of stop by stop; the
-  web timeline shows "3 stops before yours" instead of every stop.
-- Migration 0018 removes the parent's read access to `routes`. `bus_runs.stops` already holds only student ids and
-  their order, never homes.
+  are the homes. The parent then sees the bus, the school and their own stop only.
+- Both parent apps use them; the web parent page numbers the other stops without naming them.
+- Migration 0019 (the clean-up) removes the parent's read access to `routes`. `bus_runs.stops` already holds only
+  student ids and their order, never homes.
 
 **When.** With the new parent app in two-runs step 4: that rebuild changes the same screens, and the function needs the
-run. Doing it now would mean rewriting the parent arrival time twice. The function and 0018 must both be on production
-before the first real parent is invited, so this blocks store submission (Phase 12).
+run. 0018 goes to production with the new apps; 0019 must be on production before the first real parent is invited,
+so it blocks store submission (Phase 12).
 
-**Check.** SQL checks in `supabase/tests/`, the same way as 0017's: the parent gets the line and their own stop;
-another parent, a driver of another bus and anonymous callers get nothing; after 0018 a parent reading `routes` gets
-no rows.
+**Check.** `supabase/tests/0018_parent_route.sql` (11 checks, pass locally): the parent gets the line, their own stop
+and counts, and no other child's id or home; stops are counted by address; another parent, a driver and anonymous
+callers are refused; progress is live only with a recent GPS point and a running run. Still to add with 0019: a
+parent reading `routes` gets no rows.
 
 ## Order
 

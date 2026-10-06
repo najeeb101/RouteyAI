@@ -2,6 +2,7 @@ import * as Location from 'expo-location'
 import * as TaskManager from 'expo-task-manager'
 import { supabase } from '@/lib/supabase'
 import { storage } from '@/lib/storage'
+import type { Run } from '@/lib/runs'
 import { BRAND_COLOR } from '@/lib/theme'
 
 /**
@@ -16,7 +17,7 @@ export const GPS_INTERVAL_MS = 10_000
 /** The running trip, so the task knows which bus to report and a reopened app can pick the trip back up. */
 const TRIP_KEY = 'routeyai.trip'
 
-export type RunningTrip = { busId: string; startedAt: string }
+export type RunningTrip = { busId: string; startedAt: string; run?: Run }
 
 type GpsListener = { onFix: (at: Date) => void; onError: () => void }
 const listeners = new Set<GpsListener>()
