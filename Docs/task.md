@@ -230,8 +230,17 @@ Full plan: [plans/two-runs-a-day.md](plans/two-runs-a-day.md). Every bus does a 
 - [x] Step 1 (2026-10-06, branch `two-runs`): `0017_two_runs.sql` (`bus_runs`, attendance per run with `dropped_off`, absence reports per run, a morning and an afternoon route row, `start_run` / `end_run` / `mark_attendance`, `save_route_plan`), the route rules in `supabase/functions/_shared/routePlan.ts` with tests (`pnpm test:logic`), and database checks per role (`supabase/tests/0017_two_runs.sql`). Applied locally
 - [x] `0017_two_runs.sql` is on production (verified 2026-10-06: `routes.run` and `attendance.run` are available)
 - [ ] Step 2 (planned in detail 2026-10-06, not built): `optimize-route` (`update`, and `optimize` as a proposal; both directions; Mapbox leg times) and `send-notification` (run-aware alerts). Goes live together with steps 3 and 4
-- [ ] Step 3: refresh existing routes (decide first whether the morning direction flips)
+- [ ] Step 3: refresh existing routes, flipping the morning direction once so it ends at the school (decided 2026-10-06)
 - [ ] Step 4: driver app, then parent app
 - [ ] Step 5: school dashboard
 - [ ] Step 6: iPhone test in Expo Go, merge
 - [ ] Step 7: clean-up migration 0018, docs, store and landing copy
+
+## Fixes
+
+Full plan: [plans/fixes.md](plans/fixes.md). Older problems found while planning two runs a day.
+
+- [ ] 1A: the Students page stops re-planning every route in the school after each change; Optimize all asks first
+- [ ] 2: "Edit student" saves the new address's map location (needs `NEXT_PUBLIC_MAPBOX_TOKEN` on Vercel)
+- [ ] 1B: new children slot into the route without moving anyone (two-runs steps 2 and 5)
+- [ ] 3: parents read only the route line and their own child's stop (two-runs step 4, before the first real parent)

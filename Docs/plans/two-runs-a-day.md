@@ -1,6 +1,8 @@
 # Two runs a day: morning pickup and afternoon drop-off
 
-Status: approved 2026-10-06; step 1 (database and route rules) done on branch `two-runs`, waiting for the production push. Builds on the mobile UI refresh (merged in PR #4).
+Status: approved 2026-10-06; step 1 (database and route rules) done on branch `two-runs` and on production; step 2
+planned, not built. Builds on the mobile UI refresh (merged in PR #4). Older problems found along the way are planned
+separately in [fixes.md](fixes.md).
 
 ## The rules
 
@@ -28,9 +30,10 @@ Status: approved 2026-10-06; step 1 (database and route rules) done on branch `t
    `StudentsTable.tsx`). That re-runs the bus assignment for every child in the school and re-plans every route. So
    one new child can reshuffle every bus, move other children to different buses, and overrule a "Change bus" the
    admin just made. The Routes page's Recalculate (one bus) and Optimize all do the same on purpose. An earlier
-   version of this plan said routes only changed on purpose; that was wrong.
+   version of this plan said routes only changed on purpose; that was wrong. Fix 1 in [fixes.md](fixes.md) stops it
+   before this work ships.
 4. **Editing an address doesn't move the stop.** "Edit student" saves the new address text but not its map location
-   (`home_location`), so the route keeps going to the old place.
+   (`home_location`), so the route keeps going to the old place. Fix 2 in [fixes.md](fixes.md).
 
 ## Architecture
 
@@ -73,7 +76,7 @@ The planner gets three modes. Only `optimize` can reorder existing stops, and on
 
 | Mode | When | Existing stops | Saved |
 |---|---|---|---|
-| `refresh` | Once after this update; if Mapbox is changed | Order unchanged | Map lines and times for both runs |
+| `refresh` | Once after this update; if Mapbox is changed | Order unchanged (the one after this update flips the morning direction, decision 0) | Map lines and times for both runs |
 | `update` | Straight after a school admin adds, removes or moves a child, or changes an address | Order unchanged. A new child goes where they add the least driving (or joins an existing stop at the same address); a removed child's stop goes if nobody else uses it | Right away; the dashboard says what changed ("Omar added between stops 3 and 4") |
 | `optimize` (one bus) | School admin presses Re-optimize | Re-planned | **Proposal only.** The dashboard shows minutes and km saved and how many stops move. Unless it saves at least 5 minutes a run, or at least 10% and 2 minutes, the current route is kept ("Your route is already good") |
 | `optimize` (whole school) | School admin presses Optimize all | Re-planned; children can move between buses | **Proposal only**, listing every child who would change bus, applied only when the admin confirms |
@@ -158,12 +161,11 @@ run and skip undo taps.
 
 `src/types/database.ts`, Docs/Claude.md §5 and CLAUDE.md are updated with all of this.
 
-**Privacy fix (found in step 1, older than this work):** a parent can read their child's bus route, and its
-`waypoints` list the home coordinates of every child on that bus (checked locally: a parent of 3 children could read
-26 homes). The app only draws the parent's own stop, but the data is reachable with the parent's login. No real
-parents use the app yet. Fix, with the new parent app: parents read the route through a function that returns only
-the line, their own child's stop and how many stops come before it; the parent's read access to `routes` is removed
-in 0018. `bus_runs.stops` only holds student ids and order, never homes, for the same reason.
+**Privacy fix (found in step 1, older than this work):** a parent can read the home location of every child on their
+child's bus through the route's `waypoints`. It is fixed with the new parent app in step 4: parents read the route
+through `get_parent_route`, which returns only the line and their own child's stop, and 0018 removes their read access
+to `routes`. Details in [fixes.md](fixes.md#3-a-parent-can-read-every-home-on-the-bus). `bus_runs.stops` only holds
+student ids and order, never homes, for the same reason.
 
 ### Apps and dashboard
 
@@ -225,7 +227,7 @@ older web driver and parent pages follow the same rules.
 
 ## Step 2 in detail: route planner and notifications
 
-Planned 2026-10-06, not built yet. Needs 0017 in production.
+Planned 2026-10-06, not built yet. 0017 is on production (checked 2026-10-06).
 
 ### `optimize-route`: two actions
 
@@ -235,8 +237,8 @@ Planned 2026-10-06, not built yet. Needs 0017 in production.
 | `{ action: 'optimize', bus_id }` | Plans the bus from scratch (`planChain`) and compares it with the current route using Mapbox times for both runs. **Saves nothing.** Returns minutes and km per run now and proposed, minutes saved, students who would change place, and whether it is clearly better. | Same |
 | `{ action: 'optimize', bus_id, apply: true, chain }` | Saves the proposed order the admin accepted. Refused if it isn't clearly better, or if the bus's children changed since the proposal ("The bus changed, review again"). | Same |
 | `{ action: 'optimize', school_id }`, then `apply: true, assignments` | Optimize all: proposes which children move to which bus (the current K-means assignment) and the routes that would give, listing every child who changes bus. Applied only with the admin's confirmation; then each changed bus is planned from scratch. | Same |
-| `{ action: 'update', reverse: true }` | Service role only, once, if decision 0 is yes: flips each bus's saved order so the morning ends at the school. | Service role |
-| No `action` (what today's dashboard sends) | Treated as `update`. Today's Students page stops reshuffling the school straight away; Recalculate and Optimize all only refresh until the Routes page gets the proposal screen (step 5). | As today |
+| `{ action: 'update', reverse: true }` | Service role only, once in step 3 (decision 0): flips each bus's saved order so the morning ends at the school. | Service role |
+| No `action` (what today's Routes page sends) | Treated as `update`: Recalculate and Optimize all only refresh until the Routes page gets the proposal screen (step 5). The Students page no longer calls the planner after fix 1A ([fixes.md](fixes.md)). | As today |
 
 How a bus is planned:
 
@@ -292,30 +294,31 @@ nothing changes for anyone else.
 
 1. **Database and route logic.** Write 0017 and the pure route functions (chain → morning and afternoon order,
    slotting in a new child, the "clearly better" check) with tests, run the migration on the local database with the
-   seed data, and check each role's access. You push 0017 to production; nobody sees a change yet.
+   seed data, and check each role's access. Done; 0017 is on production and nobody sees a change yet.
 2. **Edge Functions.** `optimize-route` (`update`, and `optimize` as a proposal; both directions; one-transaction
    save) and `send-notification` (run-aware alerts, still accepting today's messages). Built and tested locally; they
    go live with steps 3 and 4 (see "Going live" above).
-3. **Existing routes.** Run `refresh` on every bus: the same chain of stops, with map lines and times for both runs.
-   Nothing is re-planned. Done when the new apps go live, because today's apps read whichever route row is newest.
-4. **Driver app, then parent app** (including the privacy fix), checked in the browser preview with the demo
-   accounts through a full simulated day.
-5. **School dashboard.** Includes the Students page calling `update` only for the buses that changed, and "Edit
-   student" saving the new address's map location.
+3. **Existing routes.** Run `update` with `reverse: true` once on every bus: the same chain of stops, flipped so the
+   morning ends at the school (decision 0), with map lines and times for both runs. Nothing is re-planned. Done when
+   the new apps go live, because today's apps read whichever route row is newest.
+4. **Driver app, then parent app** (including the privacy fix, fix 3 in [fixes.md](fixes.md)), checked in the
+   browser preview with the demo accounts through a full simulated day.
+5. **School dashboard.** Includes the Students page calling `update` only for the buses that changed (fix 1B). "Edit
+   student" already saves the new address's map location by then (fix 2).
 6. **You test on the iPhone** in Expo Go (GPS sends while the app is open; I can follow the demo bus as the demo parent
    in the browser preview while you drive it). Then merge.
 7. **Clean-up migration 0018** (old `set_bus_active`, old `save_optimized_route`, drivers' direct attendance writes,
    parents' direct read of `routes`), and
    docs: task.md, Docs/Claude.md, store listing and landing page copy where they only mention mornings.
 
-## Decisions for you
+## Decisions
 
-Needed before step 3:
+Decided 2026-10-06:
 
-0. **Which way do existing routes run in the morning?** Recommended: **flip the morning once**, so it ends at the
-   school (farthest stop first). Each stop keeps the same neighbours; only the direction of the morning changes, and
-   the afternoon runs today's order. Kids picked up first no longer ride the whole loop out and back. The other option
-   keeps today's morning order and makes the afternoon its reverse, which starts at the farthest stop.
+0. **Existing routes flip their morning direction once**, so the morning ends at the school (farthest stop first).
+   Each stop keeps the same neighbours; only the direction of the morning changes, and the afternoon runs today's
+   order. Children picked up first no longer ride the whole loop out and back. Done once in step 3. (Not chosen: keep
+   today's morning order and make the afternoon its reverse, which would start at the farthest stop.)
 
 Needed before step 4 (I'll go with the recommendation unless you say otherwise):
 
