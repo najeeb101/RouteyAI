@@ -426,6 +426,18 @@ Plan: [plans/two-runs-a-day.md](plans/two-runs-a-day.md).
   p_status)`, which checks the bus, the running run and the step. Their direct-write policy goes in 0018.
 - `absence_reports.runs`: `both` (default), `morning` or `afternoon`.
 - The attendance trigger sends `run` and `previous_status`, skips undo taps, and sends drop-offs as type `drop_off`.
+- `optimize-route` (step 2, built on `two-runs`, not deployed): `update` (also any request without `action`) keeps
+  each bus's order, slots newcomers and movers in and drops leavers, and leaves a bus with no changes alone; `optimize`
+  only proposes (a fresh plan for one bus, or new bus assignments for the school), and `apply: true` saves it only if
+  it is still clearly better and nothing changed since; `reverse: true` (service role, once) flips routes planned
+  before two runs so the morning ends at the school. Mapbox Directions per run (split above 24 stops), straight lines
+  at 30 km/h without it. The logic is pure functions in `supabase/functions/_shared/` with Node tests
+  (`pnpm test:logic`).
+- `send-notification`: wording per run from `_shared/notifications.ts`; `eta_alert` goes out only on the running run
+  (morning: the child is still waiting; afternoon: the child is on board); `dry_run: true` (service role) returns the
+  messages without sending.
+- Edge Functions import `npm:@supabase/supabase-js@2.117.2`, not esm.sh (esm.sh failed on the types an unpinned
+  import pulled in).
 - Checks: `supabase/tests/0017_two_runs.sql` (local database). The local Postgres image crashes when a superuser
   session switches to anon/authenticated and hits "permission denied" on a function, so those checks read the catalog.
 

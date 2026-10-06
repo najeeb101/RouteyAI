@@ -12,7 +12,7 @@ Mobile: Expo (React Native) | React Native styles | Mapbox RN | EAS
 - In progress: Phase 13 — landing page live at https://routeyai.vercel.app; launch placeholders in `src/lib/siteConfig.ts`; no Mapbox token on Vercel yet, so student addresses aren't geocoded on the live site.
 - In progress: Phase 12 (store submission). Expo SDK 57, EAS profiles, OTA updates, icons, Play graphics and store copy are done; next are the device test, the Mapbox `pk.` token, `eas login` and the first EAS builds.
 - Phase 14 (parent and driver app upgrade) done apart from checks on a real phone.
-- 2026-10-06: Phase 15 light mode and identity merged (PR #4). Phase 16 (two runs a day) started: step 1 is on production. Verified `0017`'s `run` columns are live and `0016` rejects anonymous route-helper calls with `401`.
+- 2026-10-06: Phase 15 light mode and identity merged (PR #4). Phase 16 (two runs a day) started: step 1 is on production. Verified `0017`'s `run` columns are live and `0016` rejects anonymous route-helper calls with `401`. Step 2 (route planner and notifications) built and tested locally on `two-runs`. Fixes 1A and 2 are in PR #5, waiting to be merged.
 
 ## Phase 1: Project Setup and Landing Page
 
@@ -229,7 +229,7 @@ Full plan: [plans/two-runs-a-day.md](plans/two-runs-a-day.md). Every bus does a 
 
 - [x] Step 1 (2026-10-06, branch `two-runs`): `0017_two_runs.sql` (`bus_runs`, attendance per run with `dropped_off`, absence reports per run, a morning and an afternoon route row, `start_run` / `end_run` / `mark_attendance`, `save_route_plan`), the route rules in `supabase/functions/_shared/routePlan.ts` with tests (`pnpm test:logic`), and database checks per role (`supabase/tests/0017_two_runs.sql`). Applied locally
 - [x] `0017_two_runs.sql` is on production (verified 2026-10-06: `routes.run` and `attendance.run` are available)
-- [ ] Step 2 (planned in detail 2026-10-06, not built): `optimize-route` (`update`, and `optimize` as a proposal; both directions; Mapbox leg times) and `send-notification` (run-aware alerts). Goes live together with steps 3 and 4
+- [x] Step 2 (2026-10-06, branch `two-runs`, not deployed): `optimize-route` (`update`, and `optimize` as a proposal; both directions; Mapbox leg times; Optimize all clusters start from the current buses) and `send-notification` (run-aware alerts, `dry_run`). Logic in `supabase/functions/_shared/`; 49 logic tests and 35 local end-to-end checks pass. Goes live together with steps 3 and 4
 - [ ] Step 3: refresh existing routes, flipping the morning direction once so it ends at the school (decided 2026-10-06)
 - [ ] Step 4: driver app, then parent app
 - [ ] Step 5: school dashboard
@@ -240,7 +240,7 @@ Full plan: [plans/two-runs-a-day.md](plans/two-runs-a-day.md). Every bus does a 
 
 Full plan: [plans/fixes.md](plans/fixes.md). Older problems found while planning two runs a day.
 
-- [ ] 1A: the Students page stops re-planning every route in the school after each change; Optimize all asks first
-- [ ] 2: "Edit student" saves the new address's map location (needs `NEXT_PUBLIC_MAPBOX_TOKEN` on Vercel)
-- [ ] 1B: new children slot into the route without moving anyone (two-runs steps 2 and 5)
+- [x] 1A: the Students page stops re-planning every route in the school after each change; Optimize all asks first; buses without a route get Plan route (2026-10-06, PR #5 from `fixes`, waiting to be merged)
+- [x] 2: "Edit student" saves the new address's map location (same PR; needs `NEXT_PUBLIC_MAPBOX_TOKEN` on Vercel)
+- [ ] 1B: new children slot into the route without moving anyone (`update` built in two-runs step 2; the Students page calls it in step 5)
 - [ ] 3: parents read only the route line and their own child's stop (two-runs step 4, before the first real parent)

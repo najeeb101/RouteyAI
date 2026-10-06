@@ -1,7 +1,7 @@
 # Two runs a day: morning pickup and afternoon drop-off
 
 Status: approved 2026-10-06; step 1 (database and route rules) done on branch `two-runs` and on production; step 2
-planned, not built. Builds on the mobile UI refresh (merged in PR #4). Older problems found along the way are planned
+(route planner and notifications) built and tested locally on `two-runs`, not deployed. Builds on the mobile UI refresh (merged in PR #4). Older problems found along the way are planned
 separately in [fixes.md](fixes.md).
 
 ## The rules
@@ -214,12 +214,12 @@ The map shows the running run's line in its direction. Past rides show both runs
 |---|---|---|
 | Morning, bus ~5 min away | Bus arriving in ~5 minutes | Get Lina ready - the bus is almost at your stop. (unchanged) |
 | Morning, boarded | Lina has boarded | Lina is on the bus and on the way to school. (unchanged) |
-| Morning run ended | Lina arrived at school | The bus reached the school at 7:25. |
+| Morning run ended | Lina arrived at school | The bus reached Doha International Academy at 7:25 AM. |
 | Morning, absent | Lina marked absent | Lina was not on the bus this morning. |
-| Afternoon, boarded at school | Lina is on the bus home | The bus left school at 1:35. |
+| Afternoon, boarded at school | Lina is on the bus home | Lina boarded at school at 1:35 PM. |
 | Afternoon, absent at school | Lina isn't on the bus home | The driver marked Lina absent at school. Contact the school if you didn't expect this. |
 | Afternoon, bus ~5 min from home | Lina is almost home | The bus is about 5 minutes from your stop. |
-| Afternoon, dropped off | Lina was dropped off | Lina got off at Al Waab, Doha at 2:05. |
+| Afternoon, dropped off | Lina was dropped off | Lina got off at Al Waab, Doha at 2:05 PM. |
 
 **School admin:** the bus list shows which run each bus is on. The Routes page gets a Morning / Afternoon switch,
 re-planning as a proposal, and the "would save…" hint. The Absences page shows which rides each report covers. The
@@ -227,7 +227,11 @@ older web driver and parent pages follow the same rules.
 
 ## Step 2 in detail: route planner and notifications
 
-Planned 2026-10-06, not built yet. 0017 is on production (checked 2026-10-06).
+Built 2026-10-06 on `two-runs`, tested locally, not deployed. It needs no migration: everything it uses came with
+0017, which is on production. The planning logic is pure functions in `supabase/functions/_shared/` (`busPlanner.ts`,
+`directions.ts`, `routeGeometry.ts`, `busAssignment.ts`, `notifications.ts`); the two functions only read, call them
+and save. Both functions now import supabase-js from npm (`npm:@supabase/supabase-js@2.117.2`) instead of esm.sh:
+esm.sh was failing to serve type files that the unpinned import pulled in, which would have broken the next deploy.
 
 ### `optimize-route`: two actions
 
@@ -236,9 +240,9 @@ Planned 2026-10-06, not built yet. 0017 is on production (checked 2026-10-06).
 | `{ action: 'update', bus_id or school_id }` | Keeps each bus's order. Drops children who left, slots in children who joined or moved house (`updateChain`), rebuilds both runs' lines and times, saves. A bus with no changes and both runs already saved is left alone (no Mapbox call, no new version). | School admin (own school), platform admin, service role |
 | `{ action: 'optimize', bus_id }` | Plans the bus from scratch (`planChain`) and compares it with the current route using Mapbox times for both runs. **Saves nothing.** Returns minutes and km per run now and proposed, minutes saved, students who would change place, and whether it is clearly better. | Same |
 | `{ action: 'optimize', bus_id, apply: true, chain }` | Saves the proposed order the admin accepted. Refused if it isn't clearly better, or if the bus's children changed since the proposal ("The bus changed, review again"). | Same |
-| `{ action: 'optimize', school_id }`, then `apply: true, assignments` | Optimize all: proposes which children move to which bus (the current K-means assignment) and the routes that would give, listing every child who changes bus. Applied only with the admin's confirmation; then each changed bus is planned from scratch. | Same |
-| `{ action: 'update', reverse: true }` | Service role only, once in step 3 (decision 0): flips each bus's saved order so the morning ends at the school. | Service role |
-| No `action` (what today's Routes page sends) | Treated as `update`: Recalculate and Optimize all only refresh until the Routes page gets the proposal screen (step 5). The Students page no longer calls the planner after fix 1A ([fixes.md](fixes.md)). | As today |
+| `{ action: 'optimize', school_id }`, then `apply: true, assignments` | Optimize all: proposes which children move to which bus (K-means) with straight-line minutes per bus before and after, listing every child who changes bus. Each bus's cluster starts from where its current children live, so only children who would be better off elsewhere are listed. (Starting from the first few children, as before, listed 37 of the seed's 40, because the clusters came out in a different order than the buses.) Applied only with the admin's confirmation, and refused if a listed child changed bus since; then each changed bus is planned from scratch. | Same |
+| `{ action: 'update', reverse: true }` | Service role only, once in step 3 (decision 0): flips each bus's saved order so the morning ends at the school. Only buses without an afternoon row are flipped, so running it twice changes nothing. | Service role |
+| No `action` (what today's Routes page sends) | Treated as `update`: Recalculate and Optimize all only slot changes in until the Routes page gets the proposal screen (step 5). The Students page no longer calls the planner after fix 1A ([fixes.md](fixes.md)). The Recalculate and Optimize all dialogs from fix 1A promise re-ordering, so their wording changes when this goes live. | As today |
 
 How a bus is planned:
 
@@ -276,12 +280,20 @@ run, and the hint. The dashboard can then say "Omar added between stops 3 and 4"
 
 ### Tests for step 2
 
-- Node tests (`pnpm test:logic`, also under Deno): polyline helpers and joining, splitting long routes, planning a
-  bus with a fake Mapbox (no change returns the same order and no new version; a newcomer slots in; a proposal that
-  isn't clearly better is refused on apply; a stale proposal is refused), and every row of the notification table.
-- Local end-to-end with `supabase functions serve` against the local database: `update` on the seed buses leaves the
-  order untouched and adds the afternoon row; a moved child is re-slotted; `optimize` returns a proposal and saves
-  nothing; the old dashboard request is treated as `update`.
+Done 2026-10-06:
+
+- 49 Node tests (`pnpm test:logic`): polyline helpers and joining, splitting long routes, Mapbox failures falling back
+  to straight lines, planning a bus with a fake Mapbox (no change saves nothing and asks Mapbox nothing; a newcomer
+  slots in; a leaver drops out; an edited address is re-slotted; the morning flip happens once; a proposal that isn't
+  clearly better, or is out of date, is refused on apply), the Optimize all assignment, and every row of the
+  notification table. Deno isn't installed here, so the functions were type-checked strictly with `tsc` against the
+  real supabase-js types instead.
+- 35 end-to-end checks with `supabase functions serve` (Mapbox on) against the local database: who may call; the old
+  dashboard request keeps the order and saves both runs with road lines; reverse flips the old buses once and skips
+  buses that already have both runs; no changes saves nothing; a newcomer slots in with everyone else in order and the
+  plan version goes up; an edited address and a leaver; a proposal saves nothing, an out-of-date or worse order is
+  refused and a clearly better one is applied; the Optimize all proposal saves nothing; alert wording in dry runs; and
+  the ETA alert following a real morning and afternoon run.
 
 ### Going live
 
@@ -296,8 +308,8 @@ nothing changes for anyone else.
    slotting in a new child, the "clearly better" check) with tests, run the migration on the local database with the
    seed data, and check each role's access. Done; 0017 is on production and nobody sees a change yet.
 2. **Edge Functions.** `optimize-route` (`update`, and `optimize` as a proposal; both directions; one-transaction
-   save) and `send-notification` (run-aware alerts, still accepting today's messages). Built and tested locally; they
-   go live with steps 3 and 4 (see "Going live" above).
+   save) and `send-notification` (run-aware alerts, still accepting today's messages). Done 2026-10-06, built and
+   tested locally; they go live with steps 3 and 4 (see "Going live" above).
 3. **Existing routes.** Run `update` with `reverse: true` once on every bus: the same chain of stops, flipped so the
    morning ends at the school (decision 0), with map lines and times for both runs. Nothing is re-planned. Done when
    the new apps go live, because today's apps read whichever route row is newest.

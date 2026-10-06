@@ -73,7 +73,7 @@ routeyai/
 │   ├── migrations/           # 0001_schema.sql … 0017_two_runs.sql
 │   ├── tests/                # SQL checks per migration, run against the local database
 │   ├── functions/
-│   │   ├── optimize-route/index.ts     # Edge Function: K-Means + TSP
+│   │   ├── optimize-route/index.ts     # Edge Function: route planner (update; optimize as a proposal)
 │   │   └── send-notification/index.ts  # Edge Function: Expo push
 │   └── seed.sql
 └── Docs/                     # architecture, schema, feature catalog, task tracker
@@ -92,7 +92,7 @@ routeyai/
 
 4. **Server Components by default.** Add `'use client'` only for interactivity, hooks, or browser APIs.
 
-5. **Route optimization = Edge Function only.** `supabase/functions/optimize-route/index.ts` runs K-Means + Nearest-Neighbor TSP via Mapbox Matrix API. Not a Next.js API route.
+5. **Route planning = Edge Function only.** `supabase/functions/optimize-route/index.ts` keeps each bus's stop order and slots changes in; re-planning (nearest-neighbor stop order, K-means across buses) is only a proposal a school admin applies. Mapbox Directions per run. The logic is in `supabase/functions/_shared/`. Not a Next.js API route.
 
 6. **Real-time tracking hot path:** driver writes to `bus_locations` → Supabase Realtime → parent map update. The `idx_bus_locations_bus_id` index on `(bus_id, timestamp DESC)` is critical for this path.
 

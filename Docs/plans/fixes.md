@@ -1,6 +1,7 @@
 # Fixes
 
-Status: planned 2026-10-06, nothing built. Three problems found while planning [two runs a day](two-runs-a-day.md),
+Status: planned 2026-10-06. 1A and 2 built and tested the same day (PR #5 from branch `fixes`, waiting to be
+merged); 1B and 3 come with two runs a day. Three problems found while planning [two runs a day](two-runs-a-day.md),
 all older than that work. Only the demo school uses production and no real parents have the app, so none of them has
 reached anyone yet.
 
@@ -35,9 +36,12 @@ That breaks the rule that routes never change by themselves.
   child leaves the driver's list straight away; their point stays on the saved map line until the next Recalculate.
 - "Optimize all" on the Routes page asks first: "This can move children to other buses and changes every route.
   Drivers will see the new routes." Today it runs on one click.
-- Recalculate (one bus) stays as it is: the admin chose it.
+- Recalculate (one bus) stays as it is: the admin chose it. Its dialog now says it only touches that bus.
+- Buses without a route are listed on the Routes page with "Plan route". Without it, a new bus (or a new school) could
+  only get a route through Optimize all, now that the Students page no longer plans routes.
+- The landing page FAQ and `Docs/features.md` no longer say routes are recalculated automatically.
 
-**1B, with two runs (steps 2 and 5).** The new `update` action slots a new child in where they add the least driving,
+**1B, with two runs (steps 2 and 5).** Built in step 2: the new `update` action slots a new child in where they add the least driving,
 without moving anyone else, and re-planning becomes a proposal the admin applies only if it is clearly better. The
 Students page then calls `update` for the buses it touched, and "Not on the route yet" only shows if that fails.
 Details: [two-runs-a-day.md](two-runs-a-day.md#route-planner-optimize-route-and-the-stability-rule).
@@ -60,6 +64,8 @@ all stay at the old house, and nothing tells the admin.
   recalculates the bus. With two runs, `update` spots the house move and re-slots only that child.
 - If the address can't be found, save nothing and say so: "We couldn't find that address. Try adding the area or
   street." The Add form falls back to the centre of Doha; for an edit that would move a correct stop to a wrong one.
+- Adding a student whose address isn't found now shows a warning. The old warning sat in the Add dialog, which had
+  already closed.
 
 **Needs the Mapbox token on the live site.** [task.md](../task.md) notes that Vercel has no Mapbox token yet, so on
 the live site no address can be geocoded: new children are saved at the centre of Doha, and with this fix every
