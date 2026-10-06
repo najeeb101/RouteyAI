@@ -81,7 +81,7 @@ The background logic that powers route assignment and optimization.
 | Distance Calculation | Mapbox Matrix API | Uses real road network times, not straight-line distances |
 | Smart Placement | Nearest Cluster Assignment | New students auto-assigned to closest viable bus without exceeding capacity |
 | Capacity Enforcement | Hard limit | Blocks assignment if bus exceeds set capacity (default 40) |
-| Dynamic Recalculation | Trigger-based | Route recalculates automatically on student add/remove |
+| Stable Routes | Admin-triggered | Adding, moving or removing a student never re-plans a route; the student shows "Not on route" until the admin recalculates that bus |
 | Upgrade Path | Google OR-Tools / OSRM | Planned for v2 when scale demands higher optimization quality |
 
 ---
