@@ -165,7 +165,7 @@ Mobile: Expo (React Native) | React Native styles | Mapbox RN | EAS
 
 ## Phase 13: Landing Page Launch
 
-Full plan: [plans/2026-09-29-landing-page-launch.md](plans/2026-09-29-landing-page-launch.md)
+Full plan: [plans/landing-page-launch.md](plans/landing-page-launch.md)
 
 - [x] Decide: primary CTA = "Book a demo"; pricing = fleet-size plans with "Contact us"; Arabic/RTL after launch; placeholder phone/socials removed
 - [x] Split `src/app/page.tsx` into `src/components/landing/*`; page becomes a Server Component with client islands
@@ -187,7 +187,7 @@ Full plan: [plans/2026-09-29-landing-page-launch.md](plans/2026-09-29-landing-pa
 
 ## Phase 14: Parent and Driver App Upgrade
 
-Full plan: [plans/2026-10-01-parent-driver-apps.md](plans/2026-10-01-parent-driver-apps.md)
+Implementation complete; the remaining real-device checks are tracked below.
 
 - [x] Migration `0013_absence_reports.sql`: `absence_reports` table, trigger, RLS, realtime; `set_push_token()` so parents and drivers can save push tokens
 - [x] Parent: all children on one account, child switcher on Home, History and the map
@@ -214,7 +214,7 @@ Full plan: [plans/2026-10-01-parent-driver-apps.md](plans/2026-10-01-parent-driv
 
 ## Phase 15: Mobile UI Refresh
 
-Full plan: [plans/2026-10-05-mobile-ui-refresh.md](plans/2026-10-05-mobile-ui-refresh.md)
+Full plan: [plans/mobile-ui-refresh.md](plans/mobile-ui-refresh.md)
 
 - [x] Decided (2026-10-05): Lucide icons, light large-title headers, rounded-rectangle buttons, dark mode after the light mode is final
 - [x] Foundations: `theme.ts`, Schibsted Grotesk + Inter, `Txt`, Lucide, `check:design` (2026-10-06)
@@ -225,7 +225,7 @@ Full plan: [plans/2026-10-05-mobile-ui-refresh.md](plans/2026-10-05-mobile-ui-re
 
 ## Phase 16: Two Runs a Day
 
-Full plan: [plans/2026-10-06-two-runs-per-day.md](plans/2026-10-06-two-runs-per-day.md). Every bus does a morning pickup run and an afternoon drop-off run (the same stops in reverse). Routes never change by themselves.
+Full plan: [plans/two-runs-a-day.md](plans/two-runs-a-day.md). Every bus does a morning pickup run and an afternoon drop-off run (the same stops in reverse). Routes never change by themselves.
 
 - [x] Step 1 (2026-10-06, branch `two-runs`): `0017_two_runs.sql` (`bus_runs`, attendance per run with `dropped_off`, absence reports per run, a morning and an afternoon route row, `start_run` / `end_run` / `mark_attendance`, `save_route_plan`), the route rules in `supabase/functions/_shared/routePlan.ts` with tests (`pnpm test:logic`), and database checks per role (`supabase/tests/0017_two_runs.sql`). Applied locally
 - [ ] Push 0017 to production (`supabase db push`)

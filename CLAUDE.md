@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 [Docs/Claude.md](Docs/Claude.md) is the canonical reference for the full database schema, RLS policies, color tokens, and design principles. When this file and Docs/Claude.md disagree, Docs/Claude.md wins.
 
-Current build status: **Phases 1–10 complete; Phase 11 nearly done. Phase 13 (landing page launch) in progress** — live at https://routeyai.vercel.app (auto-deploys from `main`). Phase 12 (store submission) not started. See [Docs/task.md](Docs/task.md) for the full checklist and [Docs/plans/2026-09-29-landing-page-launch.md](Docs/plans/2026-09-29-landing-page-launch.md) for the landing page plan.
+Current build status: **Phases 1–10 complete; Phase 11 nearly done. Phase 13 (landing page launch) in progress** — live at https://routeyai.vercel.app (auto-deploys from `main`). Phase 12 (store submission) not started. See [Docs/task.md](Docs/task.md) for the full checklist and [Docs/plans/landing-page-launch.md](Docs/plans/landing-page-launch.md) for the landing page plan.
 
 ## Stack
 
@@ -66,7 +66,7 @@ routeyai/
 │       ├── features/
 │       │   ├── driver/       # screens/, hooks/useDriverData, context/DriverDataContext
 │       │   └── parent/       # screens/ (incl. useParentData), context/ParentDataContext
-│       ├── components/primitives/  # Txt, Button, Card, List, ScreenHeader, SheetModal, … (see Docs/plans/2026-10-05-mobile-ui-refresh.md)
+│       ├── components/primitives/  # Txt, Button, Card, List, ScreenHeader, SheetModal, … (see Docs/plans/mobile-ui-refresh.md)
 │       ├── components/brand/       # BrandMark, SignatureCard (navy card), RouteLine, LivePill
 │       └── lib/supabase.ts
 ├── supabase/

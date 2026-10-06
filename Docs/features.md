@@ -88,7 +88,7 @@ The background logic that powers route assignment and optimization.
 
 ## 🌐 Marketing Site (Landing Page)
 
-Public page at `/`. Plan: `plans/2026-09-29-landing-page-launch.md`.
+Public page at `/`. Plan: `plans/landing-page-launch.md`.
 
 | Feature | Description |
 |---|---|

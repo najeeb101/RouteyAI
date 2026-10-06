@@ -142,7 +142,7 @@ routeyai/
 │   │   │   ├── TopBar.tsx
 │   │   │   ├── StatsCard.tsx
 │   │   │   └── DataTable.tsx
-│   │   └── landing/                  # Landing page sections (see Docs/plans/2026-09-29-landing-page-launch.md)
+│   │   └── landing/                  # Landing page sections (see Docs/plans/landing-page-launch.md)
 │   │       ├── LandingNav.tsx        # client: mobile menu + app modal trigger
 │   │       ├── Hero.tsx
 │   │       ├── Features.tsx
@@ -412,7 +412,7 @@ Found while testing the apps against a local database. The policies above show t
 ### Two runs a day (0017_two_runs.sql, 2026-10-06)
 
 Every bus does a morning run (homes → school) and an afternoon run (school → homes, the same stops in reverse).
-Plan: [plans/2026-10-06-two-runs-per-day.md](plans/2026-10-06-two-runs-per-day.md).
+Plan: [plans/two-runs-a-day.md](plans/two-runs-a-day.md).
 
 - `students.stop_order` is the bus's stop chain in **morning** order; the afternoon is the chain reversed.
   `routes` has a `morning` and an `afternoon` row per bus (`UNIQUE(bus_id, run)`), saved together by
