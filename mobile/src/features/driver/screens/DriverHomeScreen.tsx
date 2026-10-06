@@ -1,8 +1,11 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type PropsWithChildren } from 'react'
 import { ActivityIndicator, Alert, RefreshControl, ScrollView, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { Clock, Flag, ListChecks, ListOrdered, MessageSquare, Play } from 'lucide-react-native'
+import { LivePill } from '@/components/brand/LivePill'
+import { RouteLine } from '@/components/brand/RouteLine'
+import { SignatureCard } from '@/components/brand/SignatureCard'
 import { Avatar } from '@/components/primitives/Avatar'
 import { Banner } from '@/components/primitives/Banner'
 import { Button } from '@/components/primitives/Button'
@@ -31,6 +34,9 @@ export function DriverHomeScreen() {
   const currentStop = stops.find((stop) => stop.current) ?? stops[0]
   const nextStop = stops.find((stop) => !stop.done && !stop.current)
   const stopsDone = stops.filter((s) => s.done).length
+  const allDone = stopsDone === stops.length && stops.length > 0
+  const currentIndex = currentStop ? stops.indexOf(currentStop) : 0
+  const onNight = trip.status === 'active'
   const seatsPct = busCapacity > 0 ? Math.min(100, Math.round((boarded / busCapacity) * 100)) : 0
 
   // Which stop each reported student is on, for the "won't ride today" list.
@@ -59,9 +65,9 @@ export function DriverHomeScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: t.canvas }} edges={['top']}>
       <ScreenHeader
+        brand
         title={profile?.busName ?? (loading ? 'Loading…' : 'No bus assigned')}
         subtitle={`Morning run · ${stops.length} stops · ${totalStudents} students`}
-        action={trip.status === 'active' ? <StatusText label="Live" tone="live" /> : trip.status === 'done' ? <StatusText label="Done" tone="success" /> : undefined}
       />
 
       <ScrollView
@@ -89,52 +95,62 @@ export function DriverHomeScreen() {
         )}
 
         {trip.status === 'idle' && profile && (
-          <Card style={{ gap: space.lg }}>
-            <View style={{ gap: space.xs }}>
-              <Txt variant="title">Ready for the morning run?</Txt>
-              <Txt variant="body" tone="inkSecondary">
+          <SignatureCard style={{ gap: space.lg }}>
+            <View style={{ gap: space.xs, paddingRight: space.xxxl }}>
+              <Txt variant="title" tone="onNight">
+                Ready for the morning run?
+              </Txt>
+              <Txt variant="body" tone="onNightSecondary">
                 Parents see the bus on the map once you start.
               </Txt>
             </View>
-            <Button label="Start route" icon={Play} onPress={trip.start} loading={trip.busy} haptic />
-          </Card>
-        )}
-
-        {trip.status === 'active' && (
-          <Txt variant="subhead" tone="inkSecondary" style={{ marginBottom: -space.md }}>
-            {trip.lastFixAt ? `Sharing your location with parents · last update ${timeLabel(trip.lastFixAt)}` : 'Getting your location…'}
-          </Txt>
+            <Button label="Start route" icon={Play} variant="onNight" onPress={trip.start} loading={trip.busy} haptic />
+          </SignatureCard>
         )}
 
         {trip.status !== 'done' && (
           <>
-            {/* Current stop */}
+            {/* Current stop: the navy signature card while the route is running */}
             {loading && stops.length === 0 ? (
               <Card style={{ alignItems: 'center', paddingVertical: space.xxl }}>
                 <ActivityIndicator color={t.brand} />
               </Card>
             ) : (
-              <Card style={{ gap: space.lg }}>
+              <CurrentStopCard onNight={trip.status === 'active'}>
                 <View style={{ gap: space.xs }}>
-                  <Txt variant="subhead" tone="inkSecondary">
-                    {stopsDone === stops.length && stops.length > 0 ? 'Last stop' : 'Current stop'}
-                  </Txt>
-                  <Txt variant="largeTitle" numberOfLines={2}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.md }}>
+                    <Txt variant="subhead" tone={onNight ? 'onNightSecondary' : 'inkSecondary'}>
+                      {allDone ? 'Last stop' : 'Current stop'}
+                    </Txt>
+                    {onNight && <LivePill onNight />}
+                  </View>
+                  <Txt variant="largeTitle" tone={onNight ? 'onNight' : 'ink'} numberOfLines={2}>
                     {currentStop?.name ?? 'No stops assigned'}
                   </Txt>
-                  <Txt variant="body" tone="inkSecondary">
+                  <Txt variant="body" tone={onNight ? 'onNightSecondary' : 'inkSecondary'}>
                     {waitingAtCurrent > 0 ? `${waitingAtCurrent} to check in` : currentStop ? 'Everyone here is checked in' : 'Ask your school to set up the route'}
                     {nextStop ? ` · then ${nextStop.name}` : ''}
                   </Txt>
                 </View>
+                {stops.length > 1 && (
+                  <RouteLine
+                    stops={stops.length}
+                    reached={stopsDone}
+                    current={allDone ? undefined : currentIndex}
+                    onNight={onNight}
+                    startLabel={allDone ? `All ${stops.length} stops done` : `Stop ${currentIndex + 1} of ${stops.length}`}
+                    endLabel={onNight ? (trip.lastFixAt ? `Location sent ${timeLabel(trip.lastFixAt)}` : 'Finding your location…') : undefined}
+                    accessibilityLabel={`${stopsDone} of ${stops.length} stops done`}
+                  />
+                )}
                 <Button
                   label="Check in students"
                   icon={ListChecks}
-                  variant={trip.status === 'active' ? 'primary' : 'secondary'}
+                  variant={onNight ? 'onNight' : 'secondary'}
                   onPress={() => router.push(routes.driverRoute)}
                   disabled={!currentStop}
                 />
-              </Card>
+              </CurrentStopCard>
             )}
 
             {/* Boarding progress */}
@@ -189,4 +205,9 @@ export function DriverHomeScreen() {
       )}
     </SafeAreaView>
   )
+}
+
+/** The navy signature card while the route runs, a plain card before it starts. */
+function CurrentStopCard({ onNight, children }: PropsWithChildren<{ onNight: boolean }>) {
+  return onNight ? <SignatureCard style={{ gap: space.lg }}>{children}</SignatureCard> : <Card style={{ gap: space.lg }}>{children}</Card>
 }

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, type ElementRef, type ReactNode }
 import { ActivityIndicator, Pressable, useColorScheme, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Bus, House, LocateFixed } from 'lucide-react-native'
+import { LivePill } from '@/components/brand/LivePill'
 import { Banner } from '@/components/primitives/Banner'
 import { FloatingCard } from '@/components/primitives/Card'
 import { Icon } from '@/components/primitives/Icon'
@@ -141,9 +142,13 @@ export function ParentMapScreen() {
             </FloatingPill>
           )}
         </View>
-        <FloatingPill>
-          <StatusText label={busLocation ? 'Live' : 'No GPS'} tone={busLocation ? 'live' : 'neutral'} />
-        </FloatingPill>
+        {busLocation ? (
+          <LivePill floating />
+        ) : (
+          <FloatingPill>
+            <StatusText label="No GPS" />
+          </FloatingPill>
+        )}
       </View>
 
       {/* Recenter */}

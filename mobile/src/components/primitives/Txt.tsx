@@ -1,7 +1,10 @@
 import { Text, type TextProps, type TextStyle } from 'react-native'
 import { type, useTheme, type Palette, type TextVariant } from '@/lib/theme'
 
-type Tone = Extract<keyof Palette, 'ink' | 'inkSecondary' | 'inkTertiary' | 'brand' | 'onBrand' | 'successText' | 'warningText' | 'dangerText' | 'infoText'>
+type Tone = Extract<
+  keyof Palette,
+  'ink' | 'inkSecondary' | 'inkTertiary' | 'brand' | 'onBrand' | 'successText' | 'warningText' | 'dangerText' | 'infoText' | 'onNight' | 'onNightSecondary' | 'onNightTertiary'
+>
 
 type TxtProps = TextProps & {
   variant?: TextVariant

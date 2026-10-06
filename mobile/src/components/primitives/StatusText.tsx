@@ -11,11 +11,12 @@ const tint: Partial<Record<StatusTone, keyof Palette>> = { warning: 'warningTint
 
 /**
  * A coloured dot and a word ("On time", "Absent"). Only states that need attention get a tinted background, and only
- * with `emphasis`, so most of the screen stays calm.
+ * with `emphasis`, so most of the screen stays calm. `onNight` keeps the dot colour and writes the word in white, for
+ * the navy signature card.
  */
-export function StatusText({ label, tone = 'neutral', emphasis = false }: { label: string; tone?: StatusTone; emphasis?: boolean }) {
+export function StatusText({ label, tone = 'neutral', emphasis = false, onNight = false }: { label: string; tone?: StatusTone; emphasis?: boolean; onNight?: boolean }) {
   const t = useTheme()
-  const bg = emphasis ? tint[tone] : undefined
+  const bg = emphasis && !onNight ? tint[tone] : undefined
   return (
     <View
       style={[
@@ -23,8 +24,8 @@ export function StatusText({ label, tone = 'neutral', emphasis = false }: { labe
         bg ? { backgroundColor: t[bg], paddingHorizontal: space.sm, paddingVertical: space.xs - 1, borderRadius: radius.sm } : null,
       ]}
     >
-      <View style={{ width: 7, height: 7, borderRadius: radius.full, backgroundColor: t[STATUS_DOT[tone]] }} />
-      <Txt variant="subhead" color={t[ink[tone]]}>
+      <View style={{ width: 7, height: 7, borderRadius: radius.full, backgroundColor: onNight && tone === 'neutral' ? t.onNightTertiary : t[STATUS_DOT[tone]] }} />
+      <Txt variant="subhead" color={onNight ? t.onNight : t[ink[tone]]}>
         {label}
       </Txt>
     </View>

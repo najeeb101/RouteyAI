@@ -33,6 +33,17 @@ const light = {
   infoTint: '#EFF6FF',
   infoText: '#1E40AF',
   scrim: 'rgba(15, 23, 42, 0.4)',
+  // Brand surfaces: the landing page's navy (footer, safety section) for the one signature card per screen and the
+  // login panel. The logo's blue-to-cyan route line is drawn on it; see components/brand.
+  night: '#0A1430',
+  nightGlow: '#1E40AF',
+  nightLine: 'rgba(255, 255, 255, 0.16)',
+  onNight: '#FFFFFF',
+  onNightSecondary: 'rgba(255, 255, 255, 0.72)',
+  onNightTertiary: 'rgba(255, 255, 255, 0.5)',
+  onNightPressed: 'rgba(255, 255, 255, 0.86)',
+  routeStart: '#2563EB',
+  routeEnd: '#22D3EE',
 }
 
 export type Palette = typeof light

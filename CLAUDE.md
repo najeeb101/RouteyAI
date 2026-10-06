@@ -12,7 +12,7 @@ Current build status: **Phases 1–10 complete; Phase 11 nearly done. Phase 13 (
 
 **Web**: Next.js 14 App Router · TypeScript strict · Tailwind · shadcn/ui · Supabase · Mapbox GL JS · Zustand · React Hook Form + Zod · pnpm · Vercel
 
-**Mobile**: Expo SDK 57 (React Native 0.86, new architecture) · React Native styles (`mobile/src/lib/colors`; NativeWind is not installed) · `@rnmapbox/maps` · `expo-router` · `expo-location` · `expo-notifications` · EAS — lives in `mobile/`
+**Mobile**: Expo SDK 57 (React Native 0.86, new architecture) · React Native styles (tokens in `mobile/src/lib/theme.ts`, read with `useTheme()` and `<Txt variant>`; `npm run check:design` guards it; NativeWind is not installed) · `@rnmapbox/maps` · `expo-router` · `expo-location` · `expo-notifications` · EAS — lives in `mobile/`
 
 ## Commands
 
@@ -65,7 +65,8 @@ routeyai/
 │       ├── features/
 │       │   ├── driver/       # screens/, hooks/useDriverData, context/DriverDataContext
 │       │   └── parent/       # screens/ (incl. useParentData), context/ParentDataContext
-│       ├── components/primitives/  # Card, MetricCard, ProgressBar, ScreenHeader, StatusPill
+│       ├── components/primitives/  # Txt, Button, Card, List, ScreenHeader, SheetModal, … (see Docs/plans/2026-10-05-mobile-ui-refresh.md)
+│       ├── components/brand/       # BrandMark, SignatureCard (navy card), RouteLine, LivePill
 │       └── lib/supabase.ts
 ├── supabase/
 │   ├── migrations/           # 0001_schema.sql … 0016_lock_optimization_helpers.sql

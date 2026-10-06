@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { Pressable, View } from 'react-native'
 import { useRouter } from 'expo-router'
 import { ChevronLeft } from 'lucide-react-native'
+import { BrandLockup } from '@/components/brand/BrandMark'
 import { Icon } from '@/components/primitives/Icon'
 import { Txt } from '@/components/primitives/Txt'
 import { gutter, minTouch, radius, space, useTheme } from '@/lib/theme'
@@ -12,10 +13,12 @@ type ScreenHeaderProps = {
   /** Shown to the right of the title, e.g. an IconButton. */
   action?: ReactNode
   back?: boolean
+  /** The RouteyAI logo and name above the title, on the Home tabs. */
+  brand?: boolean
 }
 
-/** iOS-style large title on the canvas, with an optional back button above it and an action beside it. */
-export function ScreenHeader({ title, subtitle, action, back = false }: ScreenHeaderProps) {
+/** iOS-style large title on the canvas, with an optional back button or the logo above it and an action beside it. */
+export function ScreenHeader({ title, subtitle, action, back = false, brand = false }: ScreenHeaderProps) {
   const router = useRouter()
   const t = useTheme()
 
@@ -31,6 +34,11 @@ export function ScreenHeader({ title, subtitle, action, back = false }: ScreenHe
         >
           <Icon icon={ChevronLeft} size={28} color={t.brand} strokeWidth={2} />
         </Pressable>
+      )}
+      {brand && (
+        <View style={{ marginBottom: space.md }}>
+          <BrandLockup />
+        </View>
       )}
       <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: space.md }}>
         <View style={{ flex: 1 }}>

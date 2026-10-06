@@ -68,7 +68,7 @@ export default function InviteScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: t.canvas }}>
       <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: space.xxl, gap: space.xxxl }}>
         <View style={{ alignItems: 'center', gap: space.sm }}>
-          <Image source={LOGO} style={{ width: 56, height: 56 }} accessible={false} />
+          <Image source={LOGO} alt="" style={{ width: 56, height: 56 }} accessible={false} />
           <Txt variant="title">RouteyAI</Txt>
         </View>
 
