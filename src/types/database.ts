@@ -480,7 +480,6 @@ export interface Database {
       generate_school_admin_invite: { Args: { p_school_id: string }; Returns: string }
       // 0006_school_helpers.sql
       get_school_info: { Args: Record<PropertyKey, never>; Returns: Json }
-      get_school_stats: { Args: Record<PropertyKey, never>; Returns: Json }
       get_buses_with_drivers: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -528,21 +527,6 @@ export interface Database {
       generate_driver_invite: { Args: { p_bus_id: string }; Returns: string }
       generate_parent_invite: { Args: { p_student_id: string }; Returns: string }
       send_announcement: { Args: { p_message: string; p_bus_id?: string | null }; Returns: string }
-      // 0010_routes_with_school_id.sql
-      get_routes_with_buses: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          id: string
-          school_id: string
-          bus_id: string
-          bus_name: string
-          bus_color: string
-          waypoints: Json
-          total_distance_km: number | null
-          total_duration_min: number | null
-          optimized_at: string | null
-        }[]
-      }
     }
     Enums: Record<string, never>
     CompositeTypes: Record<string, never>

@@ -148,12 +148,12 @@ RouteyAI/
 │       ├── components/           primitives/, brand/, navigation/
 │       └── lib/                  theme.ts, runs.ts, mapStyle.ts, supabase.ts, push.ts
 ├── supabase/
-│   ├── migrations/               0001 to 0020 (section 5.6)
+│   ├── migrations/               0001 to 0021 (section 5.6)
 │   ├── functions/
 │   │   ├── optimize-route/       route planner
 │   │   ├── send-notification/    Expo push
 │   │   └── _shared/              pure planning and wording logic, with Node tests
-│   ├── tests/                    SQL checks for 0017, 0018 and 0020
+│   ├── tests/                    SQL checks for 0017, 0018, 0020 and 0021
 │   └── seed.sql                  demo data for local development
 ├── scripts/                      app-icons/, landing-map/, review-accounts/ (demo accounts), store-graphics/
 ├── deck/                         pitch deck (HTML)
@@ -214,7 +214,6 @@ Called with `supabase.rpc(...)`. Functions marked service-only are for the Edge 
 | Invites and sign-up | `get_invite(code)`, `redeem_invite(code, user)` |
 | Planner (service-only) | `get_route_plan_payload`, `save_route_plan`, `run_stops`, `get_school_optimization_payload`, `save_student_bus_assignments`, `get_route_optimization_payload` |
 | Helpers | `qatar_today()`, `get_user_role()`, `get_user_school_id()`, the four `auth_*_ids()` helpers, `parent_route_child` and `parent_route_place` (service-only) |
-| Unused, safe to drop | `get_routes_with_buses`, `get_school_stats` and `recalculate_route` (a placeholder that randomly nudges a route's distance and time; school admins can still call it) |
 
 Triggers: `attendance_notify_parent` and `announcements_notify_parent` (call `send-notification`), `absence_reports_defaults`, and `updated_at` triggers on schools, buses and students.
 
@@ -256,6 +255,7 @@ Run in order with `pnpm db:push`. Types in `src/types/database.ts` are maintaine
 | 0018 | Parent route without other homes (`get_parent_route`, `get_parent_bus_progress`) |
 | 0019 | Email columns cast to text in `get_buses_with_drivers` and `get_schools_with_admins` (they failed on Postgres 17) |
 | 0020 | Clean-up: drops `set_bus_active`, `save_optimized_route`, drivers' direct attendance writes and the parent policy on `routes` |
+| 0021 | Drops the unused `recalculate_route`, `get_routes_with_buses` and `get_school_stats` |
 
 SQL checks for 0017, 0018 and 0020 are in `supabase/tests/` (section 7.3).
 

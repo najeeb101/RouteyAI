@@ -38,7 +38,7 @@ In rough priority order.
 ### Security and clean-up
 
 - [ ] **Revoke the Mapbox secret token** in the Mapbox account (Tokens page). It sat in `app.json` and `eas.json` in the public repo from phase 7 until 2026-10-01, so it is still in git history. Nothing uses it any more.
-- [ ] Drop the unused database functions `recalculate_route` (it randomly nudges a route's numbers and school admins can call it), `get_routes_with_buses` and `get_school_stats` in a new migration `0021`.
+- [ ] Push migration `0021` (`pnpm db:push`): it drops the unused functions `recalculate_route` (it randomly nudged a route's numbers and school admins could call it), `get_routes_with_buses` and `get_school_stats`. Written and checked locally; not yet on production.
 - [ ] `redeem_invite(p_code, p_user_id)` trusts `p_user_id` instead of `auth.uid()`. Low risk (it needs a valid unused code), but it cannot simply require `auth.uid()` because the invite page calls it before email confirmation gives the new user a session. Option: allow `p_user_id = auth.uid()`, or a user created in the last few minutes with no role yet.
 - [ ] Test the Edge Function caller checks with a signed-in school admin and parent.
 

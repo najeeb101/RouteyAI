@@ -14,7 +14,8 @@ Dated notes on what was built, decided and learned, newest first. The checklist 
 - **Landing page and store copy** describe the morning and afternoon runs, slotting in new students, and drop-off notifications.
 - **Dark mode** for the phone app: a second palette behind `useTheme()`, raised surfaces instead of shadows, a hairline on the navy card, status bar and navigation backgrounds that follow the setting. Checked on every parent and driver screen in the web preview; light mode unchanged. Still to check on an iPhone.
 - **Docs** reorganised: the technical reference rebuilt against the real schema, this log split out of the task tracker, `fixes.md` folded into the two-runs plan.
-- **Found and not yet fixed:** `recalculate_route`, `get_routes_with_buses` and `get_school_stats` are unused; `recalculate_route` randomly nudges a route's distance and time and can still be called by school admins.
+- **Found:** `recalculate_route`, `get_routes_with_buses` and `get_school_stats` were unused; `recalculate_route` randomly nudged a route's distance and time and school admins could call it. Migration `0021` drops all three (written and checked locally; push it with `pnpm db:push`).
+- **Pitch deck** (`deck/`) updated for two runs a day: routes stay put and new students slot in, morning pickups and afternoon drop-offs, no more "press Optimize".
 
 ## 2026-10-06: Two runs a day built; identity; fixes
 
