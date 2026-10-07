@@ -1,7 +1,7 @@
 # Fixes
 
-Status: planned 2026-10-06. 1A and 2 built and tested the same day (PR #5 from branch `fixes`, waiting to be
-merged); 3 built on `two-runs` with the new parent apps (not deployed); 1B built with the dashboard (two-runs step 5, 2026-10-06, not deployed). Three problems found while planning [two runs a day](two-runs-a-day.md),
+Status: all three fixed and live (2026-10-07). 1A and 2 merged in PR #5; 1B and 3 went out with two runs a day (PR #6),
+and 0020 (PR #9) removed the parent's direct read of `routes`. Three problems found while planning [two runs a day](two-runs-a-day.md),
 all older than that work. Only the demo school uses production and no real parents have the app, so none of them has
 reached anyone yet.
 

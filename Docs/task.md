@@ -240,7 +240,7 @@ Full plan: [plans/two-runs-a-day.md](plans/two-runs-a-day.md). Every bus does a 
 
 Full plan: [plans/fixes.md](plans/fixes.md). Older problems found while planning two runs a day.
 
-- [x] 1A: the Students page stops re-planning every route in the school after each change; Optimize all asks first; buses without a route get Plan route (2026-10-06, PR #5 from `fixes`, waiting to be merged)
+- [x] 1A: the Students page stops re-planning every route in the school after each change; Optimize all asks first; buses without a route get Plan route (2026-10-06, PR #5, merged)
 - [x] 2: "Edit student" saves the new address's map location (same PR; needs `NEXT_PUBLIC_MAPBOX_TOKEN` on Vercel)
-- [x] 1B: new children slot into the route without moving anyone (`update` built in two-runs step 2; the Students page calls it since step 5, 2026-10-06)
-- [x] 3: parents read only the route line and their own child's stop (`0018_parent_route.sql`, built with two-runs step 4, not deployed; 0020 drops the old read before the first real parent)
+- [x] 1B: new children slot into the route without moving anyone (`update` built in two-runs step 2; the Students page calls it since step 5; live 2026-10-07)
+- [x] 3: parents read only the route line and their own child's stop (`0018_parent_route.sql`, live 2026-10-07; 0020 dropped the old read the same day)
