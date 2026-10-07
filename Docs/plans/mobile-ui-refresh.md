@@ -169,10 +169,11 @@ and the landing page (navy footer and safety section, pulsing cyan live dot). Th
 Rules: one signature card per screen, so it stays special. Text on navy uses `onNight` tones and buttons the `onNight`
 variant (white). The route drawing is only used on the login panel: inside cards it collided with the text.
 
-## Dark mode (after the light mode is final)
+## Dark mode (built 2026-10-07)
 
-Starts only once every light screen has been checked on the iPhone. Because everything already goes through
-`useTheme()`, this is a palette, a few platform settings and a screen-by-screen check.
+Built after the light screens were checked on the iPhone. Because everything already went through `useTheme()`, it was a
+second palette, a few platform settings and a screen-by-screen check. What was built is described below; the iPhone
+check and the dark landing mockups are still open.
 
 **Behaviour:** follows the phone's light/dark setting, like the map already does (`userInterfaceStyle: automatic`,
 `lib/mapStyle.ts`). An in-app override (System / Light / Dark under Account, like the landing page's theme switch) only if
@@ -202,7 +203,13 @@ testers ask for it.
   1 pt `nightLine` border and a stronger glow; the login panel and live pill stay as they are; the "AI" in the header
   lockup uses the lifted brand blue.
 
-**Checks:** every screen in both modes on the iPhone (switch in Control Centre), contrast of text and status colours,
+**Built:** `dark` palette and `useIsDark()` / `useFloatingShadow()` in `lib/theme.ts`; `surfaceRaised` for sheets, floating
+cards, the selected segment and map controls; the navy `SignatureCard` and `LivePill` get a `nightLine` hairline in
+dark; `StatusBar style="auto"`; the root view and both stacks use the canvas colour so nothing flashes white; text fields
+use the dark keyboard. No splash change was needed (it is already navy), and the in-app override and iOS dark icon were
+left out. Checked in the web preview (emulated dark and light) on login and every parent and driver screen.
+
+**Still to check:** every screen in both modes on the iPhone (switch in Control Centre), contrast of text and status colours,
 the map overlays over the dark map style, sheets and the keyboard. Then redraw the dark landing mockups
 (`phone-*-dark.webp` already exist for the map backgrounds) and take dark store screenshots if wanted.
 

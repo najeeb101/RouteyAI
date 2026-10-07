@@ -19,10 +19,11 @@ import { boundsOf, decodePolyline } from '@/lib/geo'
 import { Mapbox } from '@/lib/mapbox'
 import { mapStyleJSON, ROUTE_LINE } from '@/lib/mapStyle'
 import type { Mark } from '@/lib/runs'
-import { floatingShadow, fonts, gutter, radius, space, useTheme, type Palette } from '@/lib/theme'
+import { fonts, gutter, radius, space, useFloatingShadow, useTheme, type Palette } from '@/lib/theme'
 
 export function DriverRouteScreen() {
   const t = useTheme()
+  const shadow = useFloatingShadow()
   const { loading, error, profile, run, stops, marks, mark, counts, reported, reportedIds, routePoints, encodedPolyline, trip } = useDriverContext()
   const [savingId, setSavingId] = useState<string | null>(null)
   const [markError, setMarkError] = useState<string | null>(null)
@@ -95,7 +96,7 @@ export function DriverRouteScreen() {
             {trip.status === 'active' ? (
               <LivePill style={{ position: 'absolute', left: space.md, bottom: space.md, height: 36 }} floating />
             ) : (
-              <View style={[{ position: 'absolute', left: space.md, bottom: space.md, backgroundColor: t.surface, borderRadius: radius.md, paddingHorizontal: space.md, height: 36, justifyContent: 'center' }, floatingShadow]}>
+              <View style={[{ position: 'absolute', left: space.md, bottom: space.md, backgroundColor: t.surfaceRaised, borderRadius: radius.md, paddingHorizontal: space.md, height: 36, justifyContent: 'center' }, shadow]}>
                 <StatusText label={trip.status === 'done' ? 'Finished' : 'Not started'} tone={trip.status === 'done' ? 'success' : 'neutral'} />
               </View>
             )}

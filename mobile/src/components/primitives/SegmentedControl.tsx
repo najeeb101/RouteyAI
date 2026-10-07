@@ -27,7 +27,7 @@ export function SegmentedControl<K extends string>({ segments, value, onChange, 
               flexDirection: 'row',
               gap: space.xs + 2,
               paddingHorizontal: space.sm,
-              backgroundColor: selected ? t.surface : 'transparent',
+              backgroundColor: selected ? t.surfaceRaised : 'transparent',
               borderWidth: selected ? 1 : 0,
               borderColor: t.separator,
             }}

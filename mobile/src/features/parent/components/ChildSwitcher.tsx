@@ -3,7 +3,7 @@ import { SegmentedControl } from '@/components/primitives/SegmentedControl'
 import { STATUS_DOT } from '@/components/primitives/StatusText'
 import { CHILD_STATUS } from '@/features/parent/components/childStatus'
 import type { ChildStatus, ParentChildProfile } from '@/features/parent/screens/useParentData'
-import { floatingShadow, radius, useTheme } from '@/lib/theme'
+import { radius, useFloatingShadow, useTheme } from '@/lib/theme'
 
 type ChildSwitcherProps = {
   items: ParentChildProfile[]
@@ -20,6 +20,7 @@ type ChildSwitcherProps = {
  */
 export function ChildSwitcher({ items, selectedId, statusFor, onSelect, variant = 'canvas' }: ChildSwitcherProps) {
   const t = useTheme()
+  const shadow = useFloatingShadow()
   if (items.length < 2) return null
 
   const control = (
@@ -36,5 +37,5 @@ export function ChildSwitcher({ items, selectedId, statusFor, onSelect, variant 
   )
 
   if (variant === 'canvas') return control
-  return <View style={[{ backgroundColor: t.surface, borderRadius: radius.md + 3, padding: 3 }, floatingShadow]}>{control}</View>
+  return <View style={[{ backgroundColor: t.surfaceRaised, borderRadius: radius.md + 3, padding: 3 }, shadow]}>{control}</View>
 }

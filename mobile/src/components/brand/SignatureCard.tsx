@@ -1,7 +1,7 @@
 import type { PropsWithChildren } from 'react'
 import { StyleSheet, View, type ViewStyle } from 'react-native'
 import Svg, { Circle, Defs, LinearGradient, Path, RadialGradient, Rect, Stop } from 'react-native-svg'
-import { radius, space, useTheme } from '@/lib/theme'
+import { radius, space, useIsDark, useTheme } from '@/lib/theme'
 
 /**
  * The one navy card per screen (the driver's current stop, the parent's arrival time, the finished route), so each
@@ -10,8 +10,9 @@ import { radius, space, useTheme } from '@/lib/theme'
  */
 export function SignatureCard({ children, style }: PropsWithChildren<{ style?: ViewStyle }>) {
   const t = useTheme()
+  const dark = useIsDark()
   return (
-    <View style={[{ backgroundColor: t.night, borderRadius: radius.lg, padding: space.xl, overflow: 'hidden' }, style]}>
+    <View style={[{ backgroundColor: t.night, borderRadius: radius.lg, padding: space.xl, overflow: 'hidden' }, dark ? { borderWidth: 1, borderColor: t.nightLine } : null, style]}>
       <NightGlow />
       {children}
     </View>
