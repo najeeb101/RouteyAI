@@ -21,8 +21,8 @@ const APPS: {
     title: 'The route in order, and a record of who got on',
     desc: 'Drivers see each stop in the planned order, check students in as they board, and can tell every parent at once when the bus is late.',
     features: [
-      { icon: ListOrdered, text: 'Stops in the planned order, next pickup first' },
-      { icon: UserCheck, text: 'One tap to mark a student boarded or absent' },
+      { icon: ListOrdered, text: 'Stops in the planned order: pickups in the morning, drop-offs in reverse in the afternoon' },
+      { icon: UserCheck, text: 'One tap to mark a student boarded, absent or dropped off' },
       { icon: House, text: 'Students staying home, as reported by their parents' },
       { icon: Timer, text: 'A running-late notice to every parent on the bus' },
       { icon: Radio, text: 'Shares the bus location every 10 seconds' },

@@ -1,5 +1,10 @@
+import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import SchoolsTable from './SchoolsTable'
+
+export const metadata: Metadata = {
+  title: 'Schools',
+}
 
 export type SchoolRow = {
   id: string
@@ -14,6 +19,7 @@ export type SchoolRow = {
 
 export default async function AdminSchoolsPage() {
   const supabase = createClient()
-  const { data } = await supabase.rpc('get_schools_with_admins')
+  const { data, error } = await supabase.rpc('get_schools_with_admins')
+  if (error) console.error('Schools:', error.message)
   return <SchoolsTable initialSchools={(data ?? []) as SchoolRow[]} />
 }

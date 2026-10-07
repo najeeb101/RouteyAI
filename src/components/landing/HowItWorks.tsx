@@ -20,8 +20,8 @@ const STEPS = [
     desc: 'Assign a driver to each bus and send every parent a personal invite link. Each person signs in to their own view.',
   },
   {
-    title: 'Run the route',
-    desc: 'The driver starts the route and marks each student boarded or absent. Parents follow the bus on a map and get a notification when their child boards.',
+    title: 'Run the day',
+    desc: 'In the morning the driver picks students up and ends at the school. In the afternoon the same route runs in reverse and each student is dropped off at home. Parents follow the bus on a map and get a notification when their child boards and when they are home.',
   },
 ] as const
 
@@ -71,7 +71,7 @@ export function HowItWorks() {
   return (
     <section id="how-it-works" className="scroll-mt-20 border-y border-border bg-muted/60">
       <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 md:py-28">
-        <SectionHeading title="From a list of addresses to buses on the road" intro="Four steps to your first morning run." />
+        <SectionHeading title="From a list of addresses to buses on the road" intro="Four steps to your first school day." />
 
         <div className="grid gap-10 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-16">
           <ol className="lg:py-[16vh]">

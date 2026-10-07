@@ -11,7 +11,7 @@ Character limits are checked: App Store name and subtitle 30, promotional text 1
 | App name (both stores) | RouteyAI: School Bus Tracker |
 | App Store subtitle | Live school bus tracking |
 | Play short description | Follow your child's school bus live and know the moment they get on board. |
-| App Store promotional text | Follow your child's bus on a live map, know the moment they board, and tell the driver when they're staying home. Free for parents and drivers. |
+| App Store promotional text | Follow your child's bus on a live map, know the moment they board and get home, and tell the driver when they're staying home. Free for parents and drivers. |
 | App Store keywords | school bus,bus tracker,school transport,parent,driver,student,attendance,qatar,doha,live map |
 | Category | Education (App Store secondary: Navigation; Play: Education) |
 | Age rating | 4+ / Everyone. The app is for parents and drivers, not children. |
@@ -26,14 +26,14 @@ RouteyAI is used by schools. Your school sends you a personal invite link that s
 FOR PARENTS
 • See the bus on a live street map while the route is running
 • Arrival time for your stop, and an alert when the bus is close
-• A notification when your child boards or is marked absent
+• A notification when your child boards, is dropped off at home or is marked absent
 • Every child on one account, one tap to switch
-• Report an absence ahead of time, so the bus doesn't wait
+• Report an absence for the morning, the afternoon or both, so the bus doesn't wait
 • Each child's past rides and absences
 
 FOR DRIVERS
-• Stops in the planned order, next pickup first
-• One tap to mark a student boarded or absent
+• Stops in the planned order: pickups in the morning, drop-offs in reverse in the afternoon
+• One tap to mark a student boarded, absent or dropped off
 • See which students are staying home, as reported by their parents
 • Tell every parent on the bus at once when you're running late
 • Shares the bus location every 10 seconds while the route is running

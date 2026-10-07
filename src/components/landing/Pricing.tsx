@@ -15,7 +15,7 @@ const INCLUDED = [
   'Seat capacity for every bus',
   'Announcements to one bus or all of them',
   'Web dashboard for school staff',
-  'Driver app with pickup list and attendance',
+  'Driver app with pickup and drop-off lists and attendance',
   'Parent app with bus tracking and notifications',
 ]
 

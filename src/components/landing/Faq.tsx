@@ -11,22 +11,22 @@ export const FAQS = [
   {
     question: 'How are the routes planned?',
     answer:
-      'Students are grouped by where they live, each group is given a bus with enough seats, and the stops are put in the order that gives the shortest drive, using real road travel times from Mapbox. Once made, a route stays the same so drivers can learn it; it is only recalculated when the school admin chooses to.',
+      'Students are grouped by where they live, each group is given a bus with enough seats, and the stops are put in the order that gives the shortest drive, using real road travel times from Mapbox. Every bus does a morning run (homes to school) and an afternoon run (school to homes, the same stops in reverse). Once made, a route stays the same so drivers can learn it; it is only recalculated when the school admin chooses to, and only if the new route is clearly shorter.',
   },
   {
     question: 'What happens when a new student joins mid-year?',
     answer:
-      'The student is added to the nearest bus that still has free seats, and their stop joins that bus’s route when the school admin recalculates it. Other buses don’t change. If every nearby bus is full, the school admin is alerted to add a bus.',
+      'The student is added to the nearest bus that still has free seats, and their stop slots into that bus’s route straight away. Every other stop keeps its place, so drivers don’t have to relearn anything, and other buses don’t change. If every nearby bus is full, the school admin is alerted to add a bus.',
   },
   {
     question: 'How do drivers use RouteyAI?',
     answer:
-      'Drivers use the RouteyAI app. It shows the next pickup in route order, lets them mark each student boarded or absent with one tap, and shares the bus location every 10 seconds while the route is running. It also shows which students their parents reported absent, sends parents a running-late notice in one tap, and gives a summary when the route ends.',
+      'Drivers use the RouteyAI app. In the morning it shows the next pickup in route order and lets them mark each student boarded or absent with one tap. In the afternoon students board at school and the driver drops them off stop by stop in reverse order, with the next drop-off first. It shares the bus location every 10 seconds while the route is running. It also shows which students their parents reported absent, sends parents a running-late notice in one tap, and gives a summary when the route ends.',
   },
   {
     question: 'What do parents see?',
     answer:
-      'Parents see their child’s bus on a map, the arrival time for their stop, and school announcements. They get a notification when their child boards or is marked absent, and when the bus is getting close. Parents with more than one child switch between them in the app, can report an absence ahead of time, and can look back at each child’s past rides.',
+      'Parents see their child’s bus on a map, the arrival time for their stop, and school announcements. They get a notification when their child boards or is marked absent, when the bus is getting close, and when their child is dropped off at home. Parents with more than one child switch between them in the app, can report an absence ahead of time for the morning, the afternoon or both, and can look back at each child’s past rides.',
   },
   {
     question: 'How is student data protected?',

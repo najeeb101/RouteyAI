@@ -1,5 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
-import { RouteyLogo } from '@/components/RouteyLogo'
+import Link from 'next/link'
+import { TriangleAlert } from 'lucide-react'
+import { AuthShell } from '@/components/auth/AuthShell'
 import InviteForm from './InviteForm'
 import type { InviteRole } from '@/types/database'
 
@@ -9,31 +11,18 @@ interface Props {
 
 function ErrorCard({ message }: { message: string }) {
   return (
-    <div className="w-full max-w-sm">
-      <div className="flex flex-col items-center mb-6">
-        <RouteyLogo size={64} variant="white" />
-        <div className="mt-3 text-2xl font-extrabold text-white tracking-tight">
-          Routey<span className="text-sky-400">AI</span>
-        </div>
-      </div>
-      <div className="bg-white rounded-2xl shadow-2xl p-6 text-center">
-        <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2" strokeLinecap="round">
-            <circle cx="12" cy="12" r="10"/>
-            <line x1="12" y1="8" x2="12" y2="12"/>
-            <line x1="12" y1="16" x2="12.01" y2="16"/>
-          </svg>
-        </div>
-        <h2 className="text-lg font-bold text-[#0F172A] mb-2">Invalid invite</h2>
-        <p className="text-sm text-[#64748B] mb-5">{message}</p>
-        <a
-          href="/login"
-          className="inline-block bg-[#1E3A8A] text-white rounded-xl px-6 py-2.5 text-sm font-semibold hover:bg-[#1e40af] transition-colors"
-        >
+    <AuthShell subtitle="Invite link">
+      <div className="text-center">
+        <span className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-bad-tint text-bad-text">
+          <TriangleAlert size={22} aria-hidden="true" />
+        </span>
+        <h1 className="font-display text-[22px] font-bold leading-7 tracking-[-0.01em] text-ink">Invalid invite</h1>
+        <p className="mb-5 mt-1.5 text-sm text-ink-2">{message}</p>
+        <Link href="/login" className="inline-flex h-10 items-center justify-center rounded-xl bg-brand px-5 text-sm font-semibold text-white transition-colors hover:bg-brand-pressed">
           Go to login
-        </a>
+        </Link>
       </div>
-    </div>
+    </AuthShell>
   )
 }
 
