@@ -1,5 +1,7 @@
 # Mobile app UI refresh
 
+> Tracked as **Phase 15** in [task.md](../task.md). **Status:** light mode and the RouteyAI identity are done (PR #4, 2026-10-06); dark mode was built on 2026-10-07 and still needs a check on an iPhone.
+
 **Goal:** make the parent and driver apps look designed by a person, not generated: one type system shared with the
 landing page, a restrained palette, a small set of shapes and spacings, and patterns borrowed from transport apps people
 already trust. Light mode first; dark mode follows once the light screens are final.

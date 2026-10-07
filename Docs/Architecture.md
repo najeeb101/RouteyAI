@@ -1,110 +1,83 @@
-# RouteyAI Infrastructure & Architecture
+# Architecture
+
+How RouteyAI is hosted and why. For the schema, access rules and conventions see [Claude.md](Claude.md).
 
 ## Overview
 
-RouteyAI is an AI-powered school bus routing and student tracking platform. This document outlines the hosting infrastructure and third-party services selected to support real-time parent tracking, role-based access, and the AI routing engine.
+RouteyAI runs on three managed services and needs no backend server of its own:
 
-The architecture is built on three tightly integrated services that handle all platform needs without requiring a separate backend server.
+| Service | Role |
+|---|---|
+| **Vercel** | Hosts the Next.js website and dashboards |
+| **Supabase** | PostgreSQL + PostGIS, authentication, access rules, realtime updates and the Edge Functions that plan routes and send notifications |
+| **Mapbox** | Maps, address search and road directions |
 
----
-
-## Hosting & Deployment: Vercel
-
-The Next.js application is deployed on **Vercel** — the platform built by the same team behind Next.js.
-
-- **Why Vercel:** Zero-config GitHub integration with automatic CI/CD on every push. Perfect Next.js compatibility (App Router, Server Components, Server Actions, Edge Middleware all work out of the box).
-- **Cost:** Free tier covers the entire development and early launch phase. Scales with revenue.
-- **Edge Functions:** Vercel's edge network handles API routes and middleware with no cold start issues for typical SaaS workloads.
-
-> The AI route optimization runs as a **Supabase Edge Function** — not a separate backend server — keeping the stack lean and cost-free.
-
----
-
-## Database, Auth & Real-Time: Supabase
-
-Supabase serves as the central data store, authentication provider, and real-time engine.
-
-- **PostgreSQL + PostGIS:** Handles all relational data with native geospatial support for distance calculations and location queries.
-- **Supabase Auth:** Email/password authentication with role-based access enforced via Row Level Security (RLS) policies directly in the database.
-- **Supabase Realtime:** WebSocket subscriptions broadcast GPS coordinate updates from the driver's device directly to the parent's tracking screen with zero additional infrastructure.
-- **Edge Functions:** Deno-based serverless functions run the K-Means clustering and TSP route optimization logic on demand.
-- **Cost:** Free tier includes 500MB database, 2GB bandwidth, and 500K Edge Function invocations per month — sufficient for MVP and early launch.
-
----
-
-## Maps & Location: Mapbox
-
-RouteyAI uses **Mapbox** as its core mapping and routing provider.
-
-### Why Mapbox over Google Maps
-
-1. **Cost-Effective Free Tier:** 50,000 monthly map loads and 100,000 geocoding requests free — protects against unpredictable API bills during early growth.
-2. **Custom Map Styling (Mapbox Studio):** Full control over the map's visual identity. Routes, school zones, and bus stops can be styled to match RouteyAI's brand without distracting POIs.
-3. **Logistics-First APIs:**
-   - **Matrix API:** Feeds precise travel times and distances into the K-Means + TSP solvers for accurate route optimization.
-   - **Directions API:** Renders real road-network route lines on the map (not straight lines).
-   - **Navigation SDK:** Could enable in-app turn-by-turn guidance later. Not used today — the driver app deliberately has no map or navigation.
-4. **Offline Tile Support:** Available if drivers ever need map guidance in poor-coverage areas (not used today).
-
----
-
-## Mobile App: Expo
-
-Drivers and parents use a native app built with **Expo (React Native)** in `mobile/`, built and shipped with **EAS**.
-
-- **Driver:** sends the phone's GPS position (`expo-location`) to `bus_locations` every 10 seconds while a route is active, and records attendance.
-- **Parent:** subscribes to `bus_locations` over Supabase Realtime and renders the bus with `@rnmapbox/maps`.
-- **Push notifications:** device tokens are stored in `user_roles.push_token`; the `send-notification` Edge Function sends through the Expo push service (boarded/absent, announcements, ETA alerts).
-
----
-
-## Architecture Diagram
+The phone app (Expo, in `mobile/`) talks to Supabase directly and is built and shipped with EAS.
 
 ```
 ┌─────────────────────────────────────────────────┐
-│                   VERCEL (CDN)                  │
-│          Next.js 14 App (TypeScript)            │
-│   Landing Page │ Platform Admin │ School Admin  │
+│                  VERCEL (CDN)                   │
+│            Next.js 14 (TypeScript)              │
+│  Landing page │ Platform admin │ School admin   │
 └────────────────────┬────────────────────────────┘
-                     │ Server Actions        ┌──────────────────────┐
-                     │                       │  EXPO APP (mobile/)  │
-                     │                       │  Driver │ Parent     │
-                     │                       └──────────┬───────────┘
-                     │                                  │ supabase-js
-          ┌──────────▼──────────┐
-          │      SUPABASE        │
-          │  ┌───────────────┐   │
-          │  │  PostgreSQL   │   │
-          │  │  + PostGIS    │   │
-          │  └───────────────┘   │
-          │  ┌───────────────┐   │
-          │  │  Auth + RLS   │   │
-          │  └───────────────┘   │
-          │  ┌───────────────┐   │
-          │  │   Realtime    │◄──┼── Driver GPS broadcast
-          │  │  WebSockets   │───┼──► Parent live tracking
-          │  └───────────────┘   │
-          │  ┌───────────────┐   │
-          │  │ Edge Functions│   │ ◄── Route optimization + push notifications
-          │  └───────────────┘   │
-          └─────────────────────┘
-                     │
-          ┌──────────▼──────────┐
-          │       MAPBOX         │
-          │  Maps │ Geocoding    │
-          │  Directions │ Matrix │
-          └─────────────────────┘
+                     │ Server Actions          ┌─────────────────────┐
+                     │                         │  EXPO APP (mobile/) │
+                     │                         │  Driver │ Parent    │
+                     │                         └──────────┬──────────┘
+                     │                                    │ supabase-js
+          ┌──────────▼────────────────────────────────────▼─┐
+          │                    SUPABASE                     │
+          │  PostgreSQL + PostGIS   Auth + row level security│
+          │  Realtime (WebSockets): driver GPS ──► parent map│
+          │  Edge Functions: route planning, push messages  │
+          └──────────────────────────┬──────────────────────┘
+                                     │
+                          ┌──────────▼──────────┐
+                          │       MAPBOX        │
+                          │ Maps │ Geocoding    │
+                          │ Directions          │
+                          └─────────────────────┘
 ```
 
----
+## Hosting: Vercel
 
-## Environment Variables
+- **Why:** zero-configuration GitHub integration with automatic deploys on every merge to `main`, and complete Next.js support (App Router, Server Components, Server Actions, middleware).
+- **Cost:** the free tier covers development and the early launch; it scales with revenue.
+- **No separate backend:** route planning runs as a Supabase Edge Function, not a server of our own, which keeps the stack lean.
+
+## Data, auth and realtime: Supabase
+
+- **PostgreSQL + PostGIS** holds all relational data with native geospatial support (stop locations, distances).
+- **Auth** is email and password. Access is enforced by **row level security** policies in the database, so the rules hold no matter which client asks (website, app or a script).
+- **Realtime** broadcasts the driver's GPS rows, run and attendance changes over WebSockets to parents' screens and the school dashboard, with no extra infrastructure.
+- **Edge Functions** (Deno) are `optimize-route`, which keeps each bus's route and slots changes in (and proposes re-plans), and `send-notification`, which sends push messages through Expo. Each checks its caller itself.
+- **Cost:** the free tier (500 MB database, 2 GB bandwidth, 500K function calls a month) is enough for the MVP and early launch.
+
+## Maps: Mapbox
+
+1. **Cost:** 50,000 map loads and 100,000 geocoding requests a month are free, which protects against surprise bills during early growth.
+2. **Custom styling:** full control over the map's look; the project uses one Google Maps-like style everywhere (see Claude.md §3.5).
+3. **APIs in use:**
+   - **Directions:** real road lines and leg times for each run (the planner calls it per run, in batches above 24 stops).
+   - **Geocoding:** turns a student's home address into a map location.
+   - **GL JS** (web) and **`@rnmapbox/maps`** (app) draw the maps.
+4. **Not used:** the Navigation SDK. The driver app deliberately has no map or turn-by-turn guidance, because drivers know their roads.
+
+## Phone app: Expo
+
+Drivers and parents use a native app built with **Expo (React Native)** and shipped with **EAS**; JavaScript-only changes can go out as over-the-air updates.
+
+- **Driver:** starts the morning or afternoon run, sends the phone's GPS position (`expo-location`) to `bus_locations` every 10 seconds while the run is open, and records attendance through `mark_attendance`.
+- **Parent:** follows the bus over Supabase Realtime, drawn with `@rnmapbox/maps`, and reads its route only through `get_parent_route`.
+- **Push notifications:** device tokens live in `user_roles.push_token`; the `send-notification` function sends through the Expo push service (boarded, absent and dropped-off messages, announcements, "bus almost there" alerts).
+
+## Environment variables
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=        # Server-side only, never exposed to client
+SUPABASE_SERVICE_ROLE_KEY=        # server only, never exposed to the browser
 NEXT_PUBLIC_MAPBOX_TOKEN=
 ```
 
-All secrets stored in `.env.local` (never committed). See `.env.example` for the template.
+Secrets live in `.env.local`, which is never committed; `.env.example` is the template. The phone app's variables are in `mobile/.env.example`.

@@ -1,58 +1,79 @@
 # AGENTS.md
 
-This file provides guidance to Codex (Codex.ai/code) when working with code in this repository.
+Guidance for Codex and other coding agents working in this repository. It mirrors CLAUDE.md.
 
-## Read These First
+## Source of truth
 
-This repo is currently in the **planning/documentation phase** — no source code, no `package.json`, no `src/` exists yet. All knowledge lives in [Docs/](Docs/):
+[Docs/Claude.md](Docs/Claude.md) is the canonical technical reference (schema, access rules, design tokens, conventions). Where this file and Docs/Claude.md disagree, Docs/Claude.md wins. The other docs are indexed in [Docs/README.md](Docs/README.md).
 
-- [Docs/AGENTS.md](Docs/AGENTS.md) — **canonical system prompt**: full tech stack, design tokens, complete database schema with RLS policies, file layout, build phases, coding conventions. Read this in full before writing code.
-- [Docs/Architecture.md](Docs/Architecture.md) — Vercel + Supabase + Mapbox infra rationale and architecture diagram.
-- [Docs/features.md](Docs/features.md) — feature catalog organized by user role.
-- [Docs/task.md](Docs/task.md) — phase-by-phase task checklist; **work follows this order strictly** (Phase 1 → Phase 9).
+**Status (2026-10-07):** phases 1–10 and 14–16 are complete and live at https://routeyai.vercel.app (the website auto-deploys from `main`). Phase 11 (custom domain) is nearly done, phase 13 (landing page launch) is in progress and phase 12 (store submission) has not started. The live checklist is [Docs/task.md](Docs/task.md).
 
-When [Docs/AGENTS.md](Docs/AGENTS.md) and this file disagree, [Docs/AGENTS.md](Docs/AGENTS.md) wins — it is the single source of truth that all AI assistants on this project must follow.
+## The core of the product: two runs a day
 
-## Stack (one-liner)
+Every bus does a **morning run** (homes to school) and an **afternoon run** (school to homes, the same stops in reverse), every school day, always both. Treat this as the main idea of the app, not a feature.
 
-Next.js 14 App Router · TypeScript (strict, no `any`) · Tailwind · shadcn/ui · Supabase (Postgres + PostGIS + Auth + Realtime + Edge Functions) · Mapbox GL JS · Zustand · React Hook Form + Zod · pnpm · Vercel.
+- `students.stop_order` is the bus's chain in morning order; the afternoon is the chain reversed. `routes` has one row per bus **and run**; `bus_runs`, `attendance` and `absence_reports.runs` are per run.
+- **Routes never change by themselves.** Adding, moving or removing a child slots them in (`optimize-route` action `update`); re-planning is a proposal an admin applies only if it is clearly better.
+- Drivers start and end runs with `start_run` / `end_run` and mark students with `mark_attendance` (no direct table writes). Parents read their route only through `get_parent_route`.
+- The shared run rules live in `src/lib/runs.ts` and `mobile/src/lib/runs.ts` (keep them in step) and are tested with `pnpm test:logic`.
+- Full rules: [Docs/Claude.md §1.1](Docs/Claude.md) and [Docs/plans/two-runs-a-day.md](Docs/plans/two-runs-a-day.md).
 
-## Commands (once Phase 1 initializes the project)
+## Stack
+
+- **Web:** Next.js 14 (App Router), TypeScript strict, Tailwind, shadcn/ui, Supabase, Mapbox GL JS, Zustand, React Hook Form + Zod, pnpm, Vercel.
+- **Mobile** (`mobile/`): Expo SDK 57 (React Native 0.86, new architecture), React Native styles from `mobile/src/lib/theme.ts` (read with `useTheme()` and `<Txt variant>`; `npm run check:design` guards it; NativeWind is not installed), `@rnmapbox/maps`, expo-router, expo-location, expo-notifications, EAS.
+
+## Commands
 
 ```bash
-pnpm install
+# Web (repo root)
 pnpm dev              # Next.js dev server
 pnpm build
 pnpm lint
+pnpm typecheck        # tsc --noEmit
+pnpm test:logic       # route planning, notification wording, run rules (Node's test runner)
+pnpm db:reset         # rebuild the local database from migrations + seed
+pnpm db:push          # push migrations to the remote Supabase project
+pnpm db:types         # regenerate src/types/database.ts (the file is otherwise maintained by hand)
+
+# Mobile (cd mobile/)
+npx expo start        # dev server (add --android or --ios)
+npx tsc --noEmit && npm run check:design
 ```
 
-The package.json does not exist yet — these are the expected commands per [README.md](README.md). Do not invent additional scripts; follow whatever Phase 1 sets up.
+SQL checks for a migration run against the local database: see Docs/Claude.md §7.3.
 
-## Non-obvious architectural rules (don't violate without checking docs)
+## Architectural rules
 
-1. **Multi-tenancy is enforced in the database, not the app.** Every table except `schools`/`user_roles` is scoped by `school_id`, and RLS policies in [Docs/AGENTS.md](Docs/AGENTS.md) §5 do the filtering using `get_user_role()` / `get_user_school_id()` helpers. Application code must not bypass RLS.
-2. **Two Supabase clients, never mixed.** Use the **server client** (`src/lib/supabase/server.ts`) in Server Components, Server Actions, and API routes. Use the **browser client** (`src/lib/supabase/client.ts`) in Client Components only. Never import the service-role key in client-facing code — it bypasses RLS.
-3. **Mapbox is client-only.** Wrap any `mapbox-gl` usage in a Client Component, lazy-load it with `next/dynamic` + `ssr: false`, and clean up the map instance in the `useEffect` return. Use `mapbox-gl` directly, not `react-map-gl`.
-4. **Server Components by default.** Add `'use client'` only when you actually need interactivity, hooks, or browser APIs.
-5. **Real-time bus tracking** flows: driver writes to `bus_locations` → Supabase Realtime → parent's subscribed map updates. The `idx_bus_locations_bus_id` index on `(bus_id, timestamp DESC)` exists specifically for this hot path.
-6. **Route optimization** runs as a Supabase Edge Function (`supabase/functions/optimize-route/`) using K-Means clustering + Nearest-Neighbor TSP heuristic, fed by Mapbox Matrix API for real road-network distances. The Edge Function is the optimizer — not a Next.js API route.
+1. **Multi-tenancy lives in the database.** Every table except `schools` and `user_roles` is scoped by `school_id`, and RLS policies (Docs/Claude.md §5.2) do the filtering. Never bypass RLS in application code.
+2. **Two Supabase clients, never mixed.** `src/lib/supabase/server.ts` in Server Components, Server Actions and API routes; `src/lib/supabase/client.ts` in Client Components only. `SUPABASE_SERVICE_ROLE_KEY` is server-side only: it bypasses RLS.
+3. **Mapbox is client-only.** Lazy-load with `next/dynamic` and `ssr: false`, use `mapbox-gl` directly (not `react-map-gl`), and clean up map instances in the `useEffect` return.
+4. **Server Components by default.** Add `'use client'` only for interactivity, hooks or browser APIs.
+5. **Route planning is an Edge Function, never a Next.js API route.** `supabase/functions/optimize-route` keeps each bus's order and slots changes in; re-planning is only a proposal. The logic is in `supabase/functions/_shared/`.
+6. **Live tracking hot path:** the driver writes to `bus_locations`, Supabase Realtime pushes it to the parent's map. The `idx_bus_locations_bus_id` index on `(bus_id, timestamp DESC)` is critical.
+7. **Every Edge Function checks its caller** (`supabase/functions/_shared/caller.ts`); the gateway only checks that a key is valid, and the anon key is public.
+8. **A new `SECURITY DEFINER` function** needs its own role check, or `REVOKE ALL ... FROM PUBLIC, anon, authenticated`.
 
-## Roles (used everywhere — auth, RLS, redirects, UI)
+## Roles
 
-`platform_admin` · `school_admin` · `driver` · `parent`. Post-login redirect is role-based. RLS policies differ per role per table; see [Docs/AGENTS.md](Docs/AGENTS.md) §5.
+`platform_admin` · `school_admin` · `driver` · `parent`. The post-login redirect is role-based, and access rules differ per role per table (Docs/Claude.md §5.2).
 
-## Design system (must match)
+## Design system
 
-Karwa / Qatar Metro Link aesthetic — deep blue (`#1E3A8A`) primary, white/slate backgrounds, Inter font, map-centric layouts. Mobile-first for driver and parent views; desktop-first for admin dashboards. Full color tokens in [Docs/AGENTS.md](Docs/AGENTS.md) §3.1 — use them, don't invent new ones.
+One design for the landing page, the apps and the dashboards: Karwa / Qatar Metro aesthetic, deep blue `#1E3A8A` for things you act on, Schibsted Grotesk headings with Inter text, one navy signature card per screen, flat white cards, status as a coloured dot plus words, no uppercase labels. Tokens and components are listed in Docs/Claude.md §3.
+
+- **Dashboards** (`/school`, `/admin`) use the app's tokens as Tailwind colours (`ink`, `ink-2`, `canvas`, `line`, `brand`, `night`, `live`, `ok` / `warn` / `bad` with `-text` and `-tint`), `font-display`, the landing page's easing (`ease-swift`, `animate-rise`) and the kit in `src/components/dashboard/`. Their map uses `src/lib/mapStyle.ts`, a copy of the app's.
+- **The phone app** reads colours through `useTheme()` and follows the phone's light or dark setting. Never use raw hex in components.
 
 ## Conventions
 
-- Absolute imports via `@/` alias → `src/`.
-- PascalCase for components and component files (`StatsCard.tsx`); camelCase for utilities (`utils.ts`).
-- One component per file, named exports.
-- Use `cn()` from shadcn for conditional classes; customize shadcn components via Tailwind, never by editing the shadcn source.
+- Absolute imports with `@/` (`src/` on the web, `mobile/src/` in the app).
+- PascalCase for component files, camelCase for utilities; one component per file, named exports.
+- `cn()` from shadcn for conditional classes; never edit shadcn source files.
 - Always destructure `{ data, error }` from Supabase calls and handle `error`.
+- Mobile route files in `mobile/src/app/` are thin: they render a screen from `mobile/src/features/<role>/screens/`.
+- Work on a branch, open a pull request, merge to `main` (which deploys the website) when it is checked.
 
 ## What not to commit
 
-`.env.local` (already in `.gitignore`). The four required env vars are listed in [README.md](README.md) and [Docs/Architecture.md](Docs/Architecture.md). `SUPABASE_SERVICE_ROLE_KEY` is server-side only.
+`.env.local` (gitignored). Required variables: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_MAPBOX_TOKEN`; the app's variables are in `mobile/.env.example`.

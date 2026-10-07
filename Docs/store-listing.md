@@ -76,7 +76,7 @@ No ads, no tracking across apps, nothing sold. Data is encrypted in transit.
 
 ## Blocking before submission
 
-- Account deletion (Apple 5.1.1(v), Google Play) is built: Account tab → Delete account. Play's "delete account URL" is `https://<domain>/privacy#delete-account`. Needs migration `0015` on the production database.
+- Account deletion (Apple 5.1.1(v), Google Play) is built and live: Account tab, Delete account (migration `0015`, on production). Play's "delete account URL" is `https://<domain>/privacy#delete-account`.
 - Demo reviewer accounts on the production database (above).
 - A real support email and privacy policy URL (`NEXT_PUBLIC_CONTACT_EMAIL`, `/privacy` on the final domain).
 
@@ -89,4 +89,4 @@ No ads, no tracking across apps, nothing sold. Data is encrypted in transit.
 | Play feature graphic | 1024 × 500: `mobile/store/feature-graphic.jpg` (`node scripts/store-graphics/build.mjs`) |
 | App icon | 1024 × 1024, no transparency (App Store, from `mobile/assets/icon.png`); 512 × 512 (Play): `mobile/store/play-icon.png` |
 
-Suggested screenshot order: parent live map, child boarded notification, report an absence, driver route with stops, driver check-in, end-of-route summary.
+Suggested screenshot order: parent live map, child boarded notification, "Which rides?" absence sheet, driver morning route with stops, driver afternoon drop-offs, end-of-run summary. Dark versions are available now that the app follows the phone's appearance.

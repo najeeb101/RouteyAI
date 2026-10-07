@@ -1,8 +1,8 @@
-# 🚌 RouteyAI
+# RouteyAI
 
 **Smarter school bus routes, and live bus tracking for parents.**
 
-🌐 **Website:** [routeyai.vercel.app](https://routeyai.vercel.app)
+**Website:** [routeyai.vercel.app](https://routeyai.vercel.app)
 
 ---
 
@@ -22,7 +22,7 @@ No more waiting at the bus stop guessing, and no more planning routes by hand.
 
 ## How it helps each person
 
-### 👨‍👩‍👧 Parents
+### Parents
 
 - See your child's bus moving on a map, live
 - Know how many minutes until it reaches your stop
@@ -30,18 +30,18 @@ No more waiting at the bus stop guessing, and no more planning routes by hand.
 - Let the school know your child won't ride, for the morning, the afternoon or both
 - Read updates from the driver and the school
 
-### 🚌 Drivers
+### Drivers
 
 - Start the morning or the afternoon run, and see the next stop in the right order for it
 - Tap to mark each student as on board or absent, and in the afternoon as dropped off
 - The phone shares the bus location while the route is running, so parents can follow along
 - Send quick updates to parents, such as "running 10 minutes late"
 
-### 🏫 Schools
+### Schools
 
 - Add buses, drivers and students in one place
-- Let RouteyAI plan the routes, instead of drawing them by hand
-- See every bus on one live map
+- Let RouteyAI plan the routes, instead of drawing them by hand, and keep them steady: a new student slots in without moving anyone else
+- See every bus and every run on one live map, and who has not yet been dropped off
 - Send announcements to drivers and parents
 - Check reports on how full each bus is and how many students ride
 
@@ -72,9 +72,9 @@ Read more in the [privacy policy](https://routeyai.vercel.app/privacy).
 
 | Part | Status |
 |---|---|
-| Website | ✅ Live |
-| School dashboard (on the web) | ✅ Live: routes, students, fleet, absences and analytics |
-| Phone app for parents and drivers | 🛠️ Being prepared for the App Store and Google Play |
+| Website | Live |
+| School dashboard (on the web) | Live: routes, students, fleet, absences and analytics |
+| Phone app for parents and drivers | Working; being prepared for the App Store and Google Play |
 
 ---
 
@@ -88,7 +88,7 @@ Everything below is for people who want to run or work on the code.
 |---|---|
 | Website and dashboards | Next.js 14 (App Router), TypeScript, Tailwind CSS, shadcn/ui |
 | Database, sign-in and live updates | Supabase (PostgreSQL, Auth, Realtime, Edge Functions) |
-| Maps | Mapbox (GL JS, Geocoding, Directions and Matrix APIs) |
+| Maps | Mapbox (GL JS, Geocoding and Directions APIs) |
 | Phone app | Expo SDK 57 (React Native 0.86), expo-router, @rnmapbox/maps |
 | State and forms | Zustand, React Hook Form + Zod |
 | Hosting | Vercel (website), EAS (phone app) |
@@ -151,6 +151,7 @@ pnpm dev         # start the website locally
 pnpm build       # production build
 pnpm lint        # check code style
 pnpm typecheck   # check TypeScript types
+pnpm test:logic   # route planning, notification wording and run rules
 pnpm db:reset    # rebuild the local database from migrations + seed data
 pnpm db:push     # apply new migrations to the live Supabase project
 ```
@@ -177,23 +178,21 @@ RouteyAI/
 
 | File | What's in it |
 |---|---|
-| [Docs/Claude.md](Docs/Claude.md) | Main technical reference: database tables, access rules, colors, conventions |
+| [Docs/README.md](Docs/README.md) | The index of all the documentation |
+| [Docs/Claude.md](Docs/Claude.md) | Main technical reference: the two-runs rules, database, access rules, design system, conventions |
 | [Docs/Architecture.md](Docs/Architecture.md) | Why the project uses Vercel, Supabase and Mapbox, with a diagram |
 | [Docs/features.md](Docs/features.md) | Every feature, grouped by account type |
 | [Docs/busflow.md](Docs/busflow.md) | How students, stops, buses and drivers connect |
-| [Docs/task.md](Docs/task.md) | Progress checklist, phase by phase |
+| [Docs/task.md](Docs/task.md) | Progress checklist and open work |
+| [Docs/CHANGELOG.md](Docs/CHANGELOG.md) | Dated notes on what was built and decided |
 | [Docs/plans/](Docs/plans/) | Plans for bigger pieces of work |
 
 ---
 
 ## Design
 
-The look is inspired by the **Karwa Journey Planner** and **Qatar Rail** apps: clean, map-first screens in deep blue and white, a palette that feels trustworthy and safe.
+The look is inspired by the **Karwa Journey Planner** and **Qatar Rail** apps: clean, map-first screens in deep blue and white, a palette that feels trustworthy and safe. The landing page, the phone apps (light and dark) and the dashboards share one design system, described in [Docs/Claude.md](Docs/Claude.md#3-design-system).
 
 ## License
 
 MIT
-
----
-
-Built with ❤️ for safer school journeys.
