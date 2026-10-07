@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { AccessibilityInfo, Animated, Easing, View, type ViewStyle } from 'react-native'
 import { Txt } from '@/components/primitives/Txt'
-import { floatingShadow, radius, space, useTheme } from '@/lib/theme'
+import { radius, space, useFloatingShadow, useIsDark, useTheme } from '@/lib/theme'
 
 /** A cyan dot with a ring that pulses outwards, like the landing page's live bus tag. Still when Reduce Motion is on. */
 export function LiveDot({ size = 8 }: { size?: number }) {
@@ -48,6 +48,8 @@ export function LiveDot({ size = 8 }: { size?: number }) {
  */
 export function LivePill({ label = 'Live', onNight = false, floating = false, style }: { label?: string; onNight?: boolean; floating?: boolean; style?: ViewStyle }) {
   const t = useTheme()
+  const dark = useIsDark()
+  const shadow = useFloatingShadow()
   return (
     <View
       accessible
@@ -55,7 +57,8 @@ export function LivePill({ label = 'Live', onNight = false, floating = false, st
       style={[
         { flexDirection: 'row', alignItems: 'center', gap: space.sm, alignSelf: 'flex-start' },
         onNight ? null : { backgroundColor: t.night, paddingLeft: space.md, paddingRight: space.md + 2, height: floating ? 44 : 30, borderRadius: radius.full },
-        floating ? floatingShadow : null,
+        floating ? shadow : null,
+        dark && !onNight ? { borderWidth: 1, borderColor: t.nightLine } : null,
         style,
       ]}
     >

@@ -1,4 +1,4 @@
-import type { TextStyle, ViewStyle } from 'react-native'
+import { useColorScheme, type TextStyle, type ViewStyle } from 'react-native'
 
 /**
  * The app's design tokens (Docs/plans/mobile-ui-refresh.md). Screens never use raw colours, font names or
@@ -12,6 +12,8 @@ const light = {
   inkTertiary: '#94A3B8',
   canvas: '#F6F7F9',
   surface: '#FFFFFF',
+  // Sheets and cards floating over the map. Light mode uses the surface and a shadow; dark mode a lighter surface.
+  surfaceRaised: '#FFFFFF',
   separator: '#E5E7EB',
   brand: '#1E3A8A',
   brandPressed: '#172E6E',
@@ -48,6 +50,52 @@ const light = {
 
 export type Palette = typeof light
 
+/**
+ * The dark palette (landing page `.dark` theme, Docs/plans/mobile-ui-refresh.md "Dark mode"): same token names. Depth
+ * comes from `surfaceRaised` instead of shadows, the brand blue is lifted so it reads on dark surfaces, and status text
+ * uses lighter shades so it still passes 4.5:1.
+ */
+const dark: Palette = {
+  ink: '#F1F5F9',
+  inkSecondary: '#94A3B8',
+  inkTertiary: '#64748B',
+  canvas: '#020617',
+  surface: '#0B1220',
+  surfaceRaised: '#131C2E',
+  separator: 'rgba(255, 255, 255, 0.08)',
+  brand: '#3B82F6',
+  brandPressed: '#2563EB',
+  brandTint: 'rgba(59, 130, 246, 0.16)',
+  brandTintPressed: 'rgba(59, 130, 246, 0.26)',
+  onBrand: '#FFFFFF',
+  onBrandSecondary: 'rgba(255, 255, 255, 0.78)',
+  live: '#38BDF8',
+  success: '#10B981',
+  successText: '#34D399',
+  successTint: 'rgba(16, 185, 129, 0.14)',
+  warning: '#F59E0B',
+  warningText: '#FBBF24',
+  warningTint: 'rgba(245, 158, 11, 0.14)',
+  danger: '#EF4444',
+  dangerText: '#F87171',
+  dangerTint: 'rgba(239, 68, 68, 0.14)',
+  dangerTintPressed: 'rgba(239, 68, 68, 0.24)',
+  infoTint: 'rgba(59, 130, 246, 0.14)',
+  infoText: '#93C5FD',
+  scrim: 'rgba(0, 0, 0, 0.62)',
+  // The navy card would vanish on the near-black canvas: it keeps its navy, gains a hairline (see SignatureCard) and a
+  // stronger glow.
+  night: '#0A1430',
+  nightGlow: '#2563EB',
+  nightLine: 'rgba(255, 255, 255, 0.16)',
+  onNight: '#FFFFFF',
+  onNightSecondary: 'rgba(255, 255, 255, 0.72)',
+  onNightTertiary: 'rgba(255, 255, 255, 0.5)',
+  onNightPressed: 'rgba(255, 255, 255, 0.86)',
+  routeStart: '#2563EB',
+  routeEnd: '#22D3EE',
+}
+
 /** The brand blue for places outside React, such as the Android "Route in progress" notification. */
 export const BRAND_COLOR = light.brand
 
@@ -78,8 +126,8 @@ export const space = { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 24, xxxl: 32, 
 /** The screen's side margin. */
 export const gutter = space.xl
 
-/** The only shadow: for cards, chips and sheets floating over the map. Flat cards on the canvas have none. */
-export const floatingShadow: ViewStyle = {
+/** The only shadow: for cards, chips and sheets floating over the map. Flat cards on the canvas have none. Read it with useFloatingShadow(). */
+const floatingShadow: ViewStyle = {
   shadowColor: '#0F172A',
   shadowOffset: { width: 0, height: 4 },
   shadowOpacity: 0.12,
@@ -90,10 +138,17 @@ export const floatingShadow: ViewStyle = {
 /** Smallest comfortable touch target (pt). */
 export const minTouch = 44
 
-/**
- * The active palette. Always light for now; dark mode will pick a second palette from useColorScheme() here, which is
- * why screens read colours through this hook instead of importing them.
- */
+/** Whether the phone is set to dark appearance. */
+export function useIsDark(): boolean {
+  return useColorScheme() === 'dark'
+}
+
+/** The active palette, following the phone's light or dark setting. Screens read colours through this hook. */
 export function useTheme(): Palette {
-  return light
+  return useIsDark() ? dark : light
+}
+
+/** The floating shadow in light mode; none in dark, where floating things use `surfaceRaised` instead. */
+export function useFloatingShadow(): ViewStyle | null {
+  return useIsDark() ? null : floatingShadow
 }

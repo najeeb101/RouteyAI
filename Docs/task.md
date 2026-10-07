@@ -222,7 +222,7 @@ Full plan: [plans/mobile-ui-refresh.md](plans/mobile-ui-refresh.md)
 - [x] Components, then parent, driver and login screens (2026-10-06, branch `mobile-ui-refresh`): all 14 screens and sheets moved to the tokens; old `colors.ts`, `PrimaryButton`, `StatusPill`, `MetricCard` and the unused `RouteTimeline` removed. `npm run check:design`, typecheck and expo-doctor pass. Checked in the web preview (`npx expo start --web`), not yet on the iPhone
 - [x] Checked on the iPhone in Expo Go; RouteyAI identity added (logo header, navy signature card, stop line, live pill, navy login). Merged in PR #4 (2026-10-06)
 - [ ] Landing page phone mockups and store screenshots in the new style
-- [ ] Dark mode (planned in the same document; starts when the light screens are final)
+- [x] Dark mode (2026-10-07): the app follows the phone's light or dark setting; palette in `mobile/src/lib/theme.ts` (`useTheme()`, `useIsDark()`, `useFloatingShadow()`), raised surfaces instead of shadows, a hairline on the navy card, status bar and navigation backgrounds follow it; checked on every parent and driver screen in the web preview, light mode unchanged. Still to check on a real iPhone (Control Centre switch), and the landing page phone mockups in dark
 
 ## Phase 16: Two Runs a Day
 

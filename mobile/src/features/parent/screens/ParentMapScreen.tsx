@@ -18,7 +18,7 @@ import { cardText } from '@/lib/runs'
 import { boundsOf, decodePolyline } from '@/lib/geo'
 import { Mapbox } from '@/lib/mapbox'
 import { mapStyleJSON, ROUTE_LINE } from '@/lib/mapStyle'
-import { floatingShadow, fonts, radius, space, useTheme } from '@/lib/theme'
+import { fonts, radius, space, useFloatingShadow, useTheme } from '@/lib/theme'
 
 const DOHA: [number, number] = [51.531, 25.2854]
 /** Space the card at the bottom and the chips at the top take up, so the camera frames the route between them. */
@@ -32,6 +32,7 @@ const CARD_SPACE = 230
 export function ParentMapScreen() {
   const insets = useSafeAreaInsets()
   const t = useTheme()
+  const shadow = useFloatingShadow()
   const { loading, error, children, child, selectChild, statusFor, status, card, attendance, reports, today, route, busLocation, eta } = useParentContext()
   const camera = useRef<ElementRef<NonNullable<typeof Mapbox>['Camera']>>(null)
   const [following, setFollowing] = useState(true)
@@ -106,7 +107,7 @@ export function ParentMapScreen() {
           {childPoint && (
             <Mapbox.MarkerView id="child-stop" coordinate={[childPoint.lng, childPoint.lat]} anchor={{ x: 0.5, y: 1 }} allowOverlap>
               <View style={{ alignItems: 'center', gap: space.xs }}>
-                <View style={[{ backgroundColor: t.surface, borderRadius: radius.sm, paddingHorizontal: space.sm, paddingVertical: 3 }, floatingShadow]}>
+                <View style={[{ backgroundColor: t.surfaceRaised, borderRadius: radius.sm, paddingHorizontal: space.sm, paddingVertical: 3 }, shadow]}>
                   <Txt variant="caption" style={{ fontFamily: fonts.semibold }}>
                     {first}&apos;s stop
                   </Txt>
@@ -159,8 +160,8 @@ export function ParentMapScreen() {
           accessibilityRole="button"
           accessibilityLabel={busLocation ? 'Follow the bus' : 'Show the whole route'}
           style={({ pressed }) => [
-            { position: 'absolute', right: space.lg, bottom: CARD_SPACE, width: 48, height: 48, borderRadius: radius.full, backgroundColor: pressed ? t.canvas : t.surface, alignItems: 'center', justifyContent: 'center' },
-            floatingShadow,
+            { position: 'absolute', right: space.lg, bottom: CARD_SPACE, width: 48, height: 48, borderRadius: radius.full, backgroundColor: pressed ? t.canvas : t.surfaceRaised, alignItems: 'center', justifyContent: 'center' },
+            shadow,
           ]}
         >
           <Icon icon={LocateFixed} size={22} color={t.brand} />
@@ -202,8 +203,9 @@ export function ParentMapScreen() {
 
 function FloatingPill({ children }: { children: ReactNode }) {
   const t = useTheme()
+  const shadow = useFloatingShadow()
   return (
-    <View style={[{ justifyContent: 'center', alignSelf: 'flex-start', backgroundColor: t.surface, paddingHorizontal: space.lg, height: 44, borderRadius: radius.md }, floatingShadow]}>
+    <View style={[{ justifyContent: 'center', alignSelf: 'flex-start', backgroundColor: t.surfaceRaised, paddingHorizontal: space.lg, height: 44, borderRadius: radius.md }, shadow]}>
       {children}
     </View>
   )
@@ -224,8 +226,9 @@ function Detail({ icon, value }: { icon: typeof Bus; value: string }) {
 /** A white-ringed circle marker with an icon, coloured by the route or the stop. */
 function MapPin({ color, icon }: { color: string; icon: typeof Bus }) {
   const t = useTheme()
+  const shadow = useFloatingShadow()
   return (
-    <View style={[{ width: 32, height: 32, borderRadius: radius.full, backgroundColor: color, borderWidth: 3, borderColor: t.surface, alignItems: 'center', justifyContent: 'center' }, floatingShadow]}>
+    <View style={[{ width: 32, height: 32, borderRadius: radius.full, backgroundColor: color, borderWidth: 3, borderColor: t.surface, alignItems: 'center', justifyContent: 'center' }, shadow]}>
       <Icon icon={icon} size={15} color={t.onBrand} strokeWidth={2.25} />
     </View>
   )

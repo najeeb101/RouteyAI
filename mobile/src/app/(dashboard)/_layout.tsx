@@ -1,5 +1,7 @@
 import { Stack } from 'expo-router'
+import { useTheme } from '@/lib/theme'
 
 export default function DashboardLayout() {
-  return <Stack screenOptions={{ headerShown: false }} />
+  const t = useTheme()
+  return <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: t.canvas } }} />
 }

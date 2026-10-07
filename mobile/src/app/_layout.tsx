@@ -1,4 +1,5 @@
 import { Slot } from 'expo-router'
+import { StatusBar } from 'expo-status-bar'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { useFonts, Inter_400Regular, Inter_500Medium, Inter_600SemiBold } from '@expo-google-fonts/inter'
@@ -8,6 +9,7 @@ import * as Notifications from 'expo-notifications'
 import * as SplashScreen from 'expo-splash-screen'
 import { registerForPushNotifications } from '@/lib/push'
 import { supabase } from '@/lib/supabase'
+import { useTheme } from '@/lib/theme'
 // Defines the driver's background GPS task; it has to exist before the OS hands it a location.
 import '@/features/driver/gpsTask'
 
@@ -24,6 +26,7 @@ Notifications.setNotificationHandler({
 })
 
 export default function RootLayout() {
+  const t = useTheme()
   const [fontsLoaded] = useFonts({
     Inter_400Regular,
     Inter_500Medium,
@@ -50,8 +53,10 @@ export default function RootLayout() {
   if (!fontsLoaded) return null
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: t.canvas }}>
       <SafeAreaProvider>
+        {/* Dark icons on the light canvas, light icons on the dark one (screens with a navy header set their own). */}
+        <StatusBar style="auto" />
         <Slot />
       </SafeAreaProvider>
     </GestureHandlerRootView>

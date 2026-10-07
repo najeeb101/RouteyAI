@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Pressable, TextInput, View, type TextInputProps } from 'react-native'
 import { Txt } from '@/components/primitives/Txt'
-import { fonts, radius, space, useTheme } from '@/lib/theme'
+import { fonts, radius, space, useIsDark, useTheme } from '@/lib/theme'
 
 type TextFieldProps = Omit<TextInputProps, 'style'> & {
   label: string
@@ -13,6 +13,7 @@ type TextFieldProps = Omit<TextInputProps, 'style'> & {
 export function TextField({ label, secure = false, ...input }: TextFieldProps) {
   const multiline = Boolean(input.multiline)
   const t = useTheme()
+  const dark = useIsDark()
   const [focused, setFocused] = useState(false)
   const [hidden, setHidden] = useState(true)
 
@@ -35,6 +36,7 @@ export function TextField({ label, secure = false, ...input }: TextFieldProps) {
           {...input}
           secureTextEntry={secure && hidden}
           placeholderTextColor={t.inkTertiary}
+          keyboardAppearance={dark ? 'dark' : 'light'}
           onFocus={(e) => {
             setFocused(true)
             input.onFocus?.(e)
