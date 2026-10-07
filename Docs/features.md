@@ -2,6 +2,16 @@
 
 Features organized by user role. For build order, see `Claude.md` Section 6 (Build Phases).
 
+## 🔁 Two runs a day (the core of every role)
+
+Every bus does a **morning run** (homes to school) and an **afternoon run** (school to homes, the same stops in reverse), every school day. Routes never change by themselves: new children slot in, and re-planning is a proposal the school admin applies only if it is clearly better. Rules: [Claude.md §1.1](Claude.md); plan: [plans/two-runs-a-day.md](plans/two-runs-a-day.md).
+
+| Role | What changes with two runs |
+|---|---|
+| School admin | Morning / Afternoon route per bus, run status per bus, children not yet dropped off flagged, Update / Re-plan / Re-plan all, absences show which rides |
+| Driver | Starts the morning or the afternoon run; morning pickups, afternoon boarding at school and drop-offs in reverse order |
+| Parent | A card for every moment of the day, drop-off notification, absences for the morning, the afternoon or both |
+
 ---
 
 ## 🏢 Platform Admin (Superadmin)

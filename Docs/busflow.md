@@ -1,5 +1,7 @@
 # Bus Assignment Flow
 
+Every bus does two runs every school day: a **morning run** (homes to school) and an **afternoon run** (school to homes, the same stops in reverse). The route is made once and then stays put; see [Claude.md §1.1](Claude.md).
+
 ## How It Works
 
 Drivers are assigned to **buses**, not areas. Areas emerge automatically from AI clustering.
@@ -58,7 +60,7 @@ System calculates distance from student to each existing bus cluster centroid
         ↓
 Student assigned to nearest bus that has remaining capacity (< 40 students)
         ↓
-Route recalculates automatically via Edge Function
+The child's stop slots into that bus's route (Edge Function `update`); no other stop moves
 ```
 
 If all nearby buses are at capacity, the admin is alerted to create a new bus.

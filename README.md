@@ -14,6 +14,8 @@ RouteyAI helps schools run their buses and lets parents follow the bus on their 
 - **Drivers** follow that route on their phone, stop by stop.
 - **Parents** watch the bus on a map in real time and know when it will reach their stop.
 
+**Every bus does two runs every school day.** In the **morning** it picks students up at home and ends at the school. In the **afternoon** it leaves the school and drops them off at the same stops in reverse. Once a route is made it stays the same, so drivers can learn it.
+
 No more waiting at the bus stop guessing, and no more planning routes by hand.
 
 ---
@@ -24,14 +26,14 @@ No more waiting at the bus stop guessing, and no more planning routes by hand.
 
 - See your child's bus moving on a map, live
 - Know how many minutes until it reaches your stop
-- Get a notification when your child gets on the bus, or is marked absent
-- Let the school know your child won't ride today
+- Get a notification when your child gets on the bus, is dropped off at home, or is marked absent
+- Let the school know your child won't ride, for the morning, the afternoon or both
 - Read updates from the driver and the school
 
 ### 🚌 Drivers
 
-- See the next stop and the student to pick up, in the best order
-- Tap to mark each student as on board or absent
+- Start the morning or the afternoon run, and see the next stop in the right order for it
+- Tap to mark each student as on board or absent, and in the afternoon as dropped off
 - The phone shares the bus location while the route is running, so parents can follow along
 - Send quick updates to parents, such as "running 10 minutes late"
 
@@ -50,7 +52,8 @@ No more waiting at the bus stop guessing, and no more planning routes by hand.
 1. **The school adds each student's home address.**
 2. **RouteyAI groups nearby homes into stops** and shares them out between the buses, without putting more students on a bus than it has seats.
 3. **It puts the stops in the shortest order**, using real driving times on real roads, not straight lines on a map.
-4. **When a new student joins**, RouteyAI adds them to the nearest bus that still has room.
+4. **The same stops make both runs.** The morning follows the order and ends at the school; the afternoon drives it in reverse.
+5. **When a new student joins**, RouteyAI adds them to the nearest bus that still has room and slots their stop into the route without moving anyone else's. Re-planning a whole route is only ever offered to the school admin as a proposal, and only when it would be clearly shorter.
 
 ---
 

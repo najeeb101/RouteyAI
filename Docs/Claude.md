@@ -10,10 +10,24 @@
 It optimizes bus routes for schools and gives parents real-time GPS tracking of their child's bus — similar in design language to **Karwa Journey Planner** and **Qatar Rail / Metro Link** apps (clean, map-centric, blue-and-white, transport-grade UI).
 
 ### Core Value Proposition
-- Schools add students → AI assigns them to buses and optimizes routes automatically.
-- Drivers follow optimized routes with a mobile-first interface.
-- Parents track their child's bus in real time with ETA.
+- Schools add students → AI assigns them to buses and plans one stop order per bus.
+- **Every bus does two runs every school day: a morning pickup run and an afternoon drop-off run** (see 1.1).
+- Drivers follow the route with a mobile-first interface, in the right direction for the run.
+- Parents track their child's bus in real time with ETA, are told when their child boards and when they are home, and can report an absence for the morning, the afternoon or both.
+- A route never changes by itself: new children slot in without moving anyone, and re-planning is a proposal the school admin applies only if it is clearly better.
 - Platform supports multiple schools (multi-tenant).
+
+### 1.1 Two runs a day (the core rule of the product)
+
+Plan, decisions and history: [plans/two-runs-a-day.md](plans/two-runs-a-day.md). Live since 2026-10-07.
+
+1. **Always two runs.** Every bus does a **morning run** (homes → school: the driver picks students up stop by stop and ends at the school) and an **afternoon run** (school → homes: every student boards at the school, and the driver drops them off in the **reverse** order of the morning, so the last morning stop is the first afternoon stop). There is no setting and nothing for the driver to choose except which run to start (the afternoon offers itself from 11:00 Qatar time).
+2. **One stop order per bus, kept.** `students.stop_order` is the chain in morning order; the afternoon is the same chain reversed. `routes` has a morning and an afternoon row per bus with a `plan_version` that only goes up when the order changes. The system **never re-plans a route by itself**: a new, moved or removed child is slotted in or out (`optimize-route` action `update`, called by the Students page) with every other stop keeping its place; a full re-plan (`optimize`) is only ever a **proposal** a school admin applies, and only if it is clearly better.
+3. **Runs are real records.** `bus_runs` (one per bus, Qatar day and run, written only by `start_run` / `end_run`), `attendance` per student, day and run (`boarded`, `absent`, `dropped_off`; drivers write through `mark_attendance`), `absence_reports.runs` (`both` / `morning` / `afternoon`).
+4. **What each role sees.** Driver: the run's stops in driving order, board/absent in the morning, board at school and drop-off at each stop in the afternoon; ending the afternoon with a child still on board asks first. Parent: a card for every moment of the day (waiting, on the bus, at school, dropped off, absent), the arrival time, and "Which rides?" when reporting an absence. School admin: run status per bus, who is not yet dropped off (flagged in red), Morning / Afternoon routes with Update, Re-plan and Re-plan all.
+5. **Privacy.** A parent never reads `routes`; `get_parent_route` and `get_parent_bus_progress` return only the road line, their own child's stop and counts.
+
+Any new feature must respect these five rules. Details by area: schema §5, apps and dashboard in the "Two runs a day" and later sections of that chapter, planner logic in `supabase/functions/_shared/`.
 
 ---
 
@@ -497,7 +511,7 @@ Drops `set_bus_active` and `save_optimized_route`, drivers' direct writes to `at
 
 Numbering matches [task.md](task.md), which holds the live checklist.
 
-| Phase | Scope | Status (2026-09-29) |
+| Phase | Scope | Status (2026-10-07) |
 |---|---|---|
 | 1 | Project setup & first landing page | Done except Vercel deploy |
 | 2 | Auth & role system (login, signup, invites, role redirects) | Done |
@@ -512,14 +526,17 @@ Numbering matches [task.md](task.md), which holds the live checklist.
 | 11 | Web polish & production | Lighthouse audit + custom domain left |
 | 12 | App Store & Play Store submission | Not started |
 | 13 | Landing page launch | In progress |
-| 14 | Parent and driver app upgrade (child switcher, absence reports, history, delay notices, trip summary) | Built; migration 0013 to apply |
+| 14 | Parent and driver app upgrade (child switcher, absence reports, history, delay notices, trip summary) | Done |
+| 15 | Mobile UI refresh: one design for the landing page, apps and dashboard; light and dark mode | Done (dark mode needs a check on an iPhone) |
+| 16 | **Two runs a day**: morning and afternoon runs, stable routes, drop-offs, the redesigned school dashboard (see §1.1) | Done and live |
 
 ### Driver interface rules (Phase 8)
 - Mobile-first, one-handed — **no map, no turn-by-turn navigation** (drivers know their roads)
-- **Next pickup card**: next student's name + address; auto-advances when marked Boarded or Absent
-- **Progress indicator**: "X of Y students picked up" — always visible at the top
+- **Next stop card**: next student's name + address in the run's driving order (pickups in the morning, drop-offs in reverse in the afternoon); auto-advances when marked
+- **Progress indicator**: "X of Y students picked up" (morning) or "dropped off" (afternoon) — always visible at the top
 - **Passenger manifest**: ordered list of all students with stop addresses
-- **Digital attendance**: tap to mark Boarded / Absent
+- **Digital attendance**: tap to mark Boarded / Absent; in the afternoon Board at school and Drop off at each stop (via `mark_attendance`)
+- **Two runs**: the driver starts the morning or the afternoon run with `start_run`; ending the afternoon with a child still on board asks first
 - **GPS broadcast**: "Start Route" sends the device location (`expo-location`) to `bus_locations` every 10 seconds, also with the screen locked (background task in `mobile/src/features/driver/gpsTask.ts`: an Android foreground service with a "Route in progress" notification, an iOS background location session; only "while using the app" permission). "Live" badge while active; a route still running when the app reopens comes back so it can be ended
 - **Bus capacity bar**: seats filled vs. total capacity (e.g. 18 / 40)
 - **Announcements**: send updates to parents on that route; receive School Admin alerts
@@ -527,10 +544,10 @@ Numbering matches [task.md](task.md), which holds the live checklist.
 
 ### Parent interface rules (Phase 9)
 - Full-screen Mapbox map, live bus position via Supabase Realtime (`bus_locations`)
-- Child's stop highlighted with ETA countdown
+- Child's stop highlighted with ETA countdown, for whichever run is going (morning: until pickup and until school; afternoon: until the drop-off)
 - Driver announcements and attendance confirmation
 - Bottom sheet: child name, bus number, ETA, status
-- Phase 14: every child on the account with a switcher; report absences ahead of time; 30-day history; Account tab (push switch, sign out). The map shows only the child's own stop, not other students' stops.
+- Phase 14 and 16: every child on the account with a switcher; report absences ahead of time for the morning, the afternoon or both; 30-day history; Account tab (push switch, sign out). The map shows only the child's own stop, not other students' stops.
 
 ### Landing page rules (Phase 13)
 - Every claim must describe a shipped feature (no invented integrations)
