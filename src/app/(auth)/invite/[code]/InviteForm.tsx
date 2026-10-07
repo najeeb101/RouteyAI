@@ -65,7 +65,8 @@ export default function InviteForm({ code, role }: Props) {
     if (redeemError || !redeemResult || 'error' in redeemResult) {
       const msg = (redeemResult && 'error' in redeemResult ? redeemResult.error : null) ?? redeemError?.message ?? 'Failed to redeem invite.'
       setError(msg === 'invite_already_used' ? 'This invite has already been used.' :
-               msg === 'invite_expired' ? 'This invite has expired.' : msg)
+               msg === 'invite_expired' ? 'This invite has expired.' :
+               msg === 'invalid_user' ? 'This account cannot use the invite. Sign up again to continue.' : msg)
       setLoading(false)
       return
     }

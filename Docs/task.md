@@ -38,8 +38,7 @@ In rough priority order.
 ### Security and clean-up
 
 - [ ] **Revoke the Mapbox secret token** in the Mapbox account (Tokens page). It sat in `app.json` and `eas.json` in the public repo from phase 7 until 2026-10-01, so it is still in git history. Nothing uses it any more.
-- [ ] Push migration `0021` (`pnpm db:push`): it drops the unused functions `recalculate_route` (it randomly nudged a route's numbers and school admins could call it), `get_routes_with_buses` and `get_school_stats`. Written and checked locally; not yet on production.
-- [ ] `redeem_invite(p_code, p_user_id)` trusts `p_user_id` instead of `auth.uid()`. Low risk (it needs a valid unused code), but it cannot simply require `auth.uid()` because the invite page calls it before email confirmation gives the new user a session. Option: allow `p_user_id = auth.uid()`, or a user created in the last few minutes with no role yet.
+- [ ] `redeem_invite` (migration `0022`, written, not yet checked locally or pushed): the target must be an account created in the last 15 minutes with no role, and must be the caller if signed in. Run `supabase/tests/0022_redeem_invite_caller.sql` against the local database (needs Docker), then `pnpm db:push` and try one real invite.
 - [ ] Test the Edge Function caller checks with a signed-in school admin and parent.
 
 ### Store submission (Phase 12)
