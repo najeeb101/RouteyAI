@@ -1,8 +1,7 @@
 # Two runs a day: morning pickup and afternoon drop-off
 
-Status: approved 2026-10-06; step 1 (database and route rules) done on branch `two-runs` and on production; steps 2 to
-6 (route planner and notifications, existing routes, driver and parent apps, school dashboard, iPhone test) done and live
-since 2026-10-07 (merged in PR #6); step 7, the clean-up migration `0020`, is written and checked locally but not on production yet. Builds on the mobile UI refresh (merged in PR #4). Older problems found along the way are planned
+Status: approved 2026-10-06; all seven steps done and live on 2026-10-07 (route planner and notifications, existing
+routes, driver and parent apps, school dashboard, iPhone test, clean-up migration `0020`; PRs #5, #6, #8 and #9). Builds on the mobile UI refresh (merged in PR #4). Older problems found along the way are planned
 separately in [fixes.md](fixes.md).
 
 ## The rules
@@ -122,7 +121,7 @@ drop-offs only come from ending the run.
 ### Database (migration `0017_two_runs.sql`)
 
 The migration only **adds**: new columns have defaults and the old functions stay, so the current apps keep working
-while the rest is rolled out. A later clean-up migration (`0020`) removes the old pieces once nothing uses them.
+while the rest is rolled out. The clean-up migration (`0020`, live 2026-10-07) removed the old pieces once nothing used them.
 
 **New table `bus_runs`**
 
@@ -145,7 +144,7 @@ only by `start_run` / `end_run`. Added to realtime so the parent app sees a run 
 
 **`attendance`:** new `run` column (`'morning'` for existing rows), unique rule `(student_id, date, run)`, new status
 `dropped_off` with a `dropped_off_at` time (`created_at` stays the boarding time). Drivers write through
-`mark_attendance(p_student_id, p_status)`, which finds the running run. Their direct-write policy goes in 0020.
+`mark_attendance(p_student_id, p_status)`, which finds the running run. Their direct-write policy was removed in 0020.
 
 **`absence_reports`:** new `runs` column: `'both'` (default and every existing report), `'morning'` or
 `'afternoon'`. Still one report per child per day.
@@ -165,7 +164,7 @@ run and skip undo taps.
 **Privacy fix (found in step 1, older than this work):** a parent can read the home location of every child on their
 child's bus through the route's `waypoints`. It is fixed with the new parent app in step 4: parents read the route
 through `get_parent_route` (migration `0018_parent_route.sql`), which returns only the line and their own child's stop,
-and 0020 removes their read access to `routes`. Details in [fixes.md](fixes.md#3-a-parent-can-read-every-home-on-the-bus). `bus_runs.stops` only holds
+and 0020 removed their read access to `routes`. Details in [fixes.md](fixes.md#3-a-parent-can-read-every-home-on-the-bus). `bus_runs.stops` only holds
 student ids and order, never homes, for the same reason.
 
 ### Apps and dashboard
@@ -237,7 +236,7 @@ older web driver and parent pages follow the same rules.
 
 ## Step 2 in detail: route planner and notifications
 
-Built 2026-10-06 on `two-runs`, tested locally, not deployed. It needs no migration: everything it uses came with
+Built 2026-10-06, deployed 2026-10-07 (PR #6). It needs no migration: everything it uses came with
 0017, which is on production. The planning logic is pure functions in `supabase/functions/_shared/` (`busPlanner.ts`,
 `directions.ts`, `routeGeometry.ts`, `busAssignment.ts`, `notifications.ts`); the two functions only read, call them
 and save. Both functions now import supabase-js from npm (`npm:@supabase/supabase-js@2.117.2`) instead of esm.sh:
@@ -319,10 +318,9 @@ anyone else. In order:
    each bus's morning so it ends at the school and saves both runs; buses that already have both runs are skipped.
 4. You open the new apps in Expo Go (`mobile/.env.local` points at production) and drive a run.
 
-The website changes (fixes 1A and 2, PR #5, the web parent page and the step 5 dashboard) go out when `two-runs` is
-merged, after step 2 above: the new dashboard sends `update` and `optimize` requests that only the new `optimize-route`
-understands. Until then, don't use Update, Re-plan or the Students page against production from a local dev server: the
-old function re-plans the bus from scratch whatever the request says.
+The website changes (fixes 1A and 2, the web parent page and the step 5 dashboard) went out when `two-runs` was merged,
+after step 2 above, because the new dashboard sends `update` and `optimize` requests that only the new `optimize-route`
+understands.
 
 ## Order of work
 
@@ -352,9 +350,10 @@ old function re-plans the bus from scratch whatever the request says.
    confirmed; adding, moving and removing a child slots in with every other child keeping their order).
 6. **You test on the iPhone** in Expo Go (GPS sends while the app is open; I can follow the demo bus as the demo parent
    in the browser preview while you drive it). Then merge. Done 2026-10-07: tested, merged in PR #6.
-7. **Clean-up migration 0020** (written and checked locally 2026-10-07, with `supabase/tests/0020_two_runs_cleanup.sql`; not on production yet: `db push`, then deploy `send-notification`, which no longer has the old-driver-app fallback) (old `set_bus_active`, old `save_optimized_route`, drivers' direct attendance writes,
-   parents' direct read of `routes`), and
-   docs: task.md, Docs/Claude.md, store listing and landing page copy where they only mention mornings.
+7. **Clean-up migration 0020** (old `set_bus_active`, old `save_optimized_route`, drivers' direct attendance writes,
+   parents' direct read of `routes`; `send-notification` lost its old-driver-app fallback), and docs: task.md,
+   Docs/Claude.md, store listing and landing page copy where they only mention mornings. Done 2026-10-07: 0020 and
+   `send-notification` are on production (PR #9), with SQL checks in `supabase/tests/0020_two_runs_cleanup.sql`.
 
 ## Decisions
 

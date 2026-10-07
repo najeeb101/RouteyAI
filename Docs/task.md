@@ -5,14 +5,15 @@ Mobile: Expo (React Native) | React Native styles | Mapbox RN | EAS
 
 ---
 
-## Current Status Snapshot (2026-10-05)
+## Current Status Snapshot (2026-10-07)
 
-- Completed: Phases 1–10. Supabase restored; all migrations through `0015` are on production (2026-10-02).
+- Completed: Phases 1–10, 14, 15 and 16. Supabase restored; all migrations through `0020` are on production (2026-10-07).
 - Nearly done: Phase 11 (custom domain left), plus the Edge Function caller checks found on 2026-10-05.
 - In progress: Phase 13 — landing page live at https://routeyai.vercel.app; launch placeholders in `src/lib/siteConfig.ts`; no Mapbox token on Vercel yet, so student addresses aren't geocoded on the live site.
 - In progress: Phase 12 (store submission). Expo SDK 57, EAS profiles, OTA updates, icons, Play graphics and store copy are done; next are the device test, the Mapbox `pk.` token, `eas login` and the first EAS builds.
 - Phase 14 (parent and driver app upgrade) done apart from checks on a real phone.
-- 2026-10-06: Phase 15 light mode and identity merged (PR #4). Phase 16 (two runs a day) started: step 1 is on production. Verified `0017`'s `run` columns are live and `0016` rejects anonymous route-helper calls with `401`. Step 2 (route planner and notifications) built and tested locally on `two-runs`. Fixes 1A and 2 are in PR #5, waiting to be merged.
+- 2026-10-07: Phase 16 (two runs a day) is live: migrations 0017 to 0020, both Edge Functions, existing routes flipped, redesigned school dashboard, login and platform-admin pages restyled, landing and store copy updated (PRs #5, #6, #8, #9).
+- 2026-10-06: Phase 15 light mode and identity merged (PR #4). Phase 16 (two runs a day) started: step 1 is on production. Verified `0017`'s `run` columns are live and `0016` rejects anonymous route-helper calls with `401`. Steps 2 to 5 followed the same week (see Phase 16), and fixes 1A and 2 shipped in PR #5.
 
 ## Phase 1: Project Setup and Landing Page
 
@@ -227,14 +228,14 @@ Full plan: [plans/mobile-ui-refresh.md](plans/mobile-ui-refresh.md)
 
 Full plan: [plans/two-runs-a-day.md](plans/two-runs-a-day.md). Every bus does a morning pickup run and an afternoon drop-off run (the same stops in reverse). Routes never change by themselves.
 
-- [x] Step 1 (2026-10-06, branch `two-runs`): `0017_two_runs.sql` (`bus_runs`, attendance per run with `dropped_off`, absence reports per run, a morning and an afternoon route row, `start_run` / `end_run` / `mark_attendance`, `save_route_plan`), the route rules in `supabase/functions/_shared/routePlan.ts` with tests (`pnpm test:logic`), and database checks per role (`supabase/tests/0017_two_runs.sql`). Applied locally
+- [x] Step 1 (2026-10-06): `0017_two_runs.sql` (`bus_runs`, attendance per run with `dropped_off`, absence reports per run, a morning and an afternoon route row, `start_run` / `end_run` / `mark_attendance`, `save_route_plan`), the route rules in `supabase/functions/_shared/routePlan.ts` with tests (`pnpm test:logic`), and database checks per role (`supabase/tests/0017_two_runs.sql`). Applied locally
 - [x] `0017_two_runs.sql` is on production (verified 2026-10-06: `routes.run` and `attendance.run` are available)
-- [x] Step 2 (2026-10-06, branch `two-runs`, not deployed): `optimize-route` (`update`, and `optimize` as a proposal; both directions; Mapbox leg times; Optimize all clusters start from the current buses) and `send-notification` (run-aware alerts, `dry_run`). Logic in `supabase/functions/_shared/`; 49 logic tests and 35 local end-to-end checks pass. Goes live together with steps 3 and 4
-- [ ] Step 3: refresh existing routes, flipping the morning direction once so it ends at the school (decided 2026-10-06). Rehearsed on the local database 2026-10-06; runs on production at go-live (see "Going live" in the plan)
-- [x] Step 4 (2026-10-06, branch `two-runs`, not deployed): driver app (picks the run, `start_run` / `end_run` / `mark_attendance`, afternoon boarding at school and drop-offs, end-of-afternoon safety check), parent app (card for every moment of the day, "Which rides?" absences, history per run), shared rules in `mobile/src/lib/runs.ts`, and the privacy fix `0018_parent_route.sql` used by both parent apps. 22 checks in the web preview through a simulated day, 11 database checks, 59 logic tests
-- [x] Step 5 (2026-10-06, branch `two-runs`, not deployed): school dashboard rebuilt on the app and landing page design (navy side bar, signature card, flat cards, Schibsted headings, real Mapbox map, animations). Routes page: one card per bus, Morning / Afternoon switch, Update (slot changes in), Re-plan and Re-plan all as proposals you apply or keep, the "could save" hint. Students page slots each change into the route (fix 1B). Overview follows the day live (runs, check-ins, bus positions) and flags children not marked dropped off. Fleet shows each bus's run; Absences shows which rides; Analytics uses real runs and check-ins; the web driver page uses the run functions. `0019_auth_email_text.sql` fixes the bus and school lists on Postgres 17. 13 end-to-end checks on the local stack
+- [x] Step 2 (2026-10-06, deployed 2026-10-07): `optimize-route` (`update`, and `optimize` as a proposal; both directions; Mapbox leg times; Optimize all clusters start from the current buses) and `send-notification` (run-aware alerts, `dry_run`). Logic in `supabase/functions/_shared/`; 49 logic tests and 35 local end-to-end checks pass. Goes live together with steps 3 and 4
+- [x] Step 3 (done on production 2026-10-07; all 4 buses have both runs): refresh existing routes, flipping the morning direction once so it ends at the school (decided 2026-10-06). Rehearsed on the local database 2026-10-06; runs on production at go-live (see "Going live" in the plan)
+- [x] Step 4 (2026-10-06, live 2026-10-07): driver app (picks the run, `start_run` / `end_run` / `mark_attendance`, afternoon boarding at school and drop-offs, end-of-afternoon safety check), parent app (card for every moment of the day, "Which rides?" absences, history per run), shared rules in `mobile/src/lib/runs.ts`, and the privacy fix `0018_parent_route.sql` used by both parent apps. 22 checks in the web preview through a simulated day, 11 database checks, 59 logic tests
+- [x] Step 5 (2026-10-06, live 2026-10-07): school dashboard rebuilt on the app and landing page design (navy side bar, signature card, flat cards, Schibsted headings, real Mapbox map, animations). Routes page: one card per bus, Morning / Afternoon switch, Update (slot changes in), Re-plan and Re-plan all as proposals you apply or keep, the "could save" hint. Students page slots each change into the route (fix 1B). Overview follows the day live (runs, check-ins, bus positions) and flags children not marked dropped off. Fleet shows each bus's run; Absences shows which rides; Analytics uses real runs and check-ins; the web driver page uses the run functions. `0019_auth_email_text.sql` fixes the bus and school lists on Postgres 17. 13 end-to-end checks on the local stack
 - [x] Step 6 (2026-10-07): went live (migrations 0017 to 0019, both Edge Functions, existing routes flipped), iPhone test in Expo Go passed, `two-runs` merged to `main` in PR #6
-- [ ] Step 7: clean-up migration `0020_two_runs_cleanup.sql` is written and checked locally (`supabase/tests/0020_two_runs_cleanup.sql`), not on production yet: push it and deploy `send-notification` before the first real parent. Still to do: docs, store and landing copy
+- [x] Step 7 (2026-10-07): clean-up migration `0020_two_runs_cleanup.sql` and `send-notification` are on production (PR #9); docs, store listing and landing page copy updated
 
 ## Fixes
 

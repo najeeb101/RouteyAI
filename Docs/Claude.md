@@ -169,7 +169,7 @@ routeyai/
 ├── supabase/
 │   ├── migrations/                   # SQL migrations
 │   ├── functions/                    # Edge Functions
-│   │   ├── optimize-route/index.ts   # K-Means + TSP
+│   │   ├── optimize-route/index.ts   # route planner: update (slot in), optimize (proposal)
 │   │   └── send-notification/index.ts # Expo push notifications
 │   └── seed.sql                      # Seed data for development
 ├── .env.local                        # Local env vars (NOT committed)
@@ -244,11 +244,29 @@ CREATE TABLE routes (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   school_id UUID REFERENCES schools(id) ON DELETE CASCADE NOT NULL,
   bus_id UUID REFERENCES buses(id) ON DELETE CASCADE NOT NULL,
-  waypoints JSONB NOT NULL,              -- Ordered array of {lat, lng, student_id, eta}
+  run TEXT NOT NULL DEFAULT 'morning' CHECK (run IN ('morning','afternoon')),  -- 0017: one row per bus and run
+  waypoints JSONB NOT NULL DEFAULT '[]', -- Ordered array of {lat, lng, student_id, stop_order, eta_offset_min}
   total_distance_km DECIMAL,
   total_duration_min DECIMAL,
+  encoded_polyline TEXT,                 -- Mapbox road line; NULL means straight lines
+  plan_version INTEGER NOT NULL DEFAULT 1, -- goes up only when the stop order changes
+  suggestion JSONB,                      -- "re-planning would save N min" hint
   optimized_at TIMESTAMPTZ DEFAULT NOW(),
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE (bus_id, run)
+);
+
+-- Bus runs (0017): one morning and one afternoon run per bus per Qatar day, written only by start_run / end_run
+CREATE TABLE bus_runs (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  bus_id UUID REFERENCES buses(id) ON DELETE CASCADE NOT NULL,
+  school_id UUID REFERENCES schools(id) ON DELETE CASCADE NOT NULL,
+  date DATE NOT NULL,
+  run TEXT NOT NULL CHECK (run IN ('morning','afternoon')),
+  stops JSONB NOT NULL DEFAULT '[]',     -- student ids in driving order at start (never homes)
+  plan_version INTEGER NOT NULL DEFAULT 0,
+  started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  ended_at TIMESTAMPTZ
 );
 
 -- Bus Locations (real-time tracking)
@@ -276,9 +294,12 @@ CREATE TABLE attendance (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   student_id UUID REFERENCES students(id) ON DELETE CASCADE,
   bus_id UUID REFERENCES buses(id) ON DELETE CASCADE,
-  status TEXT CHECK (status IN ('boarded', 'absent')),
+  status TEXT CHECK (status IN ('boarded', 'absent', 'dropped_off')),
   date DATE DEFAULT CURRENT_DATE,
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  run TEXT NOT NULL DEFAULT 'morning' CHECK (run IN ('morning','afternoon')),  -- 0017
+  dropped_off_at TIMESTAMPTZ,            -- set with status 'dropped_off'
+  created_at TIMESTAMPTZ DEFAULT NOW(),  -- the boarding time
+  UNIQUE (student_id, date, run)
 );
 
 -- Absence reports (0013): a parent says ahead of time that a child won't ride on a day.
@@ -290,6 +311,7 @@ CREATE TABLE absence_reports (
   date DATE NOT NULL,
   reason TEXT NOT NULL DEFAULT 'other' CHECK (reason IN ('sick','appointment','travel','other')),
   note TEXT CHECK (char_length(note) <= 200),
+  runs TEXT NOT NULL DEFAULT 'both' CHECK (runs IN ('both','morning','afternoon')),  -- 0017: which rides
   reported_by UUID REFERENCES auth.users(id) DEFAULT auth.uid(),  -- set by trigger
   created_at TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE (student_id, date)
@@ -397,7 +419,7 @@ Found while testing the apps against a local database. The policies above show t
 - Every `school_admin: …` policy also checks `get_user_role() = 'school_admin'`. Parents and drivers have a
   `school_id` too, so before this they could read all roles in the school and create school_admin invites.
 - Invites can't be listed any more; the invite page calls `get_invite(code)`.
-- Drivers set their bus active or inactive with `set_bus_active(p_active)` instead of updating `buses`.
+- Drivers set their bus active or inactive with `set_bus_active(p_active)` instead of updating `buses` (removed in 0020: `start_run` / `end_run` do it now).
 - Announcements: parents and drivers see school-wide ones plus their own bus's, not other buses'.
 
 ### Edge Function and helper access (2026-10-05)
@@ -405,7 +427,7 @@ Found while testing the apps against a local database. The policies above show t
 - The gateway's verify_jwt accepts the public anon key, so each Edge Function checks its caller itself with
   `supabase/functions/_shared/caller.ts` (service role, or a signed-in user and their roles). New functions must do the same.
 - `0016_lock_optimization_helpers.sql`: the route-optimization helpers (`get_route_optimization_payload`,
-  `get_school_optimization_payload`, `save_student_bus_assignments`, `save_optimized_route`) are service-role only.
+  `get_school_optimization_payload`, `save_student_bus_assignments`, `save_optimized_route`) are service-role only (`save_optimized_route` was removed in 0020; `save_route_plan` replaced it).
   A new SECURITY DEFINER function without its own role check must `REVOKE ALL ... FROM PUBLIC, anon, authenticated`:
   Supabase grants anon and authenticated EXECUTE on new functions by default.
 
@@ -423,10 +445,10 @@ Plan: [plans/two-runs-a-day.md](plans/two-runs-a-day.md).
   Ending the morning run marks everyone still on board `dropped_off` (arrived at school).
 - `attendance` is per student, day and run (`UNIQUE(student_id, date, run)`); statuses `boarded`, `absent`,
   `dropped_off` (+ `dropped_off_at`; `created_at` is the boarding time). Drivers use `mark_attendance(p_student_id,
-  p_status)`, which checks the bus, the running run and the step. Their direct-write policy is removed in 0020 (they keep reading their own bus's marks).
+  p_status)`, which checks the bus, the running run and the step. Their direct-write policy was removed in 0020 (they keep reading their own bus's marks).
 - `absence_reports.runs`: `both` (default), `morning` or `afternoon`.
 - The attendance trigger sends `run` and `previous_status`, skips undo taps, and sends drop-offs as type `drop_off`.
-- `optimize-route` (step 2, built on `two-runs`, not deployed): `update` (also any request without `action`) keeps
+- `optimize-route` (live since 2026-10-07): `update` (also any request without `action`) keeps
   each bus's order, slots newcomers and movers in and drops leavers, and leaves a bus with no changes alone; `optimize`
   only proposes (a fresh plan for one bus, or new bus assignments for the school), and `apply: true` saves it only if
   it is still clearly better and nothing changed since; `reverse: true` (service role, once) flips routes planned
@@ -441,13 +463,17 @@ Plan: [plans/two-runs-a-day.md](plans/two-runs-a-day.md).
 - Checks: `supabase/tests/0017_two_runs.sql` (local database). The local Postgres image crashes when a superuser
   session switches to anon/authenticated and hits "permission denied" on a function, so those checks read the catalog.
 
+### Two runs clean-up (0020_two_runs_cleanup.sql, 2026-10-07)
+
+Drops `set_bus_active` and `save_optimized_route`, drivers' direct writes to `attendance` (new policy: they only read their own bus's marks), and the parent policy on `routes`. Checks: `supabase/tests/0020_two_runs_cleanup.sql`. `0019_auth_email_text.sql` casts the email columns in `get_buses_with_drivers` and `get_schools_with_admins` (they failed on Postgres 17).
+
 ### Parent route without other homes (0018_parent_route.sql, 2026-10-06)
 
 - `get_parent_route(p_student_id, p_run)`: the road line (NULL without a Mapbox line), the child's own stop, stops
   before it and in total, and the school. `get_parent_bus_progress(p_student_id)`: on the running run, from the bus's
   latest GPS point (under 3 minutes old), stops before the child's and minutes to their stop and (morning) to school.
   Both check the caller is the child's parent; stops are counted by address. Both parent apps use them.
-- The parent policy on `routes` (whose waypoints hold every child's home) is dropped in 0020.
+- The parent policy on `routes` (whose waypoints hold every child's home) was dropped in 0020.
 - Checks: `supabase/tests/0018_parent_route.sql` (local database; execute rights read from the catalog, as for 0017).
 
 ### Account deletion (0015_delete_account.sql, 2026-10-02)

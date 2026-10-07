@@ -45,10 +45,11 @@ Designed for one-handed use on a phone while managing a route.
 
 | Feature | Description |
 |---|---|
-| Next Pickup Card | Shows the next student's name and address in AI-optimized order; advances as attendance is marked |
+| Next Stop Card | Shows the next student's name and address in route order (pickups in the morning, drop-offs in reverse in the afternoon); advances as students are marked |
+| Two Runs a Day | The driver starts the morning run (homes to school) or the afternoon run (school to homes); ending the afternoon with a child still on board asks first |
 | Start Route / GPS Broadcast | Sends the phone's real GPS position (`expo-location`) every 10 seconds while the route is active |
 | Passenger Manifest | Ordered stop list with student names per stop |
-| Digital Attendance | Tap to mark each student as Boarded or Absent |
+| Digital Attendance | Tap to mark each student as Boarded or Absent, and in the afternoon Dropped off |
 | Send Parent Announcements | Push quick updates to parents on that specific bus |
 | Receive School Alerts | Read announcements from the School Admin |
 

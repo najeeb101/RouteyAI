@@ -87,7 +87,7 @@ already hidden; only the locations leak.
 stop to draw the line and to measure the arrival time stop by stop (:358). The web parent page
 (`src/app/(dashboard)/parent/page.tsx:62`) lists every stop in its timeline.
 
-**Fix (built 2026-10-06 on `two-runs`, `supabase/migrations/0018_parent_route.sql`).**
+**Fix (built 2026-10-06, `supabase/migrations/0018_parent_route.sql`, live 2026-10-07).**
 
 - `get_parent_route(p_student_id, p_run)` checks that the caller is that child's parent and returns only the road line,
   the child's own stop, how many stops come before it and in total, and the school. SECURITY DEFINER with the 0016
@@ -109,13 +109,13 @@ so it blocks store submission (Phase 12).
 
 **Check.** `supabase/tests/0018_parent_route.sql` (11 checks, pass locally): the parent gets the line, their own stop
 and counts, and no other child's id or home; stops are counted by address; another parent, a driver and anonymous
-callers are refused; progress is live only with a recent GPS point and a running run. Still to add with 0020: a
-parent reading `routes` gets no rows.
+callers are refused; progress is live only with a recent GPS point and a running run. 0020 (live) also made a
+parent reading `routes` get no rows.
 
 ## Order
 
 1. Branch `fixes` from `main` with 1A and fix 2 (the Students page, plus the confirm on Optimize all). Checked locally,
    then merged to `main`, which deploys the website. No database change.
 2. You add the Mapbox token on Vercel, before or right after that merge.
-3. 1B and fix 3 are built as part of two runs a day (steps 2, 4 and 5). The `two-runs` branch takes `main` in first,
+3. 1B and fix 3 were built as part of two runs a day (steps 2, 4 and 5). The `two-runs` branch took `main` in first,
    so the Students page changes don't clash.

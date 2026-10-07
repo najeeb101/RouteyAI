@@ -70,7 +70,7 @@ Read more in the [privacy policy](https://routeyai.vercel.app/privacy).
 | Part | Status |
 |---|---|
 | Website | ✅ Live |
-| School dashboard (on the web) | ✅ Working |
+| School dashboard (on the web) | ✅ Live: routes, students, fleet, absences and analytics |
 | Phone app for parents and drivers | 🛠️ Being prepared for the App Store and Google Play |
 
 ---
@@ -164,7 +164,7 @@ RouteyAI/
 ├── mobile/                  # Phone app for drivers and parents (Expo)
 ├── deck/                    # Pitch deck (HTML, open deck/index.html)
 ├── supabase/
-│   ├── migrations/          # Database changes, in order (0001 to 0015)
+│   ├── migrations/          # Database changes, in order (0001 to 0020)
 │   ├── functions/           # Server functions: route planning, push notifications
 │   └── seed.sql             # Sample data for local testing
 └── Docs/                    # Project documentation
