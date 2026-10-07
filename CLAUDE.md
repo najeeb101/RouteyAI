@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 [Docs/Claude.md](Docs/Claude.md) is the canonical reference for the full database schema, RLS policies, color tokens, and design principles. When this file and Docs/Claude.md disagree, Docs/Claude.md wins.
 
-Current build status: **Phases 1–10 complete; Phase 11 nearly done. Phase 13 (landing page launch) in progress** — live at https://routeyai.vercel.app (auto-deploys from `main`). Phase 12 (store submission) not started. See [Docs/task.md](Docs/task.md) for the full checklist and [Docs/plans/2026-09-29-landing-page-launch.md](Docs/plans/2026-09-29-landing-page-launch.md) for the landing page plan.
+Current build status: **Phases 1–10 complete; Phase 11 nearly done. Phase 13 (landing page launch) in progress** — live at https://routeyai.vercel.app (auto-deploys from `main`). Phase 12 (store submission) not started. See [Docs/task.md](Docs/task.md) for the full checklist and [Docs/plans/landing-page-launch.md](Docs/plans/landing-page-launch.md) for the landing page plan.
 
 ## Stack
 
@@ -25,6 +25,7 @@ pnpm typecheck        # tsc --noEmit
 pnpm db:types         # regenerate src/types/database.ts from Supabase schema
 pnpm db:reset         # supabase db reset (runs all migrations + seed)
 pnpm db:push          # push local migrations to remote Supabase
+pnpm test:logic       # route planning rules (supabase/functions/_shared/*.test.ts, Node's test runner)
 
 # Mobile (cd mobile/)
 npx expo start        # start Expo dev server
@@ -48,8 +49,8 @@ routeyai/
 │   │   └── page.tsx          # landing page (Server Component)
 │   ├── components/
 │   │   ├── ui/               # shadcn/ui primitives
-│   │   ├── dashboard/        # Sidebar, TopBar, StatsCard, DataTable
-│   │   ├── maps/             # SVG map previews (FleetMapSvg, RouteMapSvg, ParentMapSvg)
+│   │   ├── dashboard/        # DashboardShell (SideNav, TopBar), PageHeader, Panel, StatsCard, SignatureCard, Modal, ActionButton, …
+│   │   ├── maps/             # FleetMap (Mapbox GL, load via DynamicFleetMap), ParentMapSvg
 │   │   └── landing/          # landing page sections + client islands (nav, modal, demo form)
 │   ├── hooks/useAuth.ts
 │   ├── lib/
@@ -65,13 +66,14 @@ routeyai/
 │       ├── features/
 │       │   ├── driver/       # screens/, hooks/useDriverData, context/DriverDataContext
 │       │   └── parent/       # screens/ (incl. useParentData), context/ParentDataContext
-│       ├── components/primitives/  # Txt, Button, Card, List, ScreenHeader, SheetModal, … (see Docs/plans/2026-10-05-mobile-ui-refresh.md)
+│       ├── components/primitives/  # Txt, Button, Card, List, ScreenHeader, SheetModal, … (see Docs/plans/mobile-ui-refresh.md)
 │       ├── components/brand/       # BrandMark, SignatureCard (navy card), RouteLine, LivePill
 │       └── lib/supabase.ts
 ├── supabase/
-│   ├── migrations/           # 0001_schema.sql … 0016_lock_optimization_helpers.sql
+│   ├── migrations/           # 0001_schema.sql … 0019_auth_email_text.sql
+│   ├── tests/                # SQL checks per migration, run against the local database
 │   ├── functions/
-│   │   ├── optimize-route/index.ts     # Edge Function: K-Means + TSP
+│   │   ├── optimize-route/index.ts     # Edge Function: route planner (update; optimize as a proposal)
 │   │   └── send-notification/index.ts  # Edge Function: Expo push
 │   └── seed.sql
 └── Docs/                     # architecture, schema, feature catalog, task tracker
@@ -90,7 +92,7 @@ routeyai/
 
 4. **Server Components by default.** Add `'use client'` only for interactivity, hooks, or browser APIs.
 
-5. **Route optimization = Edge Function only.** `supabase/functions/optimize-route/index.ts` runs K-Means + Nearest-Neighbor TSP via Mapbox Matrix API. Not a Next.js API route.
+5. **Route planning = Edge Function only.** `supabase/functions/optimize-route/index.ts` keeps each bus's stop order and slots changes in; re-planning (nearest-neighbor stop order, K-means across buses) is only a proposal a school admin applies. Mapbox Directions per run. The logic is in `supabase/functions/_shared/`. Not a Next.js API route.
 
 6. **Real-time tracking hot path:** driver writes to `bus_locations` → Supabase Realtime → parent map update. The `idx_bus_locations_bus_id` index on `(bus_id, timestamp DESC)` is critical for this path.
 
@@ -103,6 +105,8 @@ Post-login redirect is role-based. RLS policies differ per role per table — se
 ## Design System
 
 Karwa / Qatar Metro aesthetic — deep blue `#1E3A8A` primary, white/slate backgrounds, Inter font, map-centric layouts. Mobile-first for driver and parent; desktop-first for admin dashboards. Full token table in Docs/Claude.md §3.1.
+
+The admin dashboards (`/school`, `/admin`) use the mobile app's tokens (`mobile/src/lib/theme.ts`) as Tailwind colours (`ink`, `ink-2`, `canvas`, `line`, `brand`, `night`, `live`, `ok` / `warn` / `bad` with `-text` and `-tint`), Schibsted Grotesk headings (`font-display`) and the components in `src/components/dashboard/`. One navy `SignatureCard` per page, flat white cards, status as a coloured dot plus words, no uppercase labels, the landing page's easing (`ease-swift`, `animate-rise`). The map uses the apps' style (`src/lib/mapStyle.ts`, a copy of the mobile one).
 
 ## Conventions
 

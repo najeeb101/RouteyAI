@@ -21,6 +21,7 @@ import { ReportAbsenceSheet } from '@/features/parent/components/ReportAbsenceSh
 import { useParentContext } from '@/features/parent/context/ParentDataContext'
 import { reasonLabel } from '@/lib/absence'
 import { dayLabel, dayPhrase, longDate, timeLabel, whenLabel } from '@/lib/dates'
+import { cardText, RIDES_LABEL } from '@/lib/runs'
 import { routes } from '@/lib/navigation/routes'
 import { gutter, space, useTheme } from '@/lib/theme'
 
@@ -35,13 +36,13 @@ export function ParentHomeScreen() {
     selectChild,
     statusFor,
     status,
+    card,
     attendance,
     today,
     reports,
     announcements,
     busLocation,
-    etaMinutes,
-    stopsBefore,
+    eta,
     reportAbsence,
     cancelAbsence,
     refresh,
@@ -50,38 +51,26 @@ export function ParentHomeScreen() {
   const [cancelling, setCancelling] = useState<string | null>(null)
 
   const first = child?.firstName ?? 'your child'
-  const record = child ? attendance[child.id] : undefined
   const childReports = reports.filter((r) => r.studentId === child?.id)
   const todayReport = childReports.find((r) => r.date === today)
+  const record = child && card ? attendance[child.id]?.[card.run] : undefined
   const updates = announcements.filter((a) => !a.busId || a.busId === child?.busId).slice(0, 3)
   const meta = CHILD_STATUS[status]
-
-  let big = 'Not started'
-  let sub = `${child?.busName ?? 'The bus'} hasn't started the route yet.`
-  let context = 'Arriving at your stop'
-  if (status === 'boarded') {
-    context = 'Today'
-    big = 'On the bus'
-    sub = record ? `${first} boarded at ${timeLabel(record.at)}.` : `${first} is on the bus.`
-  } else if (status === 'absent') {
-    context = 'Today'
-    big = 'Absent'
-    sub = record ? `The driver marked ${first} absent at ${timeLabel(record.at)}.` : `${first} was marked absent.`
-  } else if (status === 'reported') {
-    context = 'Today'
-    big = 'Staying home'
-    sub = `You told the driver ${first} won't ride today${todayReport ? ` (${reasonLabel(todayReport.reason).toLowerCase()})` : ''}.`
-  } else if (status === 'no-bus') {
-    context = 'Today'
-    big = 'No bus yet'
-    sub = `Your school hasn't put ${first} on a bus yet.`
-  } else if (etaMinutes !== null) {
-    big = etaMinutes <= 1 ? 'Arriving' : `${etaMinutes} min`
-    sub = stopsBefore === null || stopsBefore === 0 ? 'Your stop is next.' : `${stopsBefore} stop${stopsBefore === 1 ? '' : 's'} before yours.`
-  } else if (busLocation) {
-    sub = 'Waiting for the next GPS update.'
-  }
-  const live = Boolean(busLocation) && status === 'waiting'
+  const text = card
+    ? cardText(card, {
+      first,
+      busName: child?.busName ?? null,
+      eta,
+      live: Boolean(busLocation),
+      boardedAt: record ? timeLabel(record.at) : undefined,
+      droppedAt: record?.droppedAt ? timeLabel(record.droppedAt) : undefined,
+      markedAt: record ? timeLabel(record.at) : undefined,
+      reportReason: todayReport ? reasonLabel(todayReport.reason) : undefined,
+    })
+    : null
+  // The live pill while the bus is coming or the child is on it.
+  const live = Boolean(busLocation) && (card?.kind === 'waiting' || card?.kind === 'on-bus' || card?.kind === 'on-way-home')
+  const stopsBefore = card?.target === 'stop' ? (eta?.stopsBefore ?? null) : null
 
   function confirmCancel(reportId: string, date: string) {
     Alert.alert('Cancel this report?', `The driver will expect ${first} at the stop ${dayPhrase(date, today)}.`, [
@@ -138,15 +127,15 @@ export function ParentHomeScreen() {
               <View style={{ gap: space.xs }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.md }}>
                   <Txt variant="subhead" tone="onNightSecondary" numberOfLines={1} style={{ flex: 1 }}>
-                    {child.busName ?? 'No bus'} · {context}
+                    {child.busName ?? 'No bus'} · {text?.context}
                   </Txt>
                   {live ? <LivePill onNight /> : <StatusText label={meta.label} tone={meta.tone} onNight />}
                 </View>
                 <Txt variant="display" tone="onNight" numberOfLines={1} adjustsFontSizeToFit>
-                  {big}
+                  {text?.big}
                 </Txt>
                 <Txt variant="body" tone="onNightSecondary">
-                  {sub}
+                  {text?.sub}
                 </Txt>
               </View>
               {live && stopsBefore !== null && (
@@ -174,7 +163,7 @@ export function ParentHomeScreen() {
                   <ListRow
                     key={r.id}
                     title={dayLabel(r.date, today)}
-                    subtitle={`${reasonLabel(r.reason)}${r.note ? ` · ${r.note}` : ''}`}
+                    subtitle={`${RIDES_LABEL[r.runs]} · ${reasonLabel(r.reason)}${r.note ? ` · ${r.note}` : ''}`}
                     accessory={
                       <Pressable onPress={() => confirmCancel(r.id, r.date)} disabled={cancelling === r.id} hitSlop={10} accessibilityRole="button">
                         <Txt variant="subhead" tone={cancelling === r.id ? 'inkTertiary' : 'brand'}>
@@ -189,7 +178,7 @@ export function ParentHomeScreen() {
 
             <ListSection title={`${first}'s bus`}>
               <ListRow icon={Bus} title="Bus" value={child.busName ?? 'Not assigned'} />
-              <ListRow icon={MapPin} title="Pickup" value={child.homeAddress} />
+              <ListRow icon={MapPin} title="Stop" value={child.homeAddress} />
               <ListRow icon={School} title="School" value={child.schoolName ?? '—'} />
             </ListSection>
 

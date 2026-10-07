@@ -1,21 +1,23 @@
 import type { Metadata } from 'next'
-import { AdminSidebar } from '@/components/dashboard/AdminSidebar'
-import { AdminTopBar } from '@/components/dashboard/AdminTopBar'
+import { DashboardShell } from '@/components/dashboard/DashboardShell'
+import { createClient } from '@/lib/supabase/server'
 
 export const metadata: Metadata = {
   title: 'Platform Admin',
 }
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
   return (
-    <div className="flex h-screen w-full bg-[#F8FAFC] overflow-hidden font-sans">
-      <AdminSidebar />
-      <div className="flex flex-col flex-1 overflow-hidden">
-        <AdminTopBar />
-        <main className="flex-1 overflow-y-auto">
-          {children}
-        </main>
-      </div>
-    </div>
+    <DashboardShell
+      section="admin"
+      place="Platform admin"
+      userName={(user?.user_metadata?.full_name as string | undefined)?.trim() || 'Platform admin'}
+      userEmail={user?.email ?? ''}
+    >
+      {children}
+    </DashboardShell>
   )
 }

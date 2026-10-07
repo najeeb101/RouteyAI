@@ -1,29 +1,38 @@
 import { cn } from '@/lib/utils'
+import { CountUp } from './CountUp'
+import { Rise } from './Rise'
+
+type Tone = 'neutral' | 'warning' | 'danger' | 'success'
+
+const SUB_TONE: Record<Tone, string> = {
+  neutral: 'text-ink-2',
+  warning: 'text-warn-text',
+  danger: 'text-bad-text',
+  success: 'text-ok-text',
+}
 
 interface StatsCardProps {
   label: string
-  value: string
-  sub?: string
-  color?: string
-  icon: React.ReactNode
+  value: number | string
+  sub?: React.ReactNode
+  /** Colours the line under the number when it needs attention. */
+  subTone?: Tone
+  step?: number
+  className?: string
 }
 
-export function StatsCard({ label, value, sub, color = '#1E3A8A', icon }: StatsCardProps) {
+/**
+ * A number that matters, like the app's Stat: the label above in plain words, the number big in Schibsted (it counts
+ * up when the page opens), one line under it. No icon box and no colour unless something needs attention.
+ */
+export function StatsCard({ label, value, sub, subTone = 'neutral', step = 0, className }: StatsCardProps) {
   return (
-    <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-[0_1px_2px_0_rgb(0_0_0/0.04)] p-5">
-      <div className="flex justify-between items-start">
-        <div>
-          <div className="text-xs font-medium text-[#64748B] mb-1">{label}</div>
-          <div className="text-3xl font-bold leading-none mb-1.5" style={{ color }}>{value}</div>
-          {sub && <div className="text-[11px] text-[#94A3B8]">{sub}</div>}
-        </div>
-        <div
-          className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-          style={{ background: color + '15' }}
-        >
-          {icon}
-        </div>
+    <Rise step={step} className={cn('rounded-xl bg-white p-5 ring-1 ring-ink/[0.04]', className)}>
+      <div className="text-[13px] font-medium text-ink-2">{label}</div>
+      <div className="mt-2 font-display text-[34px] font-bold leading-[38px] tracking-[-0.02em] text-ink tabular-nums">
+        {typeof value === 'number' ? <CountUp value={value} /> : value}
       </div>
-    </div>
+      {sub && <div className={cn('mt-1.5 text-[13px]', SUB_TONE[subTone])}>{sub}</div>}
+    </Rise>
   )
 }

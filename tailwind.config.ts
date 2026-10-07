@@ -58,7 +58,44 @@ const config: Config = {
   			},
   			brand: {
   				DEFAULT: 'hsl(var(--brand))',
-  				ink: 'hsl(var(--brand-ink))'
+  				ink: 'hsl(var(--brand-ink))',
+  				pressed: '#172E6E',
+  				tint: 'rgba(30, 58, 138, 0.08)',
+  				'tint-pressed': 'rgba(30, 58, 138, 0.14)'
+  			},
+  			// Dashboard palette: the mobile app's tokens (mobile/src/lib/theme.ts), so the web and the apps match.
+  			ink: {
+  				DEFAULT: '#0F172A',
+  				2: '#64748B',
+  				3: '#94A3B8'
+  			},
+  			canvas: '#F6F7F9',
+  			line: '#E5E7EB',
+  			night: {
+  				DEFAULT: '#0A1430',
+  				glow: '#1E40AF',
+  				line: 'rgba(255, 255, 255, 0.16)'
+  			},
+  			live: '#38BDF8',
+  			ok: {
+  				DEFAULT: '#10B981',
+  				text: '#047857',
+  				tint: '#ECFDF5'
+  			},
+  			warn: {
+  				DEFAULT: '#F59E0B',
+  				text: '#B45309',
+  				tint: '#FFFBEB'
+  			},
+  			bad: {
+  				DEFAULT: '#EF4444',
+  				text: '#B91C1C',
+  				tint: '#FEF2F2',
+  				'tint-pressed': '#FEE2E2'
+  			},
+  			info: {
+  				text: '#1E40AF',
+  				tint: '#EFF6FF'
   			}
   		},
   		borderRadius: {
@@ -125,6 +162,28 @@ const config: Config = {
   			'hero-zoom': {
   				from: { transform: 'scale(1.06)' },
   				to: { transform: 'scale(1)' }
+  			},
+  			// Dashboard: content settles in place, shorter and closer than the landing page's fade-up.
+  			rise: {
+  				from: { opacity: '0', transform: 'translateY(8px)' },
+  				to: { opacity: '1', transform: 'translateY(0)' }
+  			},
+  			'grow-x': {
+  				from: { transform: 'scaleX(0)' },
+  				to: { transform: 'scaleX(1)' }
+  			},
+  			'grow-y': {
+  				from: { transform: 'scaleY(0)' },
+  				to: { transform: 'scaleY(1)' }
+  			},
+  			shimmer: {
+  				from: { backgroundPosition: '200% 0' },
+  				to: { backgroundPosition: '-200% 0' }
+  			},
+  			// The signature card's glow wanders a little, so the navy card feels lit rather than printed.
+  			'glow-drift': {
+  				from: { transform: 'translate3d(0, 0, 0) scale(1)' },
+  				to: { transform: 'translate3d(-56px, 28px, 0) scale(1.1)' }
   			}
   		},
   		animation: {
@@ -134,6 +193,14 @@ const config: Config = {
   			'word-up': 'word-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) both',
   			'fade-up': 'fade-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) both',
   			'hero-zoom': 'hero-zoom 2.4s cubic-bezier(0.22, 1, 0.36, 1) both',
+  			rise: 'rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) both',
+  			'grow-x': 'grow-x 0.9s cubic-bezier(0.22, 1, 0.36, 1) both',
+  			'grow-y': 'grow-y 0.9s cubic-bezier(0.22, 1, 0.36, 1) both',
+  			shimmer: 'shimmer 1.6s linear infinite'
+  		},
+  		transitionTimingFunction: {
+  			// The landing page's easing (Reveal, fade-up), for dashboard transitions.
+  			swift: 'cubic-bezier(0.22, 1, 0.36, 1)'
   		}
   	}
   },

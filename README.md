@@ -179,7 +179,7 @@ RouteyAI/
 | [Docs/features.md](Docs/features.md) | Every feature, grouped by account type |
 | [Docs/busflow.md](Docs/busflow.md) | How students, stops, buses and drivers connect |
 | [Docs/task.md](Docs/task.md) | Progress checklist, phase by phase |
-| [Docs/plans/](Docs/plans/) | Dated plans for bigger pieces of work |
+| [Docs/plans/](Docs/plans/) | Plans for bigger pieces of work |
 
 ---
 

@@ -8,7 +8,13 @@ const DriverDataContext = createContext<DriverContextValue | null>(null)
 
 export function DriverDataProvider({ children }: { children: ReactNode }) {
   const data = useDriverData()
-  const trip = useTrip(data.profile?.busId ?? null)
+  const trip = useTrip({
+    busId: data.profile?.busId ?? null,
+    run: data.run,
+    running: data.running,
+    runsLoaded: data.runsLoaded,
+    onRunsChanged: data.reloadRuns,
+  })
   return <DriverDataContext.Provider value={{ ...data, trip }}>{children}</DriverDataContext.Provider>
 }
 

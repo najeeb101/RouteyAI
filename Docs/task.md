@@ -12,6 +12,7 @@ Mobile: Expo (React Native) | React Native styles | Mapbox RN | EAS
 - In progress: Phase 13 — landing page live at https://routeyai.vercel.app; launch placeholders in `src/lib/siteConfig.ts`; no Mapbox token on Vercel yet, so student addresses aren't geocoded on the live site.
 - In progress: Phase 12 (store submission). Expo SDK 57, EAS profiles, OTA updates, icons, Play graphics and store copy are done; next are the device test, the Mapbox `pk.` token, `eas login` and the first EAS builds.
 - Phase 14 (parent and driver app upgrade) done apart from checks on a real phone.
+- 2026-10-06: Phase 15 light mode and identity merged (PR #4). Phase 16 (two runs a day) started: step 1 is on production. Verified `0017`'s `run` columns are live and `0016` rejects anonymous route-helper calls with `401`. Step 2 (route planner and notifications) built and tested locally on `two-runs`. Fixes 1A and 2 are in PR #5, waiting to be merged.
 
 ## Phase 1: Project Setup and Landing Page
 
@@ -135,7 +136,7 @@ Mobile: Expo (React Native) | React Native styles | Mapbox RN | EAS
 - [x] Performance audit (Lighthouse) — home page, mobile, local production build (2026-09-30): Performance 92, Accessibility 100, Best Practices 100, SEO 100
 - [ ] Connect custom domain on Vercel
 - [x] **Edge Functions check the caller** (found and fixed 2026-10-05, deployed). Both ran with the service role key and only required a valid JWT, and the public anon key is one: anyone with the web app's public key could push any text to every parent of a school (`send-notification`, `type: announcement`) or re-optimize every bus in every school (`optimize-route` with no `bus_id`). Now `supabase/functions/_shared/caller.ts` identifies the caller: the service role (database triggers, scripts; a token claiming it is confirmed against the Auth admin API, because the runtime's `SUPABASE_SERVICE_ROLE_KEY` is not the same string as the legacy key), or a signed-in user with their roles. `optimize-route`: platform admin, service role, or the school admin of that bus's school. `send-notification`: attendance and announcements only from the service role; `eta_alert` only from the child's parent. Also fixed: "Optimize all" for one school re-planned every school's buses. Tested on production: anon key and a forged service-role JWT get 401, the service key works. Not yet tested with a signed-in school admin or parent (needs the review accounts)
-- [ ] **Apply `0016_lock_optimization_helpers.sql` to production (`pnpm db:push`)**. The four route-optimization helpers from 0009 are SECURITY DEFINER with no caller checks and executable by anon: with only the public key, `get_route_optimization_payload` returns every bus with its students' home coordinates (checked on production 2026-10-05: 13 rows). 0016 makes them service-role only; only the Edge Function uses them. Claude's push was blocked by the auto-mode safety check, so run it yourself
+- [x] **`0016_lock_optimization_helpers.sql` is on production**. The four route-optimization helpers from 0009 are now service-role only. Verified 2026-10-06: an anonymous request to `get_route_optimization_payload` receives `401`.
 - [ ] `redeem_invite(p_code, p_user_id)` trusts `p_user_id` instead of `auth.uid()`. Low risk (needs a valid unused invite code), but it can't simply require `auth.uid()`: production has email confirmation on, so the invite page calls it before the new user has a session. Option: allow `p_user_id = auth.uid()`, or a user created in the last few minutes who has no role yet
 
 ## Phase 12: App Store and Play Store Submission
@@ -164,7 +165,7 @@ Mobile: Expo (React Native) | React Native styles | Mapbox RN | EAS
 
 ## Phase 13: Landing Page Launch
 
-Full plan: [plans/2026-09-29-landing-page-launch.md](plans/2026-09-29-landing-page-launch.md)
+Full plan: [plans/landing-page-launch.md](plans/landing-page-launch.md)
 
 - [x] Decide: primary CTA = "Book a demo"; pricing = fleet-size plans with "Contact us"; Arabic/RTL after launch; placeholder phone/socials removed
 - [x] Split `src/app/page.tsx` into `src/components/landing/*`; page becomes a Server Component with client islands
@@ -186,7 +187,7 @@ Full plan: [plans/2026-09-29-landing-page-launch.md](plans/2026-09-29-landing-pa
 
 ## Phase 14: Parent and Driver App Upgrade
 
-Full plan: [plans/2026-10-01-parent-driver-apps.md](plans/2026-10-01-parent-driver-apps.md)
+Implementation complete; the remaining real-device checks are tracked below.
 
 - [x] Migration `0013_absence_reports.sql`: `absence_reports` table, trigger, RLS, realtime; `set_push_token()` so parents and drivers can save push tokens
 - [x] Parent: all children on one account, child switcher on Home, History and the map
@@ -213,11 +214,33 @@ Full plan: [plans/2026-10-01-parent-driver-apps.md](plans/2026-10-01-parent-driv
 
 ## Phase 15: Mobile UI Refresh
 
-Full plan: [plans/2026-10-05-mobile-ui-refresh.md](plans/2026-10-05-mobile-ui-refresh.md)
+Full plan: [plans/mobile-ui-refresh.md](plans/mobile-ui-refresh.md)
 
 - [x] Decided (2026-10-05): Lucide icons, light large-title headers, rounded-rectangle buttons, dark mode after the light mode is final
 - [x] Foundations: `theme.ts`, Schibsted Grotesk + Inter, `Txt`, Lucide, `check:design` (2026-10-06)
 - [x] Components, then parent, driver and login screens (2026-10-06, branch `mobile-ui-refresh`): all 14 screens and sheets moved to the tokens; old `colors.ts`, `PrimaryButton`, `StatusPill`, `MetricCard` and the unused `RouteTimeline` removed. `npm run check:design`, typecheck and expo-doctor pass. Checked in the web preview (`npx expo start --web`), not yet on the iPhone
-- [ ] Check every screen on the iPhone in Expo Go, then merge `mobile-ui-refresh`
+- [x] Checked on the iPhone in Expo Go; RouteyAI identity added (logo header, navy signature card, stop line, live pill, navy login). Merged in PR #4 (2026-10-06)
 - [ ] Landing page phone mockups and store screenshots in the new style
 - [ ] Dark mode (planned in the same document; starts when the light screens are final)
+
+## Phase 16: Two Runs a Day
+
+Full plan: [plans/two-runs-a-day.md](plans/two-runs-a-day.md). Every bus does a morning pickup run and an afternoon drop-off run (the same stops in reverse). Routes never change by themselves.
+
+- [x] Step 1 (2026-10-06, branch `two-runs`): `0017_two_runs.sql` (`bus_runs`, attendance per run with `dropped_off`, absence reports per run, a morning and an afternoon route row, `start_run` / `end_run` / `mark_attendance`, `save_route_plan`), the route rules in `supabase/functions/_shared/routePlan.ts` with tests (`pnpm test:logic`), and database checks per role (`supabase/tests/0017_two_runs.sql`). Applied locally
+- [x] `0017_two_runs.sql` is on production (verified 2026-10-06: `routes.run` and `attendance.run` are available)
+- [x] Step 2 (2026-10-06, branch `two-runs`, not deployed): `optimize-route` (`update`, and `optimize` as a proposal; both directions; Mapbox leg times; Optimize all clusters start from the current buses) and `send-notification` (run-aware alerts, `dry_run`). Logic in `supabase/functions/_shared/`; 49 logic tests and 35 local end-to-end checks pass. Goes live together with steps 3 and 4
+- [ ] Step 3: refresh existing routes, flipping the morning direction once so it ends at the school (decided 2026-10-06). Rehearsed on the local database 2026-10-06; runs on production at go-live (see "Going live" in the plan)
+- [x] Step 4 (2026-10-06, branch `two-runs`, not deployed): driver app (picks the run, `start_run` / `end_run` / `mark_attendance`, afternoon boarding at school and drop-offs, end-of-afternoon safety check), parent app (card for every moment of the day, "Which rides?" absences, history per run), shared rules in `mobile/src/lib/runs.ts`, and the privacy fix `0018_parent_route.sql` used by both parent apps. 22 checks in the web preview through a simulated day, 11 database checks, 59 logic tests
+- [x] Step 5 (2026-10-06, branch `two-runs`, not deployed): school dashboard rebuilt on the app and landing page design (navy side bar, signature card, flat cards, Schibsted headings, real Mapbox map, animations). Routes page: one card per bus, Morning / Afternoon switch, Update (slot changes in), Re-plan and Re-plan all as proposals you apply or keep, the "could save" hint. Students page slots each change into the route (fix 1B). Overview follows the day live (runs, check-ins, bus positions) and flags children not marked dropped off. Fleet shows each bus's run; Absences shows which rides; Analytics uses real runs and check-ins; the web driver page uses the run functions. `0019_auth_email_text.sql` fixes the bus and school lists on Postgres 17. 13 end-to-end checks on the local stack
+- [ ] Step 6: iPhone test in Expo Go, merge
+- [ ] Step 7: clean-up migration 0020 (also drops the parent read on `routes`, fix 3), docs, store and landing copy
+
+## Fixes
+
+Full plan: [plans/fixes.md](plans/fixes.md). Older problems found while planning two runs a day.
+
+- [x] 1A: the Students page stops re-planning every route in the school after each change; Optimize all asks first; buses without a route get Plan route (2026-10-06, PR #5 from `fixes`, waiting to be merged)
+- [x] 2: "Edit student" saves the new address's map location (same PR; needs `NEXT_PUBLIC_MAPBOX_TOKEN` on Vercel)
+- [x] 1B: new children slot into the route without moving anyone (`update` built in two-runs step 2; the Students page calls it since step 5, 2026-10-06)
+- [x] 3: parents read only the route line and their own child's stop (`0018_parent_route.sql`, built with two-runs step 4, not deployed; 0020 drops the old read before the first real parent)

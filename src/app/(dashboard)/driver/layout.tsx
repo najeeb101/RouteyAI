@@ -1,7 +1,5 @@
+import { displayFont } from '@/components/landing/fonts'
+
 export default function DriverLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="min-h-screen bg-[#F8FAFC] font-sans">
-      {children}
-    </div>
-  )
+  return <div className={`${displayFont.variable} min-h-screen bg-canvas font-sans text-ink`}>{children}</div>
 }

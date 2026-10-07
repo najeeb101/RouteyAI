@@ -24,7 +24,7 @@ export default function AdminAnalyticsPage() {
   const avgUtilization = Math.round(SCHOOL_STATS.reduce((s, x) => s + x.utilization, 0) / SCHOOL_STATS.length)
 
   return (
-    <div className="p-7 max-w-[1280px]">
+    <div>
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-[#0F172A]">Analytics</h1>
@@ -37,50 +37,21 @@ export default function AdminAnalyticsPage() {
           label="Total Schools"
           value="4"
           sub="Active on platform"
-          color="#1E3A8A"
-          icon={
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1E3A8A" strokeWidth="1.75" strokeLinecap="round">
-              <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
-              <polyline points="9 22 9 12 15 12 15 22"/>
-            </svg>
-          }
         />
         <StatsCard
           label="Total Students"
           value={String(totalStudents)}
           sub={`${totalCapacity} total capacity`}
-          color="#10B981"
-          icon={
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="1.75" strokeLinecap="round">
-              <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/>
-              <path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>
-            </svg>
-          }
         />
         <StatsCard
           label="Fleet Utilization"
           value={`${avgUtilization}%`}
           sub="Avg across all schools"
-          color="#3B82F6"
-          icon={
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M8 6v6"/><path d="M15 6v6"/><path d="M2 12h19.6"/>
-              <path d="M18 18h3s.5-1.7.8-4.3c.3-2.7.2-7.7.2-7.7H2S1.7 7 2 9.7c.3 2.6.8 4.3.8 4.3H5"/>
-              <circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/>
-            </svg>
-          }
         />
         <StatsCard
           label="Total Buses"
           value="14"
           sub="Across all schools"
-          color="#F59E0B"
-          icon={
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="1.75" strokeLinecap="round">
-              <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/>
-              <line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/>
-            </svg>
-          }
         />
       </div>
 

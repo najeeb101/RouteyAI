@@ -1,23 +1,27 @@
 import { createClient } from '@/lib/supabase/server'
-import RoutesClient from './RoutesClient'
-
-export type RouteRow = {
-  id: string
-  school_id: string
-  bus_id: string
-  bus_name: string | null
-  bus_color: string | null
-  waypoints: { lat: number; lng: number; student_id?: string; eta?: string }[]
-  total_distance_km: number | null
-  total_duration_min: number | null
-  optimized_at: string
-}
+import { loadFleetToday, loadRoutes, loadSchoolPoint } from '@/lib/dashboard/today'
+import RoutesClient, { type RouteBus, type RouteStudent } from './RoutesClient'
 
 export default async function RoutesPage() {
   const supabase = createClient()
-  const { data } = await supabase.rpc('get_routes_with_buses')
+  const [busesRes, studentsRes, school] = await Promise.all([
+    supabase.rpc('get_buses_with_drivers'),
+    supabase.from('students').select('id, name, home_address, bus_id, stop_order').not('bus_id', 'is', null),
+    loadSchoolPoint(supabase),
+  ])
+  for (const { error } of [busesRes, studentsRes]) {
+    if (error) console.error('Routes page:', error.message)
+  }
+  const buses = ((busesRes.data ?? []) as RouteBus[]).map(({ id, school_id, name, color, driver_name }) => ({ id, school_id, name, color, driver_name }))
+  const [routes, today] = await Promise.all([loadRoutes(supabase, school), loadFleetToday(supabase, buses.map((b) => b.id))])
 
-  const routes: RouteRow[] = (data ?? []) as RouteRow[]
-
-  return <RoutesClient initialRoutes={routes} />
+  return (
+    <RoutesClient
+      buses={buses}
+      students={(studentsRes.data ?? []) as RouteStudent[]}
+      routes={routes}
+      school={school}
+      runsByBus={today.runsByBus}
+    />
+  )
 }

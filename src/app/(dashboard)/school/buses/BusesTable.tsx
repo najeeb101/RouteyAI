@@ -1,8 +1,19 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
+import { Bus, Check, Copy, Pencil, Plus, Trash2, UserRound } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
+import { busDayStatus, type BusRunsToday } from '@/lib/runs'
+import { ActionButton } from '@/components/dashboard/ActionButton'
+import { EmptyState } from '@/components/dashboard/EmptyState'
+import { Field, inputClass } from '@/components/dashboard/Field'
+import { Modal } from '@/components/dashboard/Modal'
+import { Notice } from '@/components/dashboard/Notice'
+import { PageHeader } from '@/components/dashboard/PageHeader'
+import { Rise } from '@/components/dashboard/Rise'
+import { StatusText } from '@/components/dashboard/StatusText'
 
 export type BusRow = {
   id: string
@@ -18,96 +29,97 @@ export type BusRow = {
   created_at: string
 }
 
-const BUS_COLORS = [
-  '#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EF4444', '#06B6D4', '#F97316',
-]
+/**
+ * Bus colours, used for its route line and on the parent's map. The landing page's route colours first (checked for
+ * contrast, and clear of the status green and amber), then a few more.
+ */
+const BUS_COLORS = ['#3B82F6', '#DB2777', '#0891B2', '#8B5CF6', '#EA580C', '#4F46E5', '#0D9488', '#65A30D']
 
-function busStatus(b: BusRow): 'active' | 'full' | 'idle' {
-  if (!b.driver_id || !b.is_active) return 'idle'
-  if (b.student_count >= b.capacity) return 'full'
-  return 'active'
-}
-
-const STATUS_STYLE = {
-  active: { bg: '#D1FAE5', text: '#059669', label: 'Active'       },
-  full:   { bg: '#FEF3C7', text: '#D97706', label: 'At capacity'  },
-  idle:   { bg: '#F1F5F9', text: '#64748B', label: 'Idle'         },
-}
-
-const STATUS_DOT = { active: '#10B981', full: '#F59E0B', idle: '#94A3B8' }
-
-function BusIcon({ color = '#1E3A8A' }: { color?: string }) {
+function ColorPicker({ value, onChange }: { value: string; onChange: (c: string) => void }) {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M8 6v6"/><path d="M15 6v6"/><path d="M2 12h19.6"/>
-      <path d="M18 18h3s.5-1.7.8-4.3c.3-2.7.2-7.7.2-7.7H2S1.7 7 2 9.7c.3 2.6.8 4.3.8 4.3H5"/>
-      <circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/>
-    </svg>
+    <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Route colour">
+      {BUS_COLORS.map((c) => (
+        <button
+          key={c}
+          type="button"
+          role="radio"
+          aria-checked={value === c}
+          aria-label={c}
+          onClick={() => onChange(c)}
+          className={cn(
+            'flex h-8 w-8 items-center justify-center rounded-full text-white transition-transform duration-200 ease-swift hover:scale-110',
+            value === c && 'scale-110 ring-2 ring-ink ring-offset-2',
+          )}
+          style={{ background: c }}
+        >
+          {value === c && <Check size={14} strokeWidth={3} />}
+        </button>
+      ))}
+    </div>
   )
 }
 
-function CloseBtn({ onClick }: { onClick: () => void }) {
-  return (
-    <button onClick={onClick} className="w-7 h-7 bg-[#F1F5F9] rounded-lg flex items-center justify-center text-[#64748B] hover:bg-[#E2E8F0] transition-colors">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-      </svg>
-    </button>
-  )
-}
-
-export default function BusesTable({ initialBuses }: { initialBuses: BusRow[] }) {
+export default function BusesTable({ initialBuses, runsByBus }: { initialBuses: BusRow[]; runsByBus: Record<string, BusRunsToday> }) {
   const supabase = createClient()
 
   const [buses, setBuses] = useState<BusRow[]>(initialBuses)
-  const [loading, setLoading]     = useState(false)
-  const [error, setError]         = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [now, setNow] = useState(() => new Date())
 
-  // Modal state
-  const [addOpen, setAddOpen]     = useState(false)
-  const [editBus, setEditBus]     = useState<BusRow | null>(null)
+  const [addOpen, setAddOpen] = useState(false)
+  const [editBus, setEditBus] = useState<BusRow | null>(null)
   const [deleteBus, setDeleteBus] = useState<BusRow | null>(null)
   const [assignBus, setAssignBus] = useState<BusRow | null>(null)
   const [inviteLink, setInviteLink] = useState<string | null>(null)
-  const [copied, setCopied]       = useState(false)
+  const [copied, setCopied] = useState(false)
 
-  // Add form state
-  const [addName,     setAddName]     = useState('')
-  const [addCapacity, setAddCapacity] = useState('40')
-  const [addColor,    setAddColor]    = useState(BUS_COLORS[0]!)
+  const [name, setName] = useState('')
+  const [capacity, setCapacity] = useState('40')
+  const [color, setColor] = useState(BUS_COLORS[0]!)
 
-  // Edit form state
-  const [editName,     setEditName]     = useState('')
-  const [editCapacity, setEditCapacity] = useState('')
-  const [editColor,    setEditColor]    = useState('')
-  const [editActive,   setEditActive]   = useState(true)
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 60_000)
+    return () => clearInterval(id)
+  }, [])
 
   const refetch = useCallback(async () => {
-    const { data } = await supabase.rpc('get_buses_with_drivers')
+    const { data, error: err } = await supabase.rpc('get_buses_with_drivers')
+    if (err) console.error('Buses:', err.message)
     if (data) setBuses(data as BusRow[])
   }, [supabase])
 
+  const close = () => {
+    setAddOpen(false)
+    setEditBus(null)
+    setDeleteBus(null)
+    setError(null)
+  }
+
+  const openAdd = () => {
+    setName('')
+    setCapacity('40')
+    setColor(BUS_COLORS[buses.length % BUS_COLORS.length]!)
+    setError(null)
+    setAddOpen(true)
+  }
+
   const openEdit = (b: BusRow) => {
     setEditBus(b)
-    setEditName(b.name)
-    setEditCapacity(String(b.capacity))
-    setEditColor(b.color)
-    setEditActive(b.is_active)
+    setName(b.name)
+    setCapacity(String(b.capacity))
+    setColor(b.color)
+    setError(null)
   }
 
   const handleAdd = async () => {
-    if (!addName.trim()) return
+    if (!name.trim()) return
     setLoading(true); setError(null)
-    const { error: err } = await supabase.rpc('create_bus', {
-      p_name:     addName.trim(),
-      p_capacity: Number(addCapacity) || 40,
-      p_color:    addColor,
-    })
+    const { error: err } = await supabase.rpc('create_bus', { p_name: name.trim(), p_capacity: Number(capacity) || 40, p_color: color })
     setLoading(false)
     if (err) { setError(err.message); return }
-    setAddOpen(false)
-    setAddName(''); setAddCapacity('40'); setAddColor(BUS_COLORS[0]!)
-    toast.success('Bus added')
+    close()
+    toast.success(`${name.trim()} added`, { description: 'Invite its driver next.' })
     await refetch()
   }
 
@@ -116,16 +128,11 @@ export default function BusesTable({ initialBuses }: { initialBuses: BusRow[] })
     setLoading(true); setError(null)
     const { error: err } = await supabase
       .from('buses')
-      .update({
-        name:      editName.trim() || editBus.name,
-        capacity:  Number(editCapacity) || editBus.capacity,
-        color:     editColor,
-        is_active: editActive,
-      })
+      .update({ name: name.trim() || editBus.name, capacity: Number(capacity) || editBus.capacity, color })
       .eq('id', editBus.id)
     setLoading(false)
     if (err) { setError(err.message); return }
-    setEditBus(null)
+    close()
     toast.success('Bus updated')
     await refetch()
   }
@@ -136,21 +143,25 @@ export default function BusesTable({ initialBuses }: { initialBuses: BusRow[] })
     const { error: err } = await supabase.from('buses').delete().eq('id', deleteBus.id)
     setLoading(false)
     if (err) { setError(err.message); return }
-    setDeleteBus(null)
-    toast.success('Bus removed')
+    const removed = deleteBus.name
+    close()
+    toast.success(`${removed} removed`)
     await refetch()
   }
 
   const handleGenerateInvite = async () => {
     if (!assignBus) return
     setLoading(true); setError(null)
-    const { data: code, error: err } = await supabase.rpc('generate_driver_invite', {
-      p_bus_id: assignBus.id,
-    })
+    const { data: code, error: err } = await supabase.rpc('generate_driver_invite', { p_bus_id: assignBus.id })
     setLoading(false)
     if (err) { setError(err.message); return }
-    const url = `${window.location.origin}/invite/${code}`
-    setInviteLink(url)
+    setInviteLink(`${window.location.origin}/invite/${code}`)
+  }
+
+  const closeAssign = () => {
+    setAssignBus(null)
+    setCopied(false)
+    setError(null)
   }
 
   const handleCopy = () => {
@@ -160,359 +171,176 @@ export default function BusesTable({ initialBuses }: { initialBuses: BusRow[] })
     setTimeout(() => setCopied(false), 2000)
   }
 
-  const closeAssign = () => {
-    setAssignBus(null)
-    setInviteLink(null)
-    setCopied(false)
-  }
+  const seats = buses.reduce((n, b) => n + b.capacity, 0)
+  const riders = buses.reduce((n, b) => n + Number(b.student_count), 0)
+
+  const busForm = (
+    <div className="flex flex-col gap-4">
+      {error && <Notice tone="danger">{error}</Notice>}
+      <div className="grid grid-cols-[1fr_120px] gap-3">
+        <Field label="Name or number" htmlFor="bus-name">
+          <input id="bus-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Bus 14" className={inputClass} />
+        </Field>
+        <Field label="Seats" htmlFor="bus-seats">
+          <input id="bus-seats" type="number" min={1} value={capacity} onChange={(e) => setCapacity(e.target.value)} className={inputClass} />
+        </Field>
+      </div>
+      <Field label="Route colour" hint="Its route line on the map, and the colour parents see for their child's bus.">
+        <ColorPicker value={color} onChange={setColor} />
+      </Field>
+    </div>
+  )
 
   return (
-    <div className="p-7 max-w-[1280px]">
-      {error && (
-        <div className="mb-4 px-4 py-3 bg-[#FEF2F2] border border-[#FEE2E2] text-[#DC2626] text-sm rounded-xl">
-          {error}
-        </div>
-      )}
-
-      <div className="flex justify-between items-start mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-[#0F172A] leading-tight">Fleet Management</h1>
-          <p className="text-sm text-[#64748B] mt-0.5">{buses.length} bus{buses.length !== 1 ? 'es' : ''} registered</p>
-        </div>
-        <button
-          onClick={() => setAddOpen(true)}
-          className="flex items-center gap-2 bg-[#1E3A8A] text-white rounded-xl px-4 py-2.5 text-sm font-semibold hover:bg-[#1e40af] transition-colors"
-        >
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-          </svg>
-          Add Bus
-        </button>
-      </div>
+    <>
+      <PageHeader
+        title="Fleet"
+        subtitle={buses.length ? `${buses.length} bus${buses.length === 1 ? '' : 'es'} · ${riders} of ${seats} seats taken` : 'Your school’s buses and drivers'}
+        actions={<ActionButton onClick={openAdd}><Plus /> Add bus</ActionButton>}
+      />
 
       {buses.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-[0_1px_2px_0_rgb(0_0_0/0.04)] p-16 flex flex-col items-center text-center">
-          <div className="w-14 h-14 rounded-2xl bg-[#EFF6FF] border border-[#BFDBFE] flex items-center justify-center mb-4">
-            <BusIcon color="#1E3A8A" />
-          </div>
-          <p className="text-sm font-semibold text-[#0F172A] mb-1">No buses yet</p>
-          <p className="text-xs text-[#94A3B8]">Add your first bus to start building your fleet.</p>
-        </div>
+        <Rise step={1} className="rounded-xl bg-white ring-1 ring-ink/[0.04]">
+          <EmptyState icon={Bus} title="No buses yet" action={<ActionButton onClick={openAdd}><Plus /> Add bus</ActionButton>}>
+            Add a bus, invite its driver, then put students on it.
+          </EmptyState>
+        </Rise>
       ) : (
-        <div className="grid grid-cols-2 gap-5">
-          {buses.map(b => {
-            const status = busStatus(b)
-            const ss     = STATUS_STYLE[status]
-            const pct    = Math.round((b.student_count / b.capacity) * 100)
-            const barColor = pct > 90 ? '#EF4444' : pct > 70 ? '#F59E0B' : '#10B981'
-
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {buses.map((b, i) => {
+            const status = busDayStatus(runsByBus[b.id] ?? {}, now)
+            const pct = b.capacity ? Math.min(100, Math.round((Number(b.student_count) / b.capacity) * 100)) : 0
+            const full = Number(b.student_count) >= b.capacity
             return (
-              <div key={b.id} className="bg-white rounded-2xl border border-[#E2E8F0] shadow-[0_1px_2px_0_rgb(0_0_0/0.04)] p-5">
-                <div className="flex justify-between items-start mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 rounded-xl bg-[#EFF6FF] border border-[#BFDBFE] flex items-center justify-center">
-                      <BusIcon color={b.color} />
-                    </div>
-                    <div>
-                      <div className="text-lg font-bold text-[#0F172A]">{b.name}</div>
-                      <div className="text-xs text-[#64748B]">
-                        {b.driver_name ?? 'No driver assigned'}
-                      </div>
+              <Rise key={b.id} step={i + 1} className="flex flex-col rounded-xl bg-white p-5 ring-1 ring-ink/[0.04] transition-shadow duration-200 hover:shadow-[0_8px_24px_-12px_rgba(15,23,42,0.18)]">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <span className="h-9 w-1.5 shrink-0 rounded-full" style={{ background: b.color }} aria-hidden="true" />
+                    <div className="min-w-0">
+                      <h2 className="truncate font-display text-xl font-bold tracking-[-0.01em] text-ink">{b.name}</h2>
+                      <StatusText tone={status.tone} className="mt-0.5">{status.label}</StatusText>
                     </div>
                   </div>
-                  <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full" style={{ background: ss.bg, color: ss.text }}>
-                    {ss.label}
-                  </span>
+                  <ActionButton size="sm" variant="plain" onClick={() => openEdit(b)} aria-label={`Edit ${b.name}`}><Pencil /> Edit</ActionButton>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 mb-4">
-                  {([
-                    ['Driver', b.driver_name ?? 'Unassigned'],
-                    ['Capacity', `${b.student_count} / ${b.capacity}`],
-                  ] as const).map(([l, v]) => (
-                    <div key={l} className="bg-[#F8FAFC] rounded-lg px-3 py-2.5 border border-[#E2E8F0]">
-                      <div className="text-[10px] text-[#94A3B8] font-semibold uppercase tracking-wide mb-1">{l}</div>
-                      <div className="text-[13px] font-semibold text-[#0F172A] truncate">{v}</div>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="mb-4">
-                  <div className="flex justify-between mb-1">
-                    <span className="text-[11px] text-[#64748B]">Capacity</span>
-                    <span className="text-[11px] font-semibold" style={{ color: barColor }}>{pct}%</span>
+                <div className="mt-5 flex min-h-[60px] items-center gap-3 rounded-xl bg-canvas px-3.5 py-2.5">
+                  <UserRound size={18} className="shrink-0 text-ink-2" aria-hidden="true" />
+                  <div className="min-w-0 flex-1">
+                    <p className={cn('truncate text-sm font-medium', b.driver_name ? 'text-ink' : 'text-warn-text')}>{b.driver_name ?? 'No driver yet'}</p>
+                    {b.driver_email && <p className="truncate text-xs text-ink-2">{b.driver_email}</p>}
                   </div>
-                  <div className="h-1.5 bg-[#F1F5F9] rounded-full overflow-hidden">
-                    <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: barColor }} />
+                  <ActionButton size="sm" variant={b.driver_id ? 'plain' : 'secondary'} onClick={() => { setAssignBus(b); setInviteLink(null); setError(null) }}>
+                    {b.driver_id ? 'New invite' : 'Invite driver'}
+                  </ActionButton>
+                </div>
+
+                <div className="mt-5">
+                  <div className="mb-1.5 flex items-baseline justify-between text-[13px]">
+                    <span className="text-ink-2">Seats taken</span>
+                    <span className={cn('font-medium tabular-nums', full ? 'text-warn-text' : 'text-ink')}>{b.student_count} of {b.capacity}</span>
+                  </div>
+                  <div className="h-1.5 overflow-hidden rounded-full bg-canvas" aria-hidden="true">
+                    <div
+                      className={cn('h-full origin-left rounded-full animate-grow-x motion-reduce:animate-none', full ? 'bg-warn' : 'bg-brand')}
+                      style={{ width: `${pct}%`, animationDelay: `${150 + i * 60}ms` }}
+                    />
                   </div>
                 </div>
 
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => openEdit(b)}
-                    className="flex-1 bg-[#F8FAFC] text-[#64748B] border border-[#E2E8F0] rounded-lg py-2 text-[12px] font-medium hover:bg-[#F1F5F9] transition-colors"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => setAssignBus(b)}
-                    className="flex-1 bg-[#EFF6FF] text-[#1E3A8A] border border-[#BFDBFE] rounded-lg py-2 text-[12px] font-medium hover:bg-[#DBEAFE] transition-colors"
-                  >
-                    Assign Driver
-                  </button>
-                  <button
-                    onClick={() => setDeleteBus(b)}
-                    className="w-9 h-9 bg-[#FEF2F2] text-[#EF4444] border border-[#FEE2E2] rounded-lg flex items-center justify-center hover:bg-[#FEE2E2] transition-colors"
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                      <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
-                      <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
-                    </svg>
-                  </button>
+                <div className="mt-auto flex justify-end pt-4">
+                  <ActionButton size="sm" variant="danger-plain" onClick={() => { setDeleteBus(b); setError(null) }}><Trash2 /> Remove</ActionButton>
                 </div>
-              </div>
+              </Rise>
             )
           })}
         </div>
       )}
 
-      {/* ── Fleet mini-list for overview (used in page.tsx overview section) ── */}
-      {/* This data structure is also exported for the overview panel */}
+      <Modal
+        open={addOpen}
+        onClose={close}
+        dismissible={!loading}
+        title="Add a bus"
+        footer={
+          <>
+            <ActionButton variant="plain" onClick={close} disabled={loading}>Cancel</ActionButton>
+            <ActionButton onClick={handleAdd} loading={loading} disabled={!name.trim()}>Add bus</ActionButton>
+          </>
+        }
+      >
+        {busForm}
+      </Modal>
 
-      {/* ── Add Bus Modal ── */}
-      {addOpen && (
-        <div className="fixed inset-0 bg-[#0F172A]/45 backdrop-blur-sm flex items-center justify-center z-50" onClick={() => setAddOpen(false)}>
-          <div className="bg-white rounded-2xl p-6 w-[480px] shadow-[0_20px_60px_-15px_rgb(0_0_0/0.3)]" onClick={e => e.stopPropagation()}>
-            <div className="flex justify-between items-center mb-5">
-              <span className="text-lg font-bold text-[#0F172A]">Add New Bus</span>
-              <CloseBtn onClick={() => setAddOpen(false)} />
-            </div>
-            <div className="flex flex-col gap-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-[#0F172A] mb-1.5">Bus Name / Number</label>
-                  <input
-                    value={addName}
-                    onChange={e => setAddName(e.target.value)}
-                    type="text"
-                    placeholder="e.g. Bus #14"
-                    className="w-full border border-[#E2E8F0] rounded-xl py-2.5 px-3 text-sm text-[#0F172A] bg-[#FAFAFA] outline-none focus:border-[#3B82F6] transition-colors"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-[#0F172A] mb-1.5">Capacity</label>
-                  <input
-                    value={addCapacity}
-                    onChange={e => setAddCapacity(e.target.value)}
-                    type="number"
-                    placeholder="40"
-                    className="w-full border border-[#E2E8F0] rounded-xl py-2.5 px-3 text-sm text-[#0F172A] bg-[#FAFAFA] outline-none focus:border-[#3B82F6] transition-colors"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-[#0F172A] mb-2">Route Color</label>
-                <div className="flex gap-2">
-                  {BUS_COLORS.map(c => (
-                    <button
-                      key={c}
-                      onClick={() => setAddColor(c)}
-                      className="w-7 h-7 rounded-full border-2 transition-all"
-                      style={{
-                        background: c,
-                        borderColor: addColor === c ? '#0F172A' : 'transparent',
-                        transform: addColor === c ? 'scale(1.15)' : 'scale(1)',
-                      }}
-                    />
-                  ))}
-                </div>
-              </div>
-              <div className="flex gap-2 justify-end mt-1">
-                <button onClick={() => setAddOpen(false)} className="bg-[#F8FAFC] text-[#64748B] border border-[#E2E8F0] rounded-lg px-4 py-2 text-sm font-medium">Cancel</button>
-                <button
-                  onClick={handleAdd}
-                  disabled={!addName.trim() || loading}
-                  className="bg-[#1E3A8A] text-white rounded-lg px-4 py-2 text-sm font-semibold disabled:opacity-60 flex items-center gap-2"
-                >
-                  {loading && <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-                  Add Bus
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <Modal
+        open={editBus !== null}
+        onClose={close}
+        dismissible={!loading}
+        title={`Edit ${editBus?.name ?? 'bus'}`}
+        footer={
+          <>
+            <ActionButton variant="plain" onClick={close} disabled={loading}>Cancel</ActionButton>
+            <ActionButton onClick={handleEdit} loading={loading}>Save</ActionButton>
+          </>
+        }
+      >
+        {busForm}
+      </Modal>
 
-      {/* ── Edit Bus Modal ── */}
-      {editBus && (
-        <div className="fixed inset-0 bg-[#0F172A]/45 backdrop-blur-sm flex items-center justify-center z-50" onClick={() => setEditBus(null)}>
-          <div className="bg-white rounded-2xl p-6 w-[480px] shadow-[0_20px_60px_-15px_rgb(0_0_0/0.3)]" onClick={e => e.stopPropagation()}>
-            <div className="flex justify-between items-center mb-5">
-              <span className="text-lg font-bold text-[#0F172A]">Edit {editBus.name}</span>
-              <CloseBtn onClick={() => setEditBus(null)} />
+      <Modal
+        open={assignBus !== null}
+        onClose={closeAssign}
+        title={inviteLink ? 'Invite link ready' : `Invite ${assignBus?.name ?? 'the bus'}'s driver`}
+        description={
+          inviteLink
+            ? `Send it to the driver. When they sign up, they are assigned to ${assignBus?.name ?? 'this bus'} and can use the driver app.`
+            : 'A one-time link. The driver opens it, creates an account and is assigned to this bus.'
+        }
+        footer={
+          inviteLink ? (
+            <ActionButton onClick={closeAssign}>Done</ActionButton>
+          ) : (
+            <>
+              <ActionButton variant="plain" onClick={closeAssign}>Cancel</ActionButton>
+              <ActionButton onClick={handleGenerateInvite} loading={loading}>Create link</ActionButton>
+            </>
+          )
+        }
+      >
+        {error && <Notice tone="danger">{error}</Notice>}
+        {inviteLink && (
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2 rounded-xl bg-canvas p-1.5 pl-3.5 animate-in fade-in-0 slide-in-from-bottom-1 duration-300">
+              <span className="min-w-0 flex-1 truncate font-mono text-xs text-ink">{inviteLink}</span>
+              <ActionButton size="sm" variant={copied ? 'secondary' : 'primary'} onClick={handleCopy}>
+                {copied ? <><Check /> Copied</> : <><Copy /> Copy</>}
+              </ActionButton>
             </div>
-            <div className="flex flex-col gap-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-[#0F172A] mb-1.5">Bus Name</label>
-                  <input
-                    value={editName}
-                    onChange={e => setEditName(e.target.value)}
-                    type="text"
-                    className="w-full border border-[#E2E8F0] rounded-xl py-2.5 px-3 text-sm text-[#0F172A] bg-[#FAFAFA] outline-none focus:border-[#3B82F6] transition-colors"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-[#0F172A] mb-1.5">Capacity</label>
-                  <input
-                    value={editCapacity}
-                    onChange={e => setEditCapacity(e.target.value)}
-                    type="number"
-                    className="w-full border border-[#E2E8F0] rounded-xl py-2.5 px-3 text-sm text-[#0F172A] bg-[#FAFAFA] outline-none focus:border-[#3B82F6] transition-colors"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-[#0F172A] mb-2">Route Color</label>
-                <div className="flex gap-2">
-                  {BUS_COLORS.map(c => (
-                    <button
-                      key={c}
-                      onClick={() => setEditColor(c)}
-                      className="w-7 h-7 rounded-full border-2 transition-all"
-                      style={{
-                        background: c,
-                        borderColor: editColor === c ? '#0F172A' : 'transparent',
-                        transform: editColor === c ? 'scale(1.15)' : 'scale(1)',
-                      }}
-                    />
-                  ))}
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={editActive}
-                    onChange={e => setEditActive(e.target.checked)}
-                    className="sr-only peer"
-                  />
-                  <div className="w-9 h-5 bg-[#E2E8F0] peer-checked:bg-[#1E3A8A] rounded-full transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4" />
-                </label>
-                <span className="text-sm text-[#0F172A]">Bus is active</span>
-              </div>
-              <div className="flex gap-2 justify-end mt-1">
-                <button onClick={() => setEditBus(null)} className="bg-[#F8FAFC] text-[#64748B] border border-[#E2E8F0] rounded-lg px-4 py-2 text-sm font-medium">Cancel</button>
-                <button
-                  onClick={handleEdit}
-                  disabled={loading}
-                  className="bg-[#1E3A8A] text-white rounded-lg px-4 py-2 text-sm font-semibold disabled:opacity-60 flex items-center gap-2"
-                >
-                  {loading && <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-                  Save Changes
-                </button>
-              </div>
-            </div>
+            <p className="text-xs text-ink-2">Works once and expires in 7 days.</p>
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
 
-      {/* ── Assign Driver Modal (invite-based) ── */}
-      {assignBus && (
-        <div className="fixed inset-0 bg-[#0F172A]/45 backdrop-blur-sm flex items-center justify-center z-50" onClick={closeAssign}>
-          <div className="bg-white rounded-2xl p-6 w-[460px] shadow-[0_20px_60px_-15px_rgb(0_0_0/0.3)]" onClick={e => e.stopPropagation()}>
-            {inviteLink ? (
-              <div>
-                <div className="flex justify-between items-center mb-4">
-                  <span className="text-lg font-bold text-[#0F172A]">Driver Invite Link</span>
-                  <CloseBtn onClick={closeAssign} />
-                </div>
-                <p className="text-sm text-[#64748B] mb-4">
-                  Share this link with the driver. When they sign up, they will be automatically assigned to <span className="font-semibold text-[#0F172A]">{assignBus.name}</span>.
-                </p>
-                <div className="flex items-center gap-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl px-3 py-2.5 mb-4">
-                  <span className="flex-1 text-[12px] text-[#0F172A] truncate font-mono">{inviteLink}</span>
-                  <button
-                    onClick={handleCopy}
-                    className="shrink-0 flex items-center gap-1.5 bg-[#1E3A8A] text-white rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors hover:bg-[#1e40af]"
-                  >
-                    {copied ? (
-                      <>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-                        Copied
-                      </>
-                    ) : (
-                      <>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
-                        Copy
-                      </>
-                    )}
-                  </button>
-                </div>
-                <p className="text-[11px] text-[#94A3B8]">Link expires in 7 days · Single use</p>
-              </div>
-            ) : (
-              <>
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-lg font-bold text-[#0F172A]">Assign Driver</span>
-                  <CloseBtn onClick={closeAssign} />
-                </div>
-                <p className="text-sm text-[#64748B] mb-5">{assignBus.name} · {assignBus.student_count} students assigned</p>
-                <div className="bg-[#EFF6FF] border border-[#BFDBFE] rounded-xl px-4 py-3 mb-5 text-sm text-[#1E3A8A]">
-                  Generate a one-time invite link. The driver clicks it, creates an account, and is automatically assigned to this bus and sent the RouteyAI driver app.
-                </div>
-                <div className="flex gap-2 justify-end">
-                  <button onClick={closeAssign} className="bg-[#F8FAFC] text-[#64748B] border border-[#E2E8F0] rounded-lg px-4 py-2 text-sm font-medium">Cancel</button>
-                  <button
-                    onClick={handleGenerateInvite}
-                    disabled={loading}
-                    className="bg-[#1E3A8A] text-white rounded-lg px-4 py-2 text-sm font-semibold flex items-center gap-2 disabled:opacity-60"
-                  >
-                    {loading
-                      ? <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      : <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
-                    }
-                    Generate Invite Link
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* ── Delete Confirmation ── */}
-      {deleteBus && (
-        <div className="fixed inset-0 bg-[#0F172A]/45 backdrop-blur-sm flex items-center justify-center z-50" onClick={() => setDeleteBus(null)}>
-          <div className="bg-white rounded-2xl p-6 w-[400px] shadow-[0_20px_60px_-15px_rgb(0_0_0/0.3)]" onClick={e => e.stopPropagation()}>
-            <div className="w-11 h-11 rounded-xl bg-[#FEF2F2] border border-[#FEE2E2] flex items-center justify-center mb-4">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2" strokeLinecap="round">
-                <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
-                <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
-              </svg>
-            </div>
-            <h2 className="text-lg font-bold text-[#0F172A] mb-1">Remove {deleteBus.name}?</h2>
-            <p className="text-sm text-[#64748B] mb-1">This will remove the bus from your fleet.</p>
-            {deleteBus.student_count > 0 && (
-              <p className="text-sm text-[#F59E0B] font-medium mb-5">
-                {deleteBus.student_count} student{deleteBus.student_count !== 1 ? 's' : ''} will be unassigned.
-              </p>
-            )}
-            {deleteBus.student_count === 0 && <div className="mb-5" />}
-            <div className="flex gap-2 justify-end">
-              <button onClick={() => setDeleteBus(null)} className="bg-[#F8FAFC] text-[#64748B] border border-[#E2E8F0] rounded-lg px-4 py-2 text-sm font-medium">Cancel</button>
-              <button
-                onClick={handleDelete}
-                disabled={loading}
-                className="bg-[#EF4444] text-white rounded-lg px-4 py-2 text-sm font-semibold disabled:opacity-60 flex items-center gap-2"
-              >
-                {loading && <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-                Remove Bus
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+      <Modal
+        open={deleteBus !== null}
+        onClose={close}
+        dismissible={!loading}
+        width="sm"
+        title={`Remove ${deleteBus?.name ?? 'bus'}?`}
+        description={
+          deleteBus && Number(deleteBus.student_count) > 0
+            ? `Its ${deleteBus.student_count} student${Number(deleteBus.student_count) === 1 ? '' : 's'} will have no bus, and its route is deleted.`
+            : 'Its route is deleted.'
+        }
+        footer={
+          <>
+            <ActionButton variant="plain" onClick={close} disabled={loading}>Cancel</ActionButton>
+            <ActionButton variant="danger" onClick={handleDelete} loading={loading}>Remove</ActionButton>
+          </>
+        }
+      >
+        {error && <Notice tone="danger">{error}</Notice>}
+      </Modal>
+    </>
   )
 }

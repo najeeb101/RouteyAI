@@ -11,8 +11,9 @@ import { TextField } from '@/components/primitives/TextField'
 import { Txt } from '@/components/primitives/Txt'
 import { ABSENCE_REASONS, type AbsenceReason, type AbsenceReport } from '@/lib/absence'
 import { dayLabel, dayPhrase, upcomingSchoolDays } from '@/lib/dates'
+import { RIDES_LABEL, type ReportRuns } from '@/lib/runs'
 import { radius, space, useTheme } from '@/lib/theme'
-import type { ParentChildProfile, TodayAttendance } from '@/features/parent/screens/useParentData'
+import type { ChildMarks, ParentChildProfile } from '@/features/parent/screens/useParentData'
 
 type ReportAbsenceSheetProps = {
   visible: boolean
@@ -20,16 +21,19 @@ type ReportAbsenceSheetProps = {
   items: ParentChildProfile[]
   initialChildId: string | null
   reports: AbsenceReport[]
-  attendance: Record<string, TodayAttendance>
+  attendance: Record<string, ChildMarks>
   today: string
-  onSubmit: (input: { studentId: string; dates: string[]; reason: AbsenceReason; note: string }) => Promise<string | null>
+  onSubmit: (input: { studentId: string; dates: string[]; runs: ReportRuns; reason: AbsenceReason; note: string }) => Promise<string | null>
 }
 
-/** Lets a parent tell the driver and school ahead of time that a child won't ride on one or more days. */
+const RIDES: ReportRuns[] = ['both', 'morning', 'afternoon']
+
+/** Lets a parent tell the driver and school ahead of time that a child won't ride on one or more days, both rides or one. */
 export function ReportAbsenceSheet({ visible, onClose, items, initialChildId, reports, attendance, today, onSubmit }: ReportAbsenceSheetProps) {
   const t = useTheme()
   const [childId, setChildId] = useState<string | null>(initialChildId)
   const [dates, setDates] = useState<string[]>([])
+  const [rides, setRides] = useState<ReportRuns>('both')
   const [reason, setReason] = useState<AbsenceReason>('sick')
   const [note, setNote] = useState('')
   const [saving, setSaving] = useState(false)
@@ -41,6 +45,7 @@ export function ReportAbsenceSheet({ visible, onClose, items, initialChildId, re
     if (!visible) return
     setChildId(initialChildId ?? items[0]?.id ?? null)
     setDates([])
+    setRides('both')
     setReason('sick')
     setNote('')
     setError(null)
@@ -53,7 +58,12 @@ export function ReportAbsenceSheet({ visible, onClose, items, initialChildId, re
   function dayState(date: string): { disabled: boolean; caption?: string } {
     if (!child) return { disabled: true }
     if (reports.some((r) => r.studentId === child.id && r.date === date)) return { disabled: true, caption: 'Reported' }
-    if (date === today && attendance[child.id]) return { disabled: true, caption: attendance[child.id]?.status === 'boarded' ? 'On the bus' : 'Marked' }
+    if (date === today) {
+      const marks = attendance[child.id] ?? {}
+      if (marks.afternoon) return { disabled: true, caption: 'Checked in' }
+      // After the morning pickup, today can still be reported for the ride home.
+      if (marks.morning && rides !== 'afternoon') return { disabled: true, caption: 'Afternoon only' }
+    }
     return { disabled: false }
   }
 
@@ -65,7 +75,7 @@ export function ReportAbsenceSheet({ visible, onClose, items, initialChildId, re
     if (!child || dates.length === 0) return
     setSaving(true)
     setError(null)
-    const err = await onSubmit({ studentId: child.id, dates, reason, note })
+    const err = await onSubmit({ studentId: child.id, dates, runs: rides, reason, note })
     setSaving(false)
     if (err) setError(err)
     else setSent(dates)
@@ -79,7 +89,7 @@ export function ReportAbsenceSheet({ visible, onClose, items, initialChildId, re
             <Icon icon={Check} size={28} color={t.successText} strokeWidth={2.25} />
           </View>
           <Txt variant="headline" align="center">
-            {child.firstName} is staying home {sent.length === 1 ? dayPhrase(sent[0] ?? '', today) : `on ${sent.length} days`}
+            {child.firstName} {rides === 'both' ? 'is staying home' : `won't ride in the ${rides}`} {sent.length === 1 ? dayPhrase(sent[0] ?? '', today) : `on ${sent.length} days`}
           </Txt>
           <Txt variant="body" tone="inkSecondary" align="center">
             The driver sees this on the route and won&apos;t wait at your stop. You can cancel it from Home or History until the day starts.
@@ -136,6 +146,19 @@ export function ReportAbsenceSheet({ visible, onClose, items, initialChildId, re
             )
           })}
         </View>
+      </View>
+
+      <View>
+        <SheetLabel>Which rides?</SheetLabel>
+        <SegmentedControl
+          segments={RIDES.map((r) => ({ key: r, label: r === 'both' ? 'Both' : RIDES_LABEL[r].replace(' only', '') }))}
+          value={rides}
+          onChange={(r) => {
+            setRides(r as ReportRuns)
+            setDates((prev) => prev.filter((d) => d !== today))
+          }}
+          onSurface
+        />
       </View>
 
       <View>

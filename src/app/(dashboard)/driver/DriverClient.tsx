@@ -1,434 +1,378 @@
 'use client'
 
-import { useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { RouteyLogo } from '@/components/RouteyLogo'
+import { toast } from 'sonner'
+import { Bell, Bus, Check, LogOut, School, Smartphone } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
-import type { DriverBusData, DriverStopData, DriverAnnouncementData } from './page'
+import {
+  driverRun,
+  groupStops,
+  qatarDateKey,
+  reportCovers,
+  RUN_LABEL,
+  runOrder,
+  savedRunOrder,
+  type BusRunsToday,
+  type Mark,
+  type ReportRuns,
+  type Run,
+} from '@/lib/runs'
+import { RouteyLogo } from '@/components/RouteyLogo'
+import { ActionButton } from '@/components/dashboard/ActionButton'
+import { EmptyState } from '@/components/dashboard/EmptyState'
+import { LivePill } from '@/components/dashboard/LivePill'
+import { Modal } from '@/components/dashboard/Modal'
+import { SignatureCard } from '@/components/dashboard/SignatureCard'
+import { Badge } from '@/components/dashboard/StatusText'
+import type { DriverAnnouncementData, DriverBusData, DriverStudentData } from './page'
 
-type Props = {
+type RunRow = { run: Run; started_at: string; ended_at: string | null; stops: { student_id: string; position: number }[] }
+type Student = DriverStudentData & { stopOrder: number | null; address: string }
+
+const clock = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Qatar', hour: 'numeric', minute: '2-digit' })
+
+/**
+ * The web version of the driver app (Docs/plans/two-runs-a-day.md): it picks the run, starts and ends it with
+ * start_run / end_run and checks children in with mark_attendance, so it follows the same rules as the phone. Live GPS
+ * only comes from the phone app.
+ */
+export default function DriverClient({ bus, students: rawStudents, announcements, schoolName }: {
   bus: DriverBusData | null
-  stops: DriverStopData[]
-  attendedIds: string[]
+  students: DriverStudentData[]
   announcements: DriverAnnouncementData[]
   schoolName: string | null
-}
-
-type TripStatus = 'idle' | 'active' | 'done'
-
-function formatETA(offsetMin: number): string {
-  const total = 7 * 60 + 30 + offsetMin
-  const h = Math.floor(total / 60)
-  const m = total % 60
-  const ampm = h >= 12 ? 'PM' : 'AM'
-  const h12 = h > 12 ? h - 12 : h === 0 ? 12 : h
-  return `${h12}:${m.toString().padStart(2, '0')} ${ampm}`
-}
-
-function formatTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
-}
-
-export default function DriverClient({ bus, stops, attendedIds: initialAttendedIds, announcements, schoolName }: Props) {
+}) {
   const router = useRouter()
-  const supabase = createClient()
-  const [tripStatus, setTripStatus] = useState<TripStatus>('idle')
-  const [boardedIds, setBoardedIds] = useState<Set<string>>(new Set(initialAttendedIds))
-  const [alertOpen, setAlertOpen] = useState(false)
-  const [signingOut, setSigningOut] = useState(false)
-  const [toggling, setToggling] = useState<string | null>(null)
+  const supabase = useMemo(() => createClient(), [])
+  const [runRows, setRunRows] = useState<RunRow[]>([])
+  const [marks, setMarks] = useState<Map<string, Partial<Record<Run, Mark>>>>(new Map())
+  const [reports, setReports] = useState<Map<string, ReportRuns>>(new Map())
+  const [loaded, setLoaded] = useState(false)
+  const [busy, setBusy] = useState<string | null>(null)
+  const [now, setNow] = useState(() => new Date())
+  const [confirmEnd, setConfirmEnd] = useState(false)
+  const [messagesOpen, setMessagesOpen] = useState(false)
 
-  const totalStudents = stops.flatMap(s => s.students).length
-  const boardedCount = boardedIds.size
+  const students: Student[] = useMemo(() => rawStudents.map((s) => ({ ...s, stopOrder: s.stop_order, address: s.home_address })), [rawStudents])
+  const studentKey = students.map((s) => s.id).join(',')
 
-  const stopsWithState = stops.map(stop => ({
-    ...stop,
-    done: stop.students.length > 0 && stop.students.every(s => boardedIds.has(s.id)),
-  }))
-  const currentStop = tripStatus === 'active'
-    ? stopsWithState.find(s => !s.done && s.students.length > 0)
-    : undefined
-
-  async function toggleAttendance(studentId: string) {
-    if (!bus || toggling) return
-    const today = new Date().toISOString().slice(0, 10)
-    const wasBoarded = boardedIds.has(studentId)
-
-    setToggling(studentId)
-    setBoardedIds(prev => {
-      const next = new Set(prev)
-      wasBoarded ? next.delete(studentId) : next.add(studentId)
-      return next
-    })
-
-    if (wasBoarded) {
-      await supabase.from('attendance')
-        .delete()
-        .eq('student_id', studentId)
-        .eq('bus_id', bus.id)
-        .eq('date', today)
-    } else {
-      await supabase.from('attendance')
-        .insert({ student_id: studentId, bus_id: bus.id, status: 'boarded', date: today })
+  const load = useCallback(async () => {
+    if (!bus) return
+    const date = qatarDateKey()
+    const ids = studentKey ? studentKey.split(',') : []
+    const [runsRes, marksRes, reportsRes] = await Promise.all([
+      supabase.from('bus_runs').select('run, started_at, ended_at, stops').eq('bus_id', bus.id).eq('date', date),
+      supabase.from('attendance').select('student_id, run, status').eq('bus_id', bus.id).eq('date', date),
+      ids.length ? supabase.from('absence_reports').select('student_id, runs').in('student_id', ids).eq('date', date) : Promise.resolve({ data: [], error: null }),
+    ])
+    for (const { error } of [runsRes, marksRes, reportsRes]) {
+      if (error) console.error('Driver page:', error.message)
     }
-    setToggling(null)
+    setRunRows((runsRes.data ?? []) as RunRow[])
+    const next = new Map<string, Partial<Record<Run, Mark>>>()
+    for (const m of marksRes.data ?? []) {
+      if (!m.student_id || !m.status) continue
+      next.set(m.student_id, { ...next.get(m.student_id), [m.run]: m.status })
+    }
+    setMarks(next)
+    setReports(new Map((reportsRes.data ?? []).map((r) => [r.student_id, r.runs])))
+    setLoaded(true)
+  }, [bus, studentKey, supabase])
+
+  useEffect(() => {
+    if (!bus) return
+    void load()
+    const channel = supabase
+      .channel(`web-driver-${bus.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'bus_runs', filter: `bus_id=eq.${bus.id}` }, () => void load())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'attendance', filter: `bus_id=eq.${bus.id}` }, () => void load())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'absence_reports' }, () => void load())
+      .subscribe()
+    const tick = setInterval(() => setNow(new Date()), 60_000)
+    return () => {
+      clearInterval(tick)
+      supabase.removeChannel(channel)
+    }
+  }, [bus, load, supabase])
+
+  const busRuns: BusRunsToday = Object.fromEntries(runRows.map((r) => [r.run, { startedAt: r.started_at, endedAt: r.ended_at }]))
+  const state = driverRun(busRuns, now)
+  const run = state.run
+  const running = state.phase === 'running'
+  const runRow = runRows.find((r) => r.run === run)
+  const ordered = running && runRow ? savedRunOrder(students, runRow.stops.map((s) => s.student_id), run) : runOrder(students, run)
+  const stops = groupStops(ordered)
+  const markOf = (id: string) => marks.get(id)?.[run]
+  const reported = (id: string) => reportCovers(reports.get(id), run)
+
+  // A child is dealt with when they boarded (morning), were dropped off (afternoon), were marked absent, or a parent
+  // reported them; in the afternoon a child who never boarded at school isn't on the bus.
+  const handled = (s: Student) => {
+    const m = markOf(s.id)
+    if (reported(s.id) || m === 'absent') return true
+    return run === 'morning' ? m === 'boarded' || m === 'dropped_off' : m === 'dropped_off' || m === undefined
+  }
+  const riding = students.filter((s) => !reported(s.id))
+  const boarded = students.filter((s) => markOf(s.id) === 'boarded' || markOf(s.id) === 'dropped_off').length
+  const atSchoolDone = students.every((s) => reported(s.id) || markOf(s.id) !== undefined)
+  const currentStopIndex = run === 'afternoon' && !atSchoolDone ? -1 : stops.findIndex((g) => !g.students.every(handled))
+  const currentStop = currentStopIndex >= 0 ? stops[currentStopIndex] : null
+  const stillOnBoard = students.filter((s) => markOf(s.id) === 'boarded' && run === 'afternoon')
+
+  async function mark(id: string, status: Mark | null) {
+    setBusy(id)
+    const { error } = await supabase.rpc('mark_attendance', { p_student_id: id, p_status: status })
+    setBusy(null)
+    if (error) toast.error(error.message)
+    await load()
   }
 
-  async function handleSignOut() {
-    setSigningOut(true)
+  async function start() {
+    setBusy('run')
+    const { error } = await supabase.rpc('start_run', { p_run: run })
+    setBusy(null)
+    if (error) toast.error(error.message)
+    else toast.success(`${RUN_LABEL[run]} started`)
+    await load()
+  }
+
+  async function end(force = false) {
+    if (!force && run === 'afternoon' && stillOnBoard.length > 0) {
+      setConfirmEnd(true)
+      return
+    }
+    setConfirmEnd(false)
+    setBusy('run')
+    const { error } = await supabase.rpc('end_run')
+    setBusy(null)
+    if (error) toast.error(error.message)
+    else toast.success(run === 'morning' ? 'Morning run ended. Everyone on board is at school.' : 'Afternoon run ended')
+    await load()
+  }
+
+  async function signOut() {
     await supabase.auth.signOut()
     router.push('/login')
     router.refresh()
   }
 
+  const header = (
+    <header className="flex items-center justify-between pb-2 pt-5">
+      <span className="flex items-center gap-2">
+        <RouteyLogo size={26} />
+        <span className="font-display text-lg font-bold tracking-[-0.01em]">Routey<span className="text-brand">AI</span></span>
+      </span>
+      <span className="flex items-center gap-1">
+        {bus && (
+          <button onClick={() => setMessagesOpen(true)} aria-label="Messages from school" className="relative flex h-10 w-10 items-center justify-center rounded-xl text-ink-2 transition-colors hover:bg-white hover:text-ink">
+            <Bell size={19} />
+            {announcements.length > 0 && <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-bad ring-2 ring-canvas" />}
+          </button>
+        )}
+        <button onClick={signOut} aria-label="Sign out" className="flex h-10 w-10 items-center justify-center rounded-xl text-ink-2 transition-colors hover:bg-white hover:text-ink">
+          <LogOut size={18} />
+        </button>
+      </span>
+    </header>
+  )
+
   if (!bus) {
     return (
-      <div className="max-w-[480px] mx-auto min-h-screen flex flex-col items-center justify-center px-6">
-        <div className="text-center">
-          <div className="w-16 h-16 rounded-full bg-[#EFF6FF] flex items-center justify-center mx-auto mb-4">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" strokeWidth="1.5" strokeLinecap="round">
-              <rect x="1" y="3" width="15" height="13" rx="2"/>
-              <path d="M16 8h4l3 3v4h-7V8z"/>
-              <circle cx="5.5" cy="18.5" r="2.5"/>
-              <circle cx="18.5" cy="18.5" r="2.5"/>
-            </svg>
-          </div>
-          <div className="text-lg font-bold text-[#0F172A] mb-1">No bus assigned</div>
-          <div className="text-sm text-[#64748B] mb-6">
-            Your account hasn&apos;t been assigned to a bus yet. Contact your school admin.
-          </div>
-          <button
-            onClick={handleSignOut}
-            disabled={signingOut}
-            className="bg-[#1E3A8A] text-white rounded-xl px-6 py-2.5 text-sm font-semibold disabled:opacity-60"
-          >
-            Sign Out
-          </button>
-        </div>
+      <div className="mx-auto max-w-[480px] px-5">
+        {header}
+        <EmptyState icon={Bus} title="No bus assigned" className="mt-16">Your school hasn&apos;t put you on a bus yet. Ask your school admin.</EmptyState>
       </div>
     )
   }
 
-  return (
-    <div className="max-w-[480px] mx-auto min-h-screen flex flex-col">
-      {/* Top bar */}
-      <div className="bg-[#0F172A] px-4 pt-4 pb-3 sticky top-0 z-20">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <RouteyLogo size={22} variant="gradient" />
-            <span className="text-sm font-extrabold tracking-tight">
-              <span className="text-white">Routey</span>
-              <span className="text-[#00D4FF]">AI</span>
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
+  const studentRow = (s: Student, kind: 'board' | 'drop') => {
+    const m = markOf(s.id)
+    const isBusy = busy === s.id
+    if (reported(s.id)) return <Badge tone="warning">Staying home</Badge>
+    if (!running) return null
+    if (kind === 'drop') {
+      if (m === 'absent') return <Badge tone="danger">Absent</Badge>
+      if (m === undefined) return <span className="text-[13px] text-ink-3">Not on the bus</span>
+      const dropped = m === 'dropped_off'
+      return (
+        <ActionButton size="sm" variant={dropped ? 'secondary' : 'primary'} loading={isBusy} onClick={() => mark(s.id, dropped ? 'boarded' : 'dropped_off')}>
+          {dropped ? <><Check /> Dropped off</> : 'Drop off'}
+        </ActionButton>
+      )
+    }
+    return (
+      <span className="inline-flex rounded-xl bg-canvas p-0.5" role="group" aria-label={`${s.name}: board or absent`}>
+        {(['boarded', 'absent'] as const).map((status) => {
+          const on = m === status || (status === 'boarded' && m === 'dropped_off')
+          return (
             <button
-              onClick={handleSignOut}
-              disabled={signingOut}
-              className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center disabled:opacity-60"
-              title="Sign out"
-            >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
-                <polyline points="16 17 21 12 16 7"/>
-                <line x1="21" y1="12" x2="9" y2="12"/>
-              </svg>
-            </button>
-            <button
-              onClick={() => setAlertOpen(true)}
-              className="relative w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round">
-                <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-                <path d="M13.73 21a2 2 0 01-3.46 0"/>
-              </svg>
-              {announcements.length > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-[#EF4444] rounded-full" />
+              key={status}
+              disabled={isBusy || m === 'dropped_off'}
+              onClick={() => mark(s.id, on ? null : status)}
+              aria-pressed={on}
+              className={cn(
+                'h-8 rounded-[10px] px-3 text-[13px] font-medium transition-colors duration-150 disabled:opacity-60',
+                on ? (status === 'boarded' ? 'bg-ok text-white' : 'bg-bad text-white') : 'text-ink-2 hover:text-ink',
               )}
+            >
+              {status === 'boarded' ? 'Board' : 'Absent'}
             </button>
-          </div>
-        </div>
+          )
+        })}
+      </span>
+    )
+  }
 
-        {/* Bus info */}
-        <div className="bg-white/[0.08] rounded-xl px-3.5 py-3 flex items-center justify-between">
-          <div>
-            <div className="text-white font-bold text-lg leading-tight">{bus.name}</div>
-            <div className="text-white/50 text-xs mt-0.5">{schoolName ?? 'School'} · Morning Run</div>
-          </div>
-          <div className="flex flex-col items-end gap-1.5">
-            {tripStatus === 'idle' && (
-              <button
-                onClick={() => setTripStatus('active')}
-                className="bg-[#10B981] text-white rounded-lg px-3.5 py-1.5 text-xs font-bold"
-              >
-                Start Trip
-              </button>
-            )}
-            {tripStatus === 'active' && (
-              <>
-                <div className="flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 bg-[#10B981] rounded-full animate-pulse" />
-                  <span className="text-[#10B981] text-[11px] font-bold uppercase tracking-wide">Live</span>
-                </div>
-                <button
-                  onClick={() => setTripStatus('done')}
-                  className="bg-[#EF4444] text-white rounded-lg px-3.5 py-1.5 text-xs font-bold"
-                >
-                  End Trip
-                </button>
-              </>
-            )}
-            {tripStatus === 'done' && (
-              <span className="bg-[#1E3A8A] text-white rounded-lg px-3.5 py-1.5 text-xs font-bold">
-                Completed
-              </span>
-            )}
-          </div>
-        </div>
+  return (
+    <div className="mx-auto max-w-[480px] px-5 pb-12">
+      {header}
+
+      <div className="mb-5 mt-3 animate-rise motion-reduce:animate-none">
+        <h1 className="font-display text-[28px] font-bold leading-[34px] tracking-[-0.02em]">{bus.name}</h1>
+        <p className="mt-0.5 text-[15px] text-ink-2">{schoolName ?? 'School'} · {stops.length} stop{stops.length === 1 ? '' : 's'} · {students.length} student{students.length === 1 ? '' : 's'}</p>
       </div>
 
-      {/* Map placeholder */}
-      <div className="relative bg-[#e8edf2] overflow-hidden" style={{ height: 210 }}>
-        <svg width="100%" height="210" viewBox="0 0 480 210" preserveAspectRatio="xMidYMid slice">
-          <rect width="480" height="210" fill="#e8edf2" />
-          {[80, 160, 240, 320, 400].map(x => (
-            <line key={x} x1={x} y1="0" x2={x} y2="210" stroke="#d1d9e0" strokeWidth={x === 240 ? 10 : 6} />
-          ))}
-          {[60, 120, 180].map(y => (
-            <line key={y} x1="0" y1={y} x2="480" y2={y} stroke="#d1d9e0" strokeWidth={y === 120 ? 10 : 6} />
-          ))}
-          {([
-            [85,65,70,50],[165,65,70,50],[245,65,70,50],[325,65,70,50],
-            [85,130,70,44],[165,130,70,44],[325,130,70,44],[405,130,70,44],
-          ] as [number,number,number,number][]).map(([x,y,w,h], i) => (
-            <rect key={i} x={x} y={y} width={w} height={h} rx="3" fill="#cdd7e0" opacity="0.55" />
-          ))}
-          <path
-            d="M30 120 Q80 120 80 60 Q80 10 160 10 Q240 10 240 60 Q240 120 320 120 Q400 120 400 60 Q400 10 450 30"
-            stroke={bus.color} strokeWidth="5" fill="none" strokeLinecap="round" opacity="0.9"
-          />
-          <circle cx="30"  cy="120" r="7" fill="#10B981" stroke="#fff" strokeWidth="2.5" />
-          <circle cx="160" cy="10"  r="7" fill="#10B981" stroke="#fff" strokeWidth="2.5" />
-          <circle cx="240" cy="60"  r="10" fill={bus.color} stroke="#fff" strokeWidth="2.5" />
-          <circle cx="320" cy="120" r="7" fill="#CBD5E1" stroke="#fff" strokeWidth="2.5" />
-          <g transform="translate(450,30)">
-            <circle r="12" fill="#1E3A8A" stroke="#fff" strokeWidth="2.5"/>
-            <rect x="-6" y="-5" width="12" height="10" rx="1" fill="#fff" opacity="0.9"/>
-            <rect x="-3.5" y="-5" width="7" height="2.5" rx="1" fill="#1E3A8A"/>
-          </g>
-          <g transform="translate(240,60)">
-            <circle r="15" fill={bus.color} stroke="#fff" strokeWidth="3"/>
-            <text textAnchor="middle" y="5" fontSize="10" fill="#fff" fontWeight="700">
-              {bus.name.replace('Bus ', '#')}
-            </text>
-          </g>
-          <text x="478" y="208" textAnchor="end" fontSize="8" fill="#94A3B8">Map simulation</text>
-        </svg>
-        <div className="absolute top-2.5 right-2.5 bg-white/90 backdrop-blur-sm rounded-full px-2.5 py-1 flex items-center gap-1.5 text-[11px] font-bold text-[#10B981]">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse block" />
-          Live
-        </div>
-        {totalStudents > 0 && (
-          <div className="absolute bottom-2.5 left-2.5 right-2.5 bg-white/90 backdrop-blur-sm rounded-lg px-3 py-1.5 flex items-center justify-between">
-            <span className="text-[11px] text-[#64748B]">{boardedCount}/{totalStudents} boarded</span>
-            <div className="flex-1 mx-3 h-1.5 bg-[#F1F5F9] rounded-full overflow-hidden">
-              <div
-                className="h-full bg-[#3B82F6] rounded-full transition-all"
-                style={{ width: `${(boardedCount / totalStudents) * 100}%` }}
-              />
+      <SignatureCard step={1}>
+        {!loaded ? (
+          <div className="h-28" aria-busy="true" />
+        ) : running ? (
+          <>
+            <div className="flex items-center justify-between">
+              <p className="text-[15px] font-medium text-white/80">{RUN_LABEL[run]}</p>
+              <LivePill onNight />
             </div>
-            <span className="text-[11px] font-bold text-[#1E3A8A]">
-              {Math.round((boardedCount / totalStudents) * 100)}%
-            </span>
-          </div>
+            <p className="mt-6 text-[13px] text-white/60">
+              {run === 'afternoon' && currentStopIndex === -1 ? 'Now' : currentStop ? `Stop ${currentStopIndex + 1} of ${stops.length}` : 'All stops done'}
+            </p>
+            <p className="mt-1 font-display text-2xl font-bold leading-tight">
+              {run === 'afternoon' && currentStopIndex === -1 ? 'Boarding at school' : currentStop?.name ?? (run === 'morning' ? 'Drive to school' : 'Everyone is home')}
+            </p>
+            <div className="mt-5 flex items-end justify-between gap-4">
+              <p className="text-sm text-white/70">
+                <span className="font-display text-[32px] font-bold leading-none text-white tabular-nums">{run === 'morning' ? boarded : students.filter((s) => markOf(s.id) === 'dropped_off').length}</span>
+                <span className="ml-1">of {run === 'morning' ? riding.length : boarded} {run === 'morning' ? 'boarded' : 'dropped off'}</span>
+              </p>
+              <ActionButton variant="on-night" size="sm" loading={busy === 'run'} onClick={() => end()}>
+                End {run} run
+              </ActionButton>
+            </div>
+          </>
+        ) : state.phase === 'ended' ? (
+          <>
+            <p className="text-[15px] font-medium text-white/80">Done for today</p>
+            <p className="mt-6 font-display text-2xl font-bold">Both runs are finished.</p>
+            <p className="mt-1 text-sm text-white/70">See you tomorrow morning.</p>
+          </>
+        ) : (
+          <>
+            <p className="text-[15px] font-medium text-white/80">{run === 'afternoon' && busRuns.morning ? 'Morning run done' : 'Today'}</p>
+            <p className="mt-6 font-display text-2xl font-bold">Ready for the {run} run?</p>
+            <p className="mt-1 text-sm text-white/70">
+              {run === 'morning' ? 'Pick students up stop by stop, then drive to school.' : 'Board everyone at school, then drop them off stop by stop.'}
+            </p>
+            <ActionButton variant="on-night" className="mt-5" loading={busy === 'run'} onClick={start}>Start {run} run</ActionButton>
+          </>
         )}
-      </div>
+      </SignatureCard>
 
-      {/* Next stop banner */}
-      {currentStop && (
-        <div className="mx-4 -mt-3 z-10 relative bg-[#1E3A8A] rounded-xl px-4 py-3 flex items-center justify-between shadow-lg">
-          <div className="min-w-0 flex-1 mr-4">
-            <div className="text-[10px] text-white/50 font-semibold uppercase tracking-wide mb-0.5">Next Stop</div>
-            <div className="text-white font-bold text-base truncate">{currentStop.home_address}</div>
-          </div>
-          <div className="text-right shrink-0">
-            <div className="text-[10px] text-white/50 font-semibold uppercase tracking-wide mb-0.5">ETA</div>
-            <div className="text-[#00D4FF] font-bold text-base">{formatETA(currentStop.eta_offset_min)}</div>
-          </div>
-        </div>
-      )}
+      <p className="mt-3 flex items-center gap-2 px-1 text-xs text-ink-2">
+        <Smartphone size={13} aria-hidden="true" /> Parents see the bus move only when you drive with the RouteyAI app on your phone.
+      </p>
 
-      {/* No students state */}
-      {stops.length === 0 && (
-        <div className="flex-1 flex items-center justify-center px-6">
-          <div className="text-center">
-            <div className="text-sm font-semibold text-[#64748B] mb-1">No students assigned to this bus</div>
-            <div className="text-xs text-[#94A3B8]">Contact your school admin to add students.</div>
-          </div>
-        </div>
-      )}
+      {students.length === 0 ? (
+        <EmptyState icon={Bus} title="No students on this bus yet" className="mt-6">Your school adds them on the dashboard.</EmptyState>
+      ) : (
+        <div className="mt-6 flex flex-col gap-3">
+          {run === 'afternoon' && (
+            <section className={cn('rounded-xl bg-white p-4 ring-1 ring-ink/[0.04] animate-rise motion-reduce:animate-none', running && currentStopIndex === -1 && 'ring-2 ring-brand')}>
+              <h2 className="flex items-center gap-2.5 text-[15px] font-semibold">
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-night text-white"><School size={14} /></span>
+                At school
+              </h2>
+              <ul className="mt-3 divide-y divide-line">
+                {students.map((s) => (
+                  <li key={s.id} className="flex items-center justify-between gap-3 py-2.5">
+                    <span className="text-sm font-medium">{s.name}</span>
+                    {studentRow(s, 'board')}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
 
-      {/* Stops + student check-in */}
-      {stops.length > 0 && (
-        <div className="flex-1 px-4 pt-4 pb-6 flex flex-col gap-3">
-          {stopsWithState.map((stop, idx) => {
-            const isCurrent = currentStop?.stop_order === stop.stop_order
+          {stops.map((g, i) => {
+            const done = g.students.every(handled)
+            const current = running && i === currentStopIndex
             return (
-              <div
-                key={stop.stop_order}
-                className="bg-white rounded-2xl border shadow-[0_1px_2px_0_rgb(0_0_0/0.04)] overflow-hidden"
-                style={{
-                  borderColor: isCurrent ? '#3B82F6' : '#E2E8F0',
-                  borderWidth: isCurrent ? 1.5 : 1,
-                }}
+              <section
+                key={`${g.name}-${i}`}
+                className={cn('rounded-xl bg-white p-4 ring-1 transition-shadow animate-rise motion-reduce:animate-none', current ? 'ring-2 ring-brand' : 'ring-ink/[0.04]')}
+                style={{ animationDelay: `${Math.min(i, 10) * 40}ms` }}
               >
-                <div
-                  className="flex items-center justify-between px-4 py-3"
-                  style={{ background: isCurrent ? '#EFF6FF' : 'white' }}
-                >
-                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                    {stop.done ? (
-                      <div className="w-6 h-6 rounded-full bg-[#10B981] flex items-center justify-center shrink-0">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round">
-                          <polyline points="20 6 9 17 4 12" />
-                        </svg>
-                      </div>
-                    ) : isCurrent ? (
-                      <div className="w-6 h-6 rounded-full bg-[#3B82F6] flex items-center justify-center shrink-0">
-                        <span className="w-2 h-2 bg-white rounded-full animate-pulse" />
-                      </div>
-                    ) : (
-                      <div className="w-6 h-6 rounded-full border-2 border-[#CBD5E1] flex items-center justify-center shrink-0">
-                        <span className="text-[10px] font-bold text-[#94A3B8]">{idx + 1}</span>
-                      </div>
+                <h2 className="flex items-center gap-2.5 text-[15px] font-semibold">
+                  <span
+                    className={cn(
+                      'flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-[2.5px] text-xs',
+                      done && running ? 'border-brand bg-brand text-white' : 'border-brand bg-white text-ink',
                     )}
-                    <div className="min-w-0">
-                      <div className="text-sm font-bold text-[#0F172A] truncate">{stop.home_address}</div>
-                      {stop.students.length > 0 && (
-                        <div className="text-[11px] text-[#64748B]">
-                          {stop.students.length} student{stop.students.length !== 1 ? 's' : ''}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  <div className="text-right shrink-0 ml-3">
-                    <div className="text-xs font-semibold text-[#64748B]">{formatETA(stop.eta_offset_min)}</div>
-                    {stop.done && <div className="text-[10px] text-[#10B981] font-bold">Done</div>}
-                    {isCurrent && <div className="text-[10px] text-[#3B82F6] font-bold">Now</div>}
-                  </div>
-                </div>
-
-                {stop.students.length > 0 && (
-                  <div className="divide-y divide-[#F1F5F9]">
-                    {stop.students.map(student => {
-                      const isBoarded = boardedIds.has(student.id)
-                      const isTogglingThis = toggling === student.id
-                      const initials = student.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2)
-                      return (
-                        <div key={student.id} className="flex items-center gap-3 px-4 py-2.5">
-                          <div className="w-8 h-8 rounded-full bg-[#EFF6FF] border border-[#BFDBFE] flex items-center justify-center text-[12px] font-bold text-[#1E3A8A] shrink-0">
-                            {initials}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="text-[13px] font-semibold text-[#0F172A]">{student.name}</div>
-                          </div>
-                          <button
-                            onClick={() => tripStatus === 'active' && !stop.done && toggleAttendance(student.id)}
-                            disabled={tripStatus !== 'active' || isTogglingThis}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold transition-colors disabled:opacity-60"
-                            style={{
-                              background: isBoarded ? '#D1FAE5' : '#FEF3C7',
-                              color: isBoarded ? '#059669' : '#D97706',
-                              cursor: tripStatus !== 'active' ? 'default' : 'pointer',
-                            }}
-                          >
-                            {isBoarded ? (
-                              <>
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
-                                  <polyline points="20 6 9 17 4 12" />
-                                </svg>
-                                Boarded
-                              </>
-                            ) : (
-                              <>
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                                  <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-                                </svg>
-                                Board
-                              </>
-                            )}
-                          </button>
-                        </div>
-                      )
-                    })}
-                  </div>
-                )}
-              </div>
+                  >
+                    {done && running ? <Check size={13} strokeWidth={3} /> : i + 1}
+                  </span>
+                  <span className="truncate">{g.name}</span>
+                </h2>
+                <ul className="mt-2 divide-y divide-line">
+                  {g.students.map((s) => (
+                    <li key={s.id} className="flex items-center justify-between gap-3 py-2.5">
+                      <span className="text-sm font-medium">{s.name}</span>
+                      {studentRow(s, run === 'morning' ? 'board' : 'drop')}
+                    </li>
+                  ))}
+                </ul>
+              </section>
             )
           })}
 
-          {/* School destination */}
-          <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-[0_1px_2px_0_rgb(0_0_0/0.04)] overflow-hidden">
-            <div className="flex items-center justify-between px-4 py-3 bg-[#F0FDF4]">
-              <div className="flex items-center gap-2.5">
-                <div className="w-6 h-6 rounded-full bg-[#1E3A8A] flex items-center justify-center shrink-0">
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
-                    <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
-                    <polyline points="9 22 9 12 15 12 15 22"/>
-                  </svg>
-                </div>
-                <div>
-                  <div className="text-sm font-bold text-[#0F172A]">{schoolName ?? 'School'}</div>
-                  <div className="text-[11px] text-[#64748B]">Drop-off destination</div>
-                </div>
-              </div>
-              <div className="text-xs font-semibold text-[#64748B]">
-                {stops.length > 0 ? formatETA((stops[stops.length - 1]?.eta_offset_min ?? 0) + 10) : '—'}
-              </div>
-            </div>
-          </div>
+          {run === 'morning' && (
+            <section className="flex items-center gap-2.5 rounded-xl bg-white p-4 text-[15px] font-semibold ring-1 ring-ink/[0.04]">
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-night text-white"><School size={14} /></span>
+              {schoolName ?? 'School'}
+            </section>
+          )}
         </div>
       )}
 
-      {/* Announcements modal */}
-      {alertOpen && (
-        <div
-          className="fixed inset-0 bg-[#0F172A]/50 backdrop-blur-sm flex items-end justify-center z-50"
-          onClick={() => setAlertOpen(false)}
-        >
-          <div
-            className="bg-white rounded-t-3xl w-full max-w-[480px] p-5 pb-8 shadow-[0_-20px_60px_-15px_rgb(0_0_0/0.3)]"
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="w-10 h-1 bg-[#E2E8F0] rounded-full mx-auto mb-5" />
-            <div className="text-base font-bold text-[#0F172A] mb-4">Messages from School</div>
-            {announcements.length === 0 ? (
-              <div className="text-center py-6 text-sm text-[#94A3B8]">No messages yet</div>
-            ) : (
-              <div className="flex flex-col gap-3">
-                {announcements.map(ann => (
-                  <div key={ann.id} className="flex gap-3 items-start bg-[#F8FAFC] rounded-xl px-3.5 py-3 border border-[#E2E8F0]">
-                    <div className="w-2 h-2 rounded-full shrink-0 mt-1.5 bg-[#3B82F6]" />
-                    <div className="flex-1">
-                      <div className="flex justify-between mb-0.5">
-                        <span className="text-[12px] font-bold text-[#0F172A]">School Admin</span>
-                        <span className="text-[11px] text-[#94A3B8]">{formatTime(ann.created_at)}</span>
-                      </div>
-                      <div className="text-[12px] text-[#64748B]">{ann.message}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-            <button
-              onClick={() => setAlertOpen(false)}
-              className="mt-4 w-full bg-[#0F172A] text-white rounded-xl py-3 text-sm font-semibold"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      )}
+      <Modal
+        open={confirmEnd}
+        onClose={() => setConfirmEnd(false)}
+        width="sm"
+        title={`${stillOnBoard.length === 1 ? `${stillOnBoard[0]?.name} is` : `${stillOnBoard.length} children are`} still on the bus`}
+        description="They boarded at school but weren't marked dropped off. Their parents will see “Not confirmed”, and the school is told."
+        footer={
+          <>
+            <ActionButton variant="danger-plain" onClick={() => end(true)} loading={busy === 'run'}>End anyway</ActionButton>
+            <ActionButton onClick={() => setConfirmEnd(false)}>Go back</ActionButton>
+          </>
+        }
+      >
+        <ul className="text-sm text-ink">{stillOnBoard.map((s) => <li key={s.id}>{s.name} · {s.home_address}</li>)}</ul>
+      </Modal>
+
+      <Modal open={messagesOpen} onClose={() => setMessagesOpen(false)} title="Messages from school">
+        {announcements.length === 0 ? (
+          <p className="text-sm text-ink-2">No messages yet.</p>
+        ) : (
+          <ul className="flex flex-col gap-3">
+            {announcements.map((a) => (
+              <li key={a.id} className="rounded-xl bg-canvas px-4 py-3">
+                <p className="text-sm text-ink">{a.message}</p>
+                <p className="mt-1 text-xs text-ink-2">{clock.format(new Date(a.created_at))}</p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Modal>
     </div>
   )
 }

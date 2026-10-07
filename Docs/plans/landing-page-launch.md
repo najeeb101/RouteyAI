@@ -1,6 +1,5 @@
 # Landing Page Launch Plan
 
-> Supersedes [2026-04-28-landing-page-enhancements.md](2026-04-28-landing-page-enhancements.md) (Framer Motion, mockups and the final CTA from that plan are already shipped).
 > Tracked as **Phase 13** in [task.md](../task.md).
 
 **Goal:** Turn the existing landing page (`src/app/page.tsx`) into a launch-ready marketing site: every claim true, every button working, fast enough to pass Lighthouse, and deployable on Vercel.

@@ -1,21 +1,26 @@
 import type { Metadata } from 'next'
-import { Sidebar } from '@/components/dashboard/Sidebar'
-import { TopBar } from '@/components/dashboard/TopBar'
+import { DashboardShell } from '@/components/dashboard/DashboardShell'
+import { createClient } from '@/lib/supabase/server'
 
 export const metadata: Metadata = {
   title: 'School Dashboard',
 }
 
-export default function SchoolLayout({ children }: { children: React.ReactNode }) {
+export default async function SchoolLayout({ children }: { children: React.ReactNode }) {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  const { data: school, error } = await supabase.rpc('get_school_info')
+  if (error) console.error('School layout:', error.message)
+  const info = school as { name?: string } | null
+
   return (
-    <div className="flex h-screen w-full bg-[#F8FAFC] overflow-hidden font-sans">
-      <Sidebar />
-      <div className="flex flex-col flex-1 overflow-hidden">
-        <TopBar />
-        <main className="flex-1 overflow-y-auto">
-          {children}
-        </main>
-      </div>
-    </div>
+    <DashboardShell
+      section="school"
+      place={info?.name ?? 'Your school'}
+      userName={(user?.user_metadata?.full_name as string | undefined)?.trim() || 'School admin'}
+      userEmail={user?.email ?? ''}
+    >
+      {children}
+    </DashboardShell>
   )
 }

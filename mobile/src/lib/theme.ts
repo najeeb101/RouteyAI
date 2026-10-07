@@ -1,7 +1,7 @@
 import type { TextStyle, ViewStyle } from 'react-native'
 
 /**
- * The app's design tokens (Docs/plans/2026-10-05-mobile-ui-refresh.md). Screens never use raw colours, font names or
+ * The app's design tokens (Docs/plans/mobile-ui-refresh.md). Screens never use raw colours, font names or
  * sizes: they read colours through useTheme() and set text with <Txt variant>. Same families and palette as the landing
  * page: Schibsted Grotesk for headings and big numbers, Inter for body text, deep blue only for things you can act on.
  */

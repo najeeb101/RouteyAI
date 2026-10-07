@@ -142,7 +142,7 @@ routeyai/
 │   │   │   ├── TopBar.tsx
 │   │   │   ├── StatsCard.tsx
 │   │   │   └── DataTable.tsx
-│   │   └── landing/                  # Landing page sections (see Docs/plans/2026-09-29-landing-page-launch.md)
+│   │   └── landing/                  # Landing page sections (see Docs/plans/landing-page-launch.md)
 │   │       ├── LandingNav.tsx        # client: mobile menu + app modal trigger
 │   │       ├── Hero.tsx
 │   │       ├── Features.tsx
@@ -408,6 +408,47 @@ Found while testing the apps against a local database. The policies above show t
   `get_school_optimization_payload`, `save_student_bus_assignments`, `save_optimized_route`) are service-role only.
   A new SECURITY DEFINER function without its own role check must `REVOKE ALL ... FROM PUBLIC, anon, authenticated`:
   Supabase grants anon and authenticated EXECUTE on new functions by default.
+
+### Two runs a day (0017_two_runs.sql, 2026-10-06)
+
+Every bus does a morning run (homes → school) and an afternoon run (school → homes, the same stops in reverse).
+Plan: [plans/two-runs-a-day.md](plans/two-runs-a-day.md).
+
+- `students.stop_order` is the bus's stop chain in **morning** order; the afternoon is the chain reversed.
+  `routes` has a `morning` and an `afternoon` row per bus (`UNIQUE(bus_id, run)`), saved together by
+  `save_route_plan` (service role), with `plan_version` going up only when the order changes. Routes never change by
+  themselves: optimize-route only reorders when a school admin asks and the new plan is clearly better.
+- `bus_runs` (bus, Qatar date, run, the run's students in driving order at start, started/ended) is written only by
+  `start_run(p_run)` and `end_run()`; drivers, parents, school and platform admins read it. One run open per bus.
+  Ending the morning run marks everyone still on board `dropped_off` (arrived at school).
+- `attendance` is per student, day and run (`UNIQUE(student_id, date, run)`); statuses `boarded`, `absent`,
+  `dropped_off` (+ `dropped_off_at`; `created_at` is the boarding time). Drivers use `mark_attendance(p_student_id,
+  p_status)`, which checks the bus, the running run and the step. Their direct-write policy goes in 0020.
+- `absence_reports.runs`: `both` (default), `morning` or `afternoon`.
+- The attendance trigger sends `run` and `previous_status`, skips undo taps, and sends drop-offs as type `drop_off`.
+- `optimize-route` (step 2, built on `two-runs`, not deployed): `update` (also any request without `action`) keeps
+  each bus's order, slots newcomers and movers in and drops leavers, and leaves a bus with no changes alone; `optimize`
+  only proposes (a fresh plan for one bus, or new bus assignments for the school), and `apply: true` saves it only if
+  it is still clearly better and nothing changed since; `reverse: true` (service role, once) flips routes planned
+  before two runs so the morning ends at the school. Mapbox Directions per run (split above 24 stops), straight lines
+  at 30 km/h without it. The logic is pure functions in `supabase/functions/_shared/` with Node tests
+  (`pnpm test:logic`).
+- `send-notification`: wording per run from `_shared/notifications.ts`; `eta_alert` goes out only on the running run
+  (morning: the child is still waiting; afternoon: the child is on board); `dry_run: true` (service role) returns the
+  messages without sending.
+- Edge Functions import `npm:@supabase/supabase-js@2.117.2`, not esm.sh (esm.sh failed on the types an unpinned
+  import pulled in).
+- Checks: `supabase/tests/0017_two_runs.sql` (local database). The local Postgres image crashes when a superuser
+  session switches to anon/authenticated and hits "permission denied" on a function, so those checks read the catalog.
+
+### Parent route without other homes (0018_parent_route.sql, 2026-10-06)
+
+- `get_parent_route(p_student_id, p_run)`: the road line (NULL without a Mapbox line), the child's own stop, stops
+  before it and in total, and the school. `get_parent_bus_progress(p_student_id)`: on the running run, from the bus's
+  latest GPS point (under 3 minutes old), stops before the child's and minutes to their stop and (morning) to school.
+  Both check the caller is the child's parent; stops are counted by address. Both parent apps use them.
+- The parent policy on `routes` (whose waypoints hold every child's home) is dropped in 0020.
+- Checks: `supabase/tests/0018_parent_route.sql` (local database; execute rights read from the catalog, as for 0017).
 
 ### Account deletion (0015_delete_account.sql, 2026-10-02)
 

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ElementRef, type ReactNode } from 'react'
 import { ActivityIndicator, Pressable, useColorScheme, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { Bus, House, LocateFixed } from 'lucide-react-native'
+import { Bus, House, LocateFixed, School } from 'lucide-react-native'
 import { LivePill } from '@/components/brand/LivePill'
 import { Banner } from '@/components/primitives/Banner'
 import { FloatingCard } from '@/components/primitives/Card'
@@ -12,7 +12,9 @@ import { Txt } from '@/components/primitives/Txt'
 import { ChildSwitcher } from '@/features/parent/components/ChildSwitcher'
 import { CHILD_STATUS } from '@/features/parent/components/childStatus'
 import { useParentContext } from '@/features/parent/context/ParentDataContext'
+import { reasonLabel } from '@/lib/absence'
 import { timeLabel } from '@/lib/dates'
+import { cardText } from '@/lib/runs'
 import { boundsOf, decodePolyline } from '@/lib/geo'
 import { Mapbox } from '@/lib/mapbox'
 import { mapStyleJSON, ROUTE_LINE } from '@/lib/mapStyle'
@@ -23,25 +25,26 @@ const DOHA: [number, number] = [51.531, 25.2854]
 const CARD_SPACE = 230
 
 /**
- * Full-screen live map: the bus follows GPS updates, the child's stop is marked, and the card at the bottom
- * shows the arrival time and how many stops are left. Other children's stops are deliberately not drawn.
+ * Full-screen live map: the bus follows GPS updates, the child's stop and the school are marked, and the card at the
+ * bottom shows the arrival time and how many stops are left. The route comes from get_parent_route, which never
+ * returns other children's stops; without a road line from Mapbox no line is drawn.
  */
 export function ParentMapScreen() {
   const insets = useSafeAreaInsets()
   const t = useTheme()
-  const { loading, error, children, child, selectChild, statusFor, status, attendance, routePoints, childPoint, encodedPolyline, busLocation, etaMinutes, stopsBefore } =
-    useParentContext()
+  const { loading, error, children, child, selectChild, statusFor, status, card, attendance, reports, today, route, busLocation, eta } = useParentContext()
   const camera = useRef<ElementRef<NonNullable<typeof Mapbox>['Camera']>>(null)
   const [following, setFollowing] = useState(true)
 
-  const line = useMemo<Array<[number, number]>>(
-    () => (encodedPolyline ? decodePolyline(encodedPolyline) : routePoints.map((p) => [p.lng, p.lat])),
-    [encodedPolyline, routePoints],
-  )
-  const bounds = useMemo(
-    () => boundsOf(childPoint ? [...line, [childPoint.lng, childPoint.lat]] : line),
-    [line, childPoint],
-  )
+  const line = useMemo<Array<[number, number]>>(() => (route?.encodedPolyline ? decodePolyline(route.encodedPolyline) : []), [route?.encodedPolyline])
+  const childPoint = route?.stop ?? null
+  const school = route?.school ?? null
+  const bounds = useMemo(() => {
+    const points: Array<[number, number]> = [...line]
+    if (childPoint) points.push([childPoint.lng, childPoint.lat])
+    if (school) points.push([school.lng, school.lat])
+    return boundsOf(points)
+  }, [line, childPoint, school])
   const topSpace = insets.top + 64
 
   // Switching child frames their route again.
@@ -58,29 +61,21 @@ export function ParentMapScreen() {
   }, [busLocation, bounds, following, topSpace])
 
   const meta = CHILD_STATUS[status]
-  const record = child ? attendance[child.id] : undefined
   const first = child?.firstName ?? 'Your child'
-  let headline = 'Not started'
-  let detail = `${child?.busName ?? 'The bus'} hasn't started the route yet`
-  if (status === 'boarded') {
-    headline = 'On the bus'
-    detail = record ? `Boarded at ${timeLabel(record.at)}` : `${first} is on the bus`
-  } else if (status === 'absent') {
-    headline = 'Absent today'
-    detail = 'Marked absent by the driver'
-  } else if (status === 'reported') {
-    headline = 'Staying home'
-    detail = 'You reported this absence'
-  } else if (status === 'no-bus') {
-    headline = 'No bus yet'
-    detail = 'Your school hasn’t assigned a bus'
-  } else if (etaMinutes !== null) {
-    headline = etaMinutes <= 1 ? 'Arriving now' : `${etaMinutes} min away`
-    detail = stopsBefore === null || stopsBefore === 0 ? 'Your stop is next' : `${stopsBefore} stop${stopsBefore === 1 ? '' : 's'} before yours`
-  } else if (busLocation) {
-    headline = 'On the way'
-    detail = 'Waiting for the next GPS update'
-  }
+  const record = child && card ? attendance[child.id]?.[card.run] : undefined
+  const todayReport = reports.find((r) => r.studentId === child?.id && r.date === today)
+  const text = card
+    ? cardText(card, {
+      first,
+      busName: child?.busName ?? null,
+      eta,
+      live: Boolean(busLocation),
+      boardedAt: record ? timeLabel(record.at) : undefined,
+      droppedAt: record?.droppedAt ? timeLabel(record.droppedAt) : undefined,
+      markedAt: record ? timeLabel(record.at) : undefined,
+      reportReason: todayReport ? reasonLabel(todayReport.reason) : undefined,
+    })
+    : null
 
   // The map follows the phone's light or dark setting (Google Maps-style palette, see lib/mapStyle).
   const scheme = useColorScheme() === 'dark' ? 'dark' : 'light'
@@ -118,6 +113,12 @@ export function ParentMapScreen() {
                 </View>
                 <MapPin color={t.ink} icon={House} />
               </View>
+            </Mapbox.MarkerView>
+          )}
+
+          {school && (
+            <Mapbox.MarkerView id="school" coordinate={[school.lng, school.lat]} allowOverlap>
+              <MapPin color={t.inkSecondary} icon={School} />
             </Mapbox.MarkerView>
           )}
 
@@ -181,10 +182,10 @@ export function ParentMapScreen() {
             <View style={{ gap: space.xs }}>
               <StatusText label={meta.label} tone={meta.tone} />
               <Txt variant="largeTitle" numberOfLines={1} adjustsFontSizeToFit>
-                {headline}
+                {text?.big}
               </Txt>
               <Txt variant="body" tone="inkSecondary">
-                {detail}
+                {text?.sub}
               </Txt>
             </View>
             <View style={{ height: 1, backgroundColor: t.separator }} />

@@ -11,12 +11,12 @@ export const FAQS = [
   {
     question: 'How are the routes planned?',
     answer:
-      'Students are grouped by where they live, each group is given a bus with enough seats, and the stops are put in the order that gives the shortest drive, using real road travel times from Mapbox. Routes are recalculated when students are added or removed.',
+      'Students are grouped by where they live, each group is given a bus with enough seats, and the stops are put in the order that gives the shortest drive, using real road travel times from Mapbox. Once made, a route stays the same so drivers can learn it; it is only recalculated when the school admin chooses to.',
   },
   {
     question: 'What happens when a new student joins mid-year?',
     answer:
-      'The student is added to the nearest bus that still has free seats, and that route is recalculated. If every nearby bus is full, the school admin is alerted to add a bus.',
+      'The student is added to the nearest bus that still has free seats, and their stop joins that bus’s route when the school admin recalculates it. Other buses don’t change. If every nearby bus is full, the school admin is alerted to add a bus.',
   },
   {
     question: 'How do drivers use RouteyAI?',
