@@ -49,6 +49,7 @@ routeyai/
 │   │   └── page.tsx          # landing page (Server Component)
 │   ├── components/
 │   │   ├── ui/               # shadcn/ui primitives
+│   │   ├── auth/             # AuthShell, AuthInput, MobileAppNotice (login, signup, invite)
 │   │   ├── dashboard/        # DashboardShell (SideNav, TopBar), PageHeader, Panel, StatsCard, SignatureCard, Modal, ActionButton, …
 │   │   ├── maps/             # FleetMap (Mapbox GL, load via DynamicFleetMap), ParentMapSvg
 │   │   └── landing/          # landing page sections + client islands (nav, modal, demo form)
