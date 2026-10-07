@@ -1,4 +1,4 @@
--- Parents read their child's route without seeing other children's homes (Docs/plans/fixes.md, fix 3; the new parent
+-- Parents read their child's route without seeing other children's homes (Docs/plans/two-runs-a-day.md, "Older problems fixed along the way", fix 3; the new parent
 -- app in Docs/plans/two-runs-a-day.md, step 4). A route's waypoints hold every child's home, and the parent policy on
 -- routes lets a parent read them all; these functions return only what the parent app shows. The policy itself is
 -- dropped in 0019, once nothing reads routes directly as a parent.

@@ -2,7 +2,7 @@
 
 Status: approved 2026-10-06; all seven steps done and live on 2026-10-07 (route planner and notifications, existing
 routes, driver and parent apps, school dashboard, iPhone test, clean-up migration `0020`; PRs #5, #6, #8 and #9). Builds on the mobile UI refresh (merged in PR #4). Older problems found along the way are planned
-separately in [fixes.md](fixes.md).
+in "Older problems fixed along the way" below.
 
 ## The rules
 
@@ -30,10 +30,10 @@ separately in [fixes.md](fixes.md).
    `StudentsTable.tsx`). That re-runs the bus assignment for every child in the school and re-plans every route. So
    one new child can reshuffle every bus, move other children to different buses, and overrule a "Change bus" the
    admin just made. The Routes page's Recalculate (one bus) and Optimize all do the same on purpose. An earlier
-   version of this plan said routes only changed on purpose; that was wrong. Fix 1 in [fixes.md](fixes.md) stops it
+   version of this plan said routes only changed on purpose; that was wrong. Fix 1 below stops it
    before this work ships.
 4. **Editing an address doesn't move the stop.** "Edit student" saves the new address text but not its map location
-   (`home_location`), so the route keeps going to the old place. Fix 2 in [fixes.md](fixes.md).
+   (`home_location`), so the route keeps going to the old place. Fix 2 below.
 
 ## Architecture
 
@@ -164,7 +164,7 @@ run and skip undo taps.
 **Privacy fix (found in step 1, older than this work):** a parent can read the home location of every child on their
 child's bus through the route's `waypoints`. It is fixed with the new parent app in step 4: parents read the route
 through `get_parent_route` (migration `0018_parent_route.sql`), which returns only the line and their own child's stop,
-and 0020 removed their read access to `routes`. Details in [fixes.md](fixes.md#3-a-parent-can-read-every-home-on-the-bus). `bus_runs.stops` only holds
+and 0020 removed their read access to `routes`. Details in fix 3 below. `bus_runs.stops` only holds
 student ids and order, never homes, for the same reason.
 
 ### Apps and dashboard
@@ -251,7 +251,7 @@ esm.sh was failing to serve type files that the unpinned import pulled in, which
 | `{ action: 'optimize', bus_id, apply: true, chain }` | Saves the proposed order the admin accepted. Refused if it isn't clearly better, or if the bus's children changed since the proposal ("The bus changed, review again"). | Same |
 | `{ action: 'optimize', school_id }`, then `apply: true, assignments` | Optimize all: proposes which children move to which bus (K-means) with straight-line minutes per bus before and after, listing every child who changes bus. Each bus's cluster starts from where its current children live, so only children who would be better off elsewhere are listed. (Starting from the first few children, as before, listed 37 of the seed's 40, because the clusters came out in a different order than the buses.) Applied only with the admin's confirmation, and refused if a listed child changed bus since; then each changed bus is planned from scratch. | Same |
 | `{ action: 'update', reverse: true }` | Service role only, once in step 3 (decision 0): flips each bus's saved order so the morning ends at the school. Only buses without an afternoon row are flipped, so running it twice changes nothing. | Service role |
-| No `action` (what today's Routes page sends) | Treated as `update`: Recalculate and Optimize all only slot changes in until the Routes page gets the proposal screen (step 5). The Students page no longer calls the planner after fix 1A ([fixes.md](fixes.md)). The Recalculate and Optimize all dialogs from fix 1A promise re-ordering, so their wording changes when this goes live. | As today |
+| No `action` (what today's Routes page sends) | Treated as `update`: Recalculate and Optimize all only slot changes in until the Routes page gets the proposal screen (step 5). The Students page no longer calls the planner after fix 1A (see below). The Recalculate and Optimize all dialogs from fix 1A promise re-ordering, so their wording changes when this goes live. | As today |
 
 How a bus is planned:
 
@@ -334,7 +334,7 @@ understands.
    morning ends at the school (decision 0), with map lines and times for both runs. Nothing is re-planned. Done when
    the new apps go live, because today's apps read whichever route row is newest. Rehearsed on the local database
    2026-10-06: every bus got both runs with Mapbox road lines.
-4. **Driver app, then parent app** (including the privacy fix, fix 3 in [fixes.md](fixes.md)), checked in the
+4. **Driver app, then parent app** (including the privacy fix, fix 3 below), checked in the
    browser preview with the demo accounts through a full simulated day. Done 2026-10-06: 22 checks in the web preview
    with the demo driver and a parent of two children on the bus (morning pickups and an absence, the parent's arrival
    time, the morning ending at school, boarding at school, a drop-off, ending the afternoon with a child still on board,
@@ -354,6 +354,28 @@ understands.
    parents' direct read of `routes`; `send-notification` lost its old-driver-app fallback), and docs: task.md,
    Docs/Claude.md, store listing and landing page copy where they only mention mornings. Done 2026-10-07: 0020 and
    `send-notification` are on production (PR #9), with SQL checks in `supabase/tests/0020_two_runs_cleanup.sql`.
+
+## Older problems fixed along the way
+
+Three problems older than this work, found while planning it. All fixed and live (2026-10-07).
+
+1. **The Students page reshuffled every route.** After every child added, moved or removed, the page called
+   `optimize-route` for the whole school, which re-ran the bus assignment (K-means) and re-planned every bus from
+   scratch: one new child could reorder every bus, move other children to other buses and undo a "Change bus" the admin
+   had just made. Fix 1A (PR #5) stopped the automatic call and made "Optimize all" ask first. Fix 1B (step 2 and 5)
+   replaced it: the Students page calls `update` for the buses it touched, which slots the change in without moving
+   anyone else.
+2. **Editing an address didn't move the stop.** "Edit student" saved the address text but not its map location, so the
+   route, the driver's order and the parent's stop stayed at the old house. Now the new address is geocoded and
+   `home_location` saved with it (nothing is saved if the address can't be found), and `update` re-slots only that
+   child. It needs `NEXT_PUBLIC_MAPBOX_TOKEN` on Vercel.
+3. **A parent could read every home on the bus.** The parent policy on `routes` exposed the waypoints, which hold every
+   child's home location (a parent of 3 children could read 26 homes). Parents now read their route through
+   `get_parent_route` (the road line, their own stop, stop counts, the school) and `get_parent_bus_progress` (stops
+   and minutes to go on the running run, worked out in the database), both from `0018_parent_route.sql`; stops are
+   counted by address. No road line means no line at all, because the straight-line fallback would draw through every
+   home. `0020` dropped the old policy. `bus_runs.stops` only ever holds student ids and order. Checks:
+   `supabase/tests/0018_parent_route.sql`.
 
 ## Decisions
 
