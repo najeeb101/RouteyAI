@@ -1,8 +1,8 @@
 # Two runs a day: morning pickup and afternoon drop-off
 
 Status: approved 2026-10-06; step 1 (database and route rules) done on branch `two-runs` and on production; steps 2 to
-5 (route planner and notifications, existing routes, driver and parent apps, school dashboard) built and tested locally
-on `two-runs`, not deployed: they go live together right before your iPhone test (see "Going live"). Builds on the mobile UI refresh (merged in PR #4). Older problems found along the way are planned
+6 (route planner and notifications, existing routes, driver and parent apps, school dashboard, iPhone test) done and live
+since 2026-10-07 (merged in PR #6); step 7, the clean-up migration `0020`, is written and checked locally but not on production yet. Builds on the mobile UI refresh (merged in PR #4). Older problems found along the way are planned
 separately in [fixes.md](fixes.md).
 
 ## The rules
@@ -281,8 +281,8 @@ run, and the hint. The dashboard can then say "Omar added between stops 3 and 4"
   line by line against that table.
 - **ETA alert** (sent by the parent app): the function finds the bus's running run itself. Morning: only while the
   child is still waiting to be picked up. Afternoon: only while the child is on board. No running run, no alert. Until
-  0020, a bus marked active by today's driver app (no run record) counts as a morning run, so today's app keeps
-  working.
+  0020, a bus marked active by the old driver app (no run record) counted as a morning run; that fallback is removed
+  with 0020 (deploy `send-notification` with it).
 - `dry_run: true` (service role only) returns the messages without sending them, to check the wording against
   production data safely.
 - Duplicate ETA alerts are stopped in the parent app (remembered per child, day and run on the phone, so an app
@@ -306,6 +306,8 @@ Done 2026-10-06:
   the ETA alert following a real morning and afternoon run.
 
 ### Going live
+
+Done 2026-10-07: all four steps below, then `two-runs` merged to `main` (PR #6). Kept for the record.
 
 Built and tested locally first. It goes live as one release with step 3 (existing routes) and the new apps, right
 before your iPhone test, so the old apps never meet the new routes. Only the demo school exists, so nothing changes for
@@ -349,8 +351,8 @@ old function re-plans the bus from scratch whatever the request says.
    nothing; a re-plan proposal saves nothing and applying it bumps the plan version; Re-plan all moves nobody until
    confirmed; adding, moving and removing a child slots in with every other child keeping their order).
 6. **You test on the iPhone** in Expo Go (GPS sends while the app is open; I can follow the demo bus as the demo parent
-   in the browser preview while you drive it). Then merge.
-7. **Clean-up migration 0020** (old `set_bus_active`, old `save_optimized_route`, drivers' direct attendance writes,
+   in the browser preview while you drive it). Then merge. Done 2026-10-07: tested, merged in PR #6.
+7. **Clean-up migration 0020** (written and checked locally 2026-10-07, with `supabase/tests/0020_two_runs_cleanup.sql`; not on production yet: `db push`, then deploy `send-notification`, which no longer has the old-driver-app fallback) (old `set_bus_active`, old `save_optimized_route`, drivers' direct attendance writes,
    parents' direct read of `routes`), and
    docs: task.md, Docs/Claude.md, store listing and landing page copy where they only mention mornings.
 

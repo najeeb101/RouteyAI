@@ -99,20 +99,17 @@ async function loadStudent(supabase: SupabaseClient, studentId: string): Promise
 async function etaRunFor(supabase: SupabaseClient, studentId: string, busId: string | null): Promise<Run | null> {
   if (!busId) return null
   const today = qatarDate()
-  const [runs, bus, attendance, report] = await Promise.all([
+  const [runs, attendance, report] = await Promise.all([
     supabase.from('bus_runs').select('run, ended_at').eq('bus_id', busId).eq('date', today),
-    supabase.from('buses').select('is_active').eq('id', busId).maybeSingle(),
     supabase.from('attendance').select('run, status').eq('student_id', studentId).eq('date', today),
     supabase.from('absence_reports').select('runs').eq('student_id', studentId).eq('date', today).maybeSingle(),
   ])
-  for (const r of [runs, bus, attendance, report]) if (r.error) throw r.error
+  for (const r of [runs, attendance, report]) if (r.error) throw r.error
 
   const todaysRuns = (runs.data ?? []) as { run: Run; ended_at: string | null }[]
   const marks = (attendance.data ?? []) as { run: Run; status: AttendanceStatus }[]
   return etaRun({
     runningRun: todaysRuns.find((r) => r.ended_at === null)?.run ?? null,
-    // Today's driver app sets the bus active instead of starting a run (until 0018).
-    legacyActive: todaysRuns.length === 0 && Boolean((bus.data as { is_active?: boolean } | null)?.is_active),
     morningStatus: marks.find((m) => m.run === 'morning')?.status ?? null,
     afternoonStatus: marks.find((m) => m.run === 'afternoon')?.status ?? null,
     reportedRuns: (report.data as { runs?: 'both' | 'morning' | 'afternoon' } | null)?.runs ?? null,

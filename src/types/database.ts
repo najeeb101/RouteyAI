@@ -451,7 +451,6 @@ export interface Database {
         Args: { p_code: string }
         Returns: { code: string; role: InviteRole; school_id: string | null; expires_at: string; used_at: string | null }[]
       }
-      set_bus_active: { Args: { p_active: boolean }; Returns: undefined }
       // 0017_two_runs.sql (drivers, own bus only)
       start_run: { Args: { p_run: Run }; Returns: BusRun }
       end_run: { Args: Record<PropertyKey, never>; Returns: BusRun | null }

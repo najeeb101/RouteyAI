@@ -81,7 +81,7 @@ test('no alert for the same status again or for undoing a drop-off', () => {
 })
 
 const state = (s: Partial<EtaState>): EtaState => ({
-  runningRun: null, legacyActive: false, morningStatus: null, afternoonStatus: null, reportedRuns: null, ...s,
+  runningRun: null, morningStatus: null, afternoonStatus: null, reportedRuns: null, ...s,
 })
 
 test('the morning alert goes out only while the child is still waiting', () => {
@@ -100,8 +100,7 @@ test('the afternoon alert goes out only while the child is on the bus', () => {
   assert.equal(etaRun(state({ runningRun: 'afternoon', afternoonStatus: 'absent' })), null)
 })
 
-test('no run going, no alert; today\'s app marking the bus active counts as the morning', () => {
+test('no run going, no alert', () => {
   assert.equal(etaRun(state({})), null)
-  assert.equal(etaRun(state({ legacyActive: true })), 'morning')
-  assert.equal(etaRun(state({ legacyActive: true, morningStatus: 'boarded' })), null)
+  assert.equal(etaRun(state({ morningStatus: 'boarded' })), null)
 })
