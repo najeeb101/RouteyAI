@@ -1,8 +1,8 @@
 # Two runs a day: morning pickup and afternoon drop-off
 
-Status: approved 2026-10-06; all seven steps done and live on 2026-10-07 (route planner and notifications, existing
-routes, driver and parent apps, school dashboard, iPhone test, clean-up migration `0020`; PRs #5, #6, #8 and #9). Builds on the mobile UI refresh (merged in PR #4). Older problems found along the way are planned
-in "Older problems fixed along the way" below.
+> Tracked as **Phase 16** in [task.md](../task.md). The rules in short: [Claude.md §1.1](../Claude.md#11-two-runs-a-day-the-core-rule).
+
+**Status:** approved 2026-10-06; all seven steps are done and live (2026-10-07): the route planner and notifications, the existing routes, the driver and parent apps, the school dashboard, the iPhone test and the clean-up migration `0020` (PRs #5, #6, #8, #9, #10, #11). It builds on the [mobile UI refresh](mobile-ui-refresh.md). Older problems found along the way are in "Older problems fixed along the way" near the end.
 
 ## The rules
 

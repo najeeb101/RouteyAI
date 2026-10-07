@@ -1,133 +1,79 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Guidance for Claude Code (claude.ai/code) when working in this repository.
 
-## Source of Truth
+## Source of truth
 
-[Docs/Claude.md](Docs/Claude.md) is the canonical reference for the full database schema, RLS policies, color tokens, and design principles. When this file and Docs/Claude.md disagree, Docs/Claude.md wins.
+[Docs/Claude.md](Docs/Claude.md) is the canonical technical reference (schema, access rules, design tokens, conventions). Where this file and Docs/Claude.md disagree, Docs/Claude.md wins. The other docs are indexed in [Docs/README.md](Docs/README.md).
 
-Current build status: **Phases 1–10 and 14–16 complete (Phase 16, two runs a day, is live since 2026-10-07); Phase 11 nearly done; Phase 13 (landing page launch) in progress** — live at https://routeyai.vercel.app (auto-deploys from `main`). Phase 12 (store submission) not started. See [Docs/task.md](Docs/task.md) for the full checklist and [Docs/plans/landing-page-launch.md](Docs/plans/landing-page-launch.md) for the landing page plan.
+**Status (2026-10-07):** phases 1–10 and 14–16 are complete and live at https://routeyai.vercel.app (the website auto-deploys from `main`). Phase 11 (custom domain) is nearly done, phase 13 (landing page launch) is in progress and phase 12 (store submission) has not started. The live checklist is [Docs/task.md](Docs/task.md).
 
 ## The core of the product: two runs a day
 
-Every bus does a **morning run** (homes → school) and an **afternoon run** (school → homes, the same stops in reverse), every school day, always both. Treat this as the main idea of the app, not a feature:
+Every bus does a **morning run** (homes to school) and an **afternoon run** (school to homes, the same stops in reverse), every school day, always both. Treat this as the main idea of the app, not a feature.
 
-- `students.stop_order` is the bus's chain in morning order; the afternoon is the chain reversed. `routes` has one row per bus **and run**; `bus_runs` / `attendance` / `absence_reports.runs` are per run.
-- **Routes never change by themselves.** Adding, moving or removing a child slots them in (`optimize-route` `update`); re-planning is a proposal an admin applies only if clearly better.
-- Drivers start and end runs with `start_run` / `end_run` and mark with `mark_attendance` (no direct writes). Parents read their route only through `get_parent_route`.
-- Shared rules live in `mobile/src/lib/runs.ts` and `src/lib/runs.ts` (kept in step), tested with `pnpm test:logic`.
+- `students.stop_order` is the bus's chain in morning order; the afternoon is the chain reversed. `routes` has one row per bus **and run**; `bus_runs`, `attendance` and `absence_reports.runs` are per run.
+- **Routes never change by themselves.** Adding, moving or removing a child slots them in (`optimize-route` action `update`); re-planning is a proposal an admin applies only if it is clearly better.
+- Drivers start and end runs with `start_run` / `end_run` and mark students with `mark_attendance` (no direct table writes). Parents read their route only through `get_parent_route`.
+- The shared run rules live in `src/lib/runs.ts` and `mobile/src/lib/runs.ts` (keep them in step) and are tested with `pnpm test:logic`.
 - Full rules: [Docs/Claude.md §1.1](Docs/Claude.md) and [Docs/plans/two-runs-a-day.md](Docs/plans/two-runs-a-day.md).
 
 ## Stack
 
-**Web**: Next.js 14 App Router · TypeScript strict · Tailwind · shadcn/ui · Supabase · Mapbox GL JS · Zustand · React Hook Form + Zod · pnpm · Vercel
-
-**Mobile**: Expo SDK 57 (React Native 0.86, new architecture) · React Native styles (tokens in `mobile/src/lib/theme.ts`, read with `useTheme()` and `<Txt variant>`; `npm run check:design` guards it; NativeWind is not installed) · `@rnmapbox/maps` · `expo-router` · `expo-location` · `expo-notifications` · EAS — lives in `mobile/`
+- **Web:** Next.js 14 (App Router), TypeScript strict, Tailwind, shadcn/ui, Supabase, Mapbox GL JS, Zustand, React Hook Form + Zod, pnpm, Vercel.
+- **Mobile** (`mobile/`): Expo SDK 57 (React Native 0.86, new architecture), React Native styles from `mobile/src/lib/theme.ts` (read with `useTheme()` and `<Txt variant>`; `npm run check:design` guards it; NativeWind is not installed), `@rnmapbox/maps`, expo-router, expo-location, expo-notifications, EAS.
 
 ## Commands
 
 ```bash
-# Web (root)
+# Web (repo root)
 pnpm dev              # Next.js dev server
 pnpm build
 pnpm lint
 pnpm typecheck        # tsc --noEmit
-pnpm db:types         # regenerate src/types/database.ts from Supabase schema
-pnpm db:reset         # supabase db reset (runs all migrations + seed)
-pnpm db:push          # push local migrations to remote Supabase
-pnpm test:logic       # route planning rules (supabase/functions/_shared/*.test.ts, Node's test runner)
+pnpm test:logic       # route planning, notification wording, run rules (Node's test runner)
+pnpm db:reset         # rebuild the local database from migrations + seed
+pnpm db:push          # push migrations to the remote Supabase project
+pnpm db:types         # regenerate src/types/database.ts (the file is otherwise maintained by hand)
 
 # Mobile (cd mobile/)
-npx expo start        # start Expo dev server
-npx expo start --android
-npx expo start --ios
+npx expo start        # dev server (add --android or --ios)
+npx tsc --noEmit && npm run check:design
 ```
 
-## Project Structure
+SQL checks for a migration run against the local database: see Docs/Claude.md §7.3.
 
-```
-routeyai/
-├── src/
-│   ├── app/
-│   │   ├── (auth)/           # login, signup, invite/[code]
-│   │   ├── (dashboard)/
-│   │   │   ├── admin/        # platform admin: overview, schools, analytics
-│   │   │   ├── school/       # school admin: overview, buses, students, absences, routes, analytics
-│   │   │   ├── driver/       # web driver view
-│   │   │   └── parent/       # web parent view
-│   │   ├── privacy/, terms/  # legal pages
-│   │   └── page.tsx          # landing page (Server Component)
-│   ├── components/
-│   │   ├── ui/               # shadcn/ui primitives
-│   │   ├── auth/             # AuthShell, AuthInput, MobileAppNotice (login, signup, invite)
-│   │   ├── dashboard/        # DashboardShell (SideNav, TopBar), PageHeader, Panel, StatsCard, SignatureCard, Modal, ActionButton, …
-│   │   ├── maps/             # FleetMap (Mapbox GL, load via DynamicFleetMap), ParentMapSvg
-│   │   └── landing/          # landing page sections + client islands (nav, modal, demo form)
-│   ├── hooks/useAuth.ts
-│   ├── lib/
-│   │   ├── supabase/         # client.ts, server.ts, middleware.ts
-│   │   └── mapbox/config.ts
-│   └── types/database.ts     # Supabase schema types — hand-maintained to match migrations (every table needs `Relationships`, every RPC must be listed); replace with `pnpm db:types` output when the DB is reachable
-├── mobile/
-│   └── src/
-│       ├── app/              # expo-router file-based routes
-│       │   ├── (auth)/       # login screen
-│       │   ├── (dashboard)/  # driver/ and parent/ stacks
-│       │   └── invite/[code].tsx
-│       ├── features/
-│       │   ├── driver/       # screens/, hooks/useDriverData, context/DriverDataContext
-│       │   └── parent/       # screens/ (incl. useParentData), context/ParentDataContext
-│       ├── components/primitives/  # Txt, Button, Card, List, ScreenHeader, SheetModal, … (see Docs/plans/mobile-ui-refresh.md)
-│       ├── components/brand/       # BrandMark, SignatureCard (navy card), RouteLine, LivePill
-│       └── lib/supabase.ts
-├── supabase/
-│   ├── migrations/           # 0001_schema.sql … 0020_two_runs_cleanup.sql
-│   ├── tests/                # SQL checks per migration, run against the local database
-│   ├── functions/
-│   │   ├── optimize-route/index.ts     # Edge Function: route planner (update; optimize as a proposal)
-│   │   └── send-notification/index.ts  # Edge Function: Expo push
-│   └── seed.sql
-└── Docs/                     # architecture, schema, feature catalog, task tracker
-```
+## Architectural rules
 
-## Critical Architectural Rules
-
-1. **Multi-tenancy lives in the DB.** Every table except `schools`/`user_roles` is scoped by `school_id`. RLS policies (Docs/Claude.md §5) use `get_user_role()` / `get_user_school_id()` helpers. Never bypass RLS in application code.
-
-2. **Two Supabase clients — never mixed.**
-   - `src/lib/supabase/server.ts` → Server Components, Server Actions, API routes.
-   - `src/lib/supabase/client.ts` → Client Components only.
-   - `SUPABASE_SERVICE_ROLE_KEY` is server-side only; it bypasses RLS.
-
-3. **Mapbox is client-only.** Lazy-load with `next/dynamic` + `ssr: false`. Use `mapbox-gl` directly, not `react-map-gl`. Clean up map instances in `useEffect` return.
-
-4. **Server Components by default.** Add `'use client'` only for interactivity, hooks, or browser APIs.
-
-5. **Route planning = Edge Function only.** `supabase/functions/optimize-route/index.ts` keeps each bus's stop order and slots changes in; re-planning (nearest-neighbor stop order, K-means across buses) is only a proposal a school admin applies. Mapbox Directions per run. The logic is in `supabase/functions/_shared/`. Not a Next.js API route.
-
-6. **Real-time tracking hot path:** driver writes to `bus_locations` → Supabase Realtime → parent map update. The `idx_bus_locations_bus_id` index on `(bus_id, timestamp DESC)` is critical for this path.
+1. **Multi-tenancy lives in the database.** Every table except `schools` and `user_roles` is scoped by `school_id`, and RLS policies (Docs/Claude.md §5.2) do the filtering. Never bypass RLS in application code.
+2. **Two Supabase clients, never mixed.** `src/lib/supabase/server.ts` in Server Components, Server Actions and API routes; `src/lib/supabase/client.ts` in Client Components only. `SUPABASE_SERVICE_ROLE_KEY` is server-side only: it bypasses RLS.
+3. **Mapbox is client-only.** Lazy-load with `next/dynamic` and `ssr: false`, use `mapbox-gl` directly (not `react-map-gl`), and clean up map instances in the `useEffect` return.
+4. **Server Components by default.** Add `'use client'` only for interactivity, hooks or browser APIs.
+5. **Route planning is an Edge Function, never a Next.js API route.** `supabase/functions/optimize-route` keeps each bus's order and slots changes in; re-planning is only a proposal. The logic is in `supabase/functions/_shared/`.
+6. **Live tracking hot path:** the driver writes to `bus_locations`, Supabase Realtime pushes it to the parent's map. The `idx_bus_locations_bus_id` index on `(bus_id, timestamp DESC)` is critical.
+7. **Every Edge Function checks its caller** (`supabase/functions/_shared/caller.ts`); the gateway only checks that a key is valid, and the anon key is public.
+8. **A new `SECURITY DEFINER` function** needs its own role check, or `REVOKE ALL ... FROM PUBLIC, anon, authenticated`.
 
 ## Roles
 
-`platform_admin` · `school_admin` · `driver` · `parent`
+`platform_admin` · `school_admin` · `driver` · `parent`. The post-login redirect is role-based, and access rules differ per role per table (Docs/Claude.md §5.2).
 
-Post-login redirect is role-based. RLS policies differ per role per table — see Docs/Claude.md §5.
+## Design system
 
-## Design System
+One design for the landing page, the apps and the dashboards: Karwa / Qatar Metro aesthetic, deep blue `#1E3A8A` for things you act on, Schibsted Grotesk headings with Inter text, one navy signature card per screen, flat white cards, status as a coloured dot plus words, no uppercase labels. Tokens and components are listed in Docs/Claude.md §3.
 
-Karwa / Qatar Metro aesthetic — deep blue `#1E3A8A` primary, white/slate backgrounds, Inter font, map-centric layouts. Mobile-first for driver and parent; desktop-first for admin dashboards. Full token table in Docs/Claude.md §3.1.
-
-The admin dashboards (`/school`, `/admin`) use the mobile app's tokens (`mobile/src/lib/theme.ts`) as Tailwind colours (`ink`, `ink-2`, `canvas`, `line`, `brand`, `night`, `live`, `ok` / `warn` / `bad` with `-text` and `-tint`), Schibsted Grotesk headings (`font-display`) and the components in `src/components/dashboard/`. One navy `SignatureCard` per page, flat white cards, status as a coloured dot plus words, no uppercase labels, the landing page's easing (`ease-swift`, `animate-rise`). The map uses the apps' style (`src/lib/mapStyle.ts`, a copy of the mobile one).
+- **Dashboards** (`/school`, `/admin`) use the app's tokens as Tailwind colours (`ink`, `ink-2`, `canvas`, `line`, `brand`, `night`, `live`, `ok` / `warn` / `bad` with `-text` and `-tint`), `font-display`, the landing page's easing (`ease-swift`, `animate-rise`) and the kit in `src/components/dashboard/`. Their map uses `src/lib/mapStyle.ts`, a copy of the app's.
+- **The phone app** reads colours through `useTheme()` and follows the phone's light or dark setting. Never use raw hex in components.
 
 ## Conventions
 
-- Absolute imports via `@/` → `src/` (web); same alias in mobile.
-- PascalCase for component files; camelCase for utilities.
-- One component per file, named exports.
+- Absolute imports with `@/` (`src/` on the web, `mobile/src/` in the app).
+- PascalCase for component files, camelCase for utilities; one component per file, named exports.
 - `cn()` from shadcn for conditional classes; never edit shadcn source files.
 - Always destructure `{ data, error }` from Supabase calls and handle `error`.
-- Mobile screens live under `mobile/src/features/<role>/screens/`. Route files in `mobile/src/app/` are thin — they just import and render the feature screen.
+- Mobile route files in `mobile/src/app/` are thin: they render a screen from `mobile/src/features/<role>/screens/`.
+- Work on a branch, open a pull request, merge to `main` (which deploys the website) when it is checked.
 
-## What Not to Commit
+## What not to commit
 
-`.env.local` (gitignored). Required env vars: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_MAPBOX_TOKEN`. See `mobile/.env.example` for mobile-specific vars.
+`.env.local` (gitignored). Required variables: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_MAPBOX_TOKEN`; the app's variables are in `mobile/.env.example`.
