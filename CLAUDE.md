@@ -6,7 +6,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 [Docs/Claude.md](Docs/Claude.md) is the canonical reference for the full database schema, RLS policies, color tokens, and design principles. When this file and Docs/Claude.md disagree, Docs/Claude.md wins.
 
-Current build status: **Phases 1–10 complete; Phase 11 nearly done. Phase 13 (landing page launch) in progress** — live at https://routeyai.vercel.app (auto-deploys from `main`). Phase 12 (store submission) not started. See [Docs/task.md](Docs/task.md) for the full checklist and [Docs/plans/landing-page-launch.md](Docs/plans/landing-page-launch.md) for the landing page plan.
+Current build status: **Phases 1–10 and 14–16 complete (Phase 16, two runs a day, is live since 2026-10-07); Phase 11 nearly done; Phase 13 (landing page launch) in progress** — live at https://routeyai.vercel.app (auto-deploys from `main`). Phase 12 (store submission) not started. See [Docs/task.md](Docs/task.md) for the full checklist and [Docs/plans/landing-page-launch.md](Docs/plans/landing-page-launch.md) for the landing page plan.
+
+## The core of the product: two runs a day
+
+Every bus does a **morning run** (homes → school) and an **afternoon run** (school → homes, the same stops in reverse), every school day, always both. Treat this as the main idea of the app, not a feature:
+
+- `students.stop_order` is the bus's chain in morning order; the afternoon is the chain reversed. `routes` has one row per bus **and run**; `bus_runs` / `attendance` / `absence_reports.runs` are per run.
+- **Routes never change by themselves.** Adding, moving or removing a child slots them in (`optimize-route` `update`); re-planning is a proposal an admin applies only if clearly better.
+- Drivers start and end runs with `start_run` / `end_run` and mark with `mark_attendance` (no direct writes). Parents read their route only through `get_parent_route`.
+- Shared rules live in `mobile/src/lib/runs.ts` and `src/lib/runs.ts` (kept in step), tested with `pnpm test:logic`.
+- Full rules: [Docs/Claude.md §1.1](Docs/Claude.md) and [Docs/plans/two-runs-a-day.md](Docs/plans/two-runs-a-day.md).
 
 ## Stack
 

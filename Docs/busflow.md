@@ -1,5 +1,7 @@
 # Bus Assignment Flow
 
+Every bus does two runs every school day: a **morning run** (homes to school) and an **afternoon run** (school to homes, the same stops in reverse). The route is made once and then stays put; see [Claude.md §1.1](Claude.md).
+
 ## How It Works
 
 Drivers are assigned to **buses**, not areas. Areas emerge automatically from AI clustering.
@@ -33,7 +35,7 @@ Driver logs in → sees their bus's route + passenger manifest
 |---|---|
 | `buses.driver_id` | One driver per bus |
 | `students.bus_id` | Many students per bus (the cluster) |
-| `students.stop_order` | Each student's position in the optimized route |
+| `students.stop_order` | Each student's position in the bus's route, in morning order (the afternoon run drives it in reverse) |
 
 ---
 
@@ -42,7 +44,7 @@ Driver logs in → sees their bus's route + passenger manifest
 The school admin **never manually draws zones or assigns students to drivers**. They only:
 
 1. Add students with home addresses
-2. Click "Optimize Routes" → AI does the clustering automatically
+2. Click "Optimize Routes" → AI does the clustering automatically (a proposal you apply; once a route exists it never changes by itself)
 3. Assign a driver to each resulting bus
 
 A driver's "area responsibility" is implicit — whoever drives Bus #3 serves whoever the AI assigned to Bus #3. If a new student is added in West Bay, **Smart Placement** auto-assigns them to the nearest viable cluster without any manual work.
@@ -58,7 +60,7 @@ System calculates distance from student to each existing bus cluster centroid
         ↓
 Student assigned to nearest bus that has remaining capacity (< 40 students)
         ↓
-Route recalculates automatically via Edge Function
+The child's stop slots into that bus's route (Edge Function `update`); no other stop moves
 ```
 
 If all nearby buses are at capacity, the admin is alerted to create a new bus.
