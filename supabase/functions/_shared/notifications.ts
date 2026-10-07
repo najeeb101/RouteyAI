@@ -71,8 +71,6 @@ export function etaText(name: string, run: Run): PushText {
 export type EtaState = {
   /** The bus's run that is running now, if any. */
   runningRun: Run | null
-  /** Today's driver app marks the bus active instead of starting a run; until 0018 that counts as the morning run. */
-  legacyActive: boolean
   /** The child's check-in status on each run today, if any. */
   morningStatus: AttendanceStatus | null
   afternoonStatus: AttendanceStatus | null
@@ -85,7 +83,7 @@ export type EtaState = {
  * to be picked up, in the afternoon only while the child is on the bus, and never with no run going.
  */
 export function etaRun(s: EtaState): Run | null {
-  const run = s.runningRun ?? (s.legacyActive ? 'morning' : null)
+  const run = s.runningRun
   if (run === 'morning') {
     const waiting = s.morningStatus === null && s.reportedRuns !== 'both' && s.reportedRuns !== 'morning'
     return waiting ? 'morning' : null

@@ -423,7 +423,7 @@ Plan: [plans/two-runs-a-day.md](plans/two-runs-a-day.md).
   Ending the morning run marks everyone still on board `dropped_off` (arrived at school).
 - `attendance` is per student, day and run (`UNIQUE(student_id, date, run)`); statuses `boarded`, `absent`,
   `dropped_off` (+ `dropped_off_at`; `created_at` is the boarding time). Drivers use `mark_attendance(p_student_id,
-  p_status)`, which checks the bus, the running run and the step. Their direct-write policy goes in 0020.
+  p_status)`, which checks the bus, the running run and the step. Their direct-write policy is removed in 0020 (they keep reading their own bus's marks).
 - `absence_reports.runs`: `both` (default), `morning` or `afternoon`.
 - The attendance trigger sends `run` and `previous_status`, skips undo taps, and sends drop-offs as type `drop_off`.
 - `optimize-route` (step 2, built on `two-runs`, not deployed): `update` (also any request without `action`) keeps

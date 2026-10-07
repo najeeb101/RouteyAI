@@ -70,7 +70,7 @@ routeyai/
 │       ├── components/brand/       # BrandMark, SignatureCard (navy card), RouteLine, LivePill
 │       └── lib/supabase.ts
 ├── supabase/
-│   ├── migrations/           # 0001_schema.sql … 0019_auth_email_text.sql
+│   ├── migrations/           # 0001_schema.sql … 0020_two_runs_cleanup.sql
 │   ├── tests/                # SQL checks per migration, run against the local database
 │   ├── functions/
 │   │   ├── optimize-route/index.ts     # Edge Function: route planner (update; optimize as a proposal)

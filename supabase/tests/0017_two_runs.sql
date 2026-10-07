@@ -27,6 +27,8 @@ SELECT set_config('t.parent1', (
 ), true);
 -- Clean slate for today on the seed buses (rolled back at the end).
 DELETE FROM attendance WHERE bus_id IN ('bbbbbbbb-0000-0000-0000-000000000001', 'bbbbbbbb-0000-0000-0000-000000000002');
+DELETE FROM bus_runs WHERE bus_id IN ('bbbbbbbb-0000-0000-0000-000000000001', 'bbbbbbbb-0000-0000-0000-000000000002');
+DELETE FROM routes WHERE bus_id IN ('bbbbbbbb-0000-0000-0000-000000000001', 'bbbbbbbb-0000-0000-0000-000000000002');
 
 CREATE SCHEMA check_0017;
 GRANT USAGE ON SCHEMA check_0017 TO authenticated, anon, service_role;
@@ -81,7 +83,6 @@ BEGIN
   ASSERT NOT has_function_privilege('anon', 'save_route_plan(uuid,uuid[],jsonb,jsonb,jsonb)', 'EXECUTE'), 'save_route_plan: not anon';
   ASSERT NOT has_function_privilege('authenticated', 'save_route_plan(uuid,uuid[],jsonb,jsonb,jsonb)', 'EXECUTE'), 'save_route_plan: not signed-in users';
   ASSERT has_function_privilege('service_role', 'save_route_plan(uuid,uuid[],jsonb,jsonb,jsonb)', 'EXECUTE'), 'save_route_plan: service role';
-  ASSERT NOT has_function_privilege('authenticated', 'save_optimized_route(uuid,jsonb,numeric,numeric,text)', 'EXECUTE'), 'old save stays service-role only';
   RAISE NOTICE 'ok: function access';
 END;
 $$;
@@ -289,28 +290,12 @@ BEGIN
   ASSERT (SELECT stop_order FROM students WHERE id = current_setting('t.first')::UUID) IS NULL, 'a student left out loses their place';
   RAISE NOTICE 'ok: route plans save both runs together and version the order';
 
-  -- Today's optimize-route still works through the old function, as the morning row.
-  PERFORM save_optimized_route(current_setting('t.bus1')::UUID, '[]'::JSONB);
-  ASSERT (SELECT COUNT(*) FROM routes WHERE bus_id = current_setting('t.bus1')::UUID) = 2, 'old save updates the morning row';
-  RAISE NOTICE 'ok: the old save_optimized_route keeps working';
 END;
 $$;
 SELECT check_0017.expect_error(format($q$SELECT save_route_plan(%L, ARRAY[%L, %L]::UUID[], '{}', '{}')$q$, current_setting('t.bus1'), current_setting('t.second'), current_setting('t.other_bus_student')), '%not on this bus%', 'cannot put another bus''s student on the route');
 SELECT check_0017.expect_error(format($q$SELECT save_route_plan(%L, ARRAY[%L, %L]::UUID[], '{}', '{}')$q$, current_setting('t.bus1'), current_setting('t.second'), current_setting('t.second')), '%twice%', 'cannot list a student twice');
 RESET ROLE;
 
--- ── The current driver app (direct writes, no run) keeps working until 0018 ──
-SET LOCAL ROLE authenticated;
-SELECT set_config('request.jwt.claims', json_build_object('sub', current_setting('t.driver1'), 'role', 'authenticated')::text, true);
-DO $$
-BEGIN
-  DELETE FROM attendance WHERE student_id = current_setting('t.second')::UUID AND bus_id = current_setting('t.bus1')::UUID AND date = CURRENT_DATE;
-  INSERT INTO attendance (student_id, bus_id, status, date) VALUES (current_setting('t.second')::UUID, current_setting('t.bus1')::UUID, 'boarded', CURRENT_DATE);
-  ASSERT (SELECT run FROM attendance WHERE student_id = current_setting('t.second')::UUID AND date = CURRENT_DATE) = 'morning', 'old writes are the morning run';
-  PERFORM set_bus_active(false);
-  RAISE NOTICE 'ok: the current driver app still works';
-END;
-$$;
-RESET ROLE;
+-- (The current driver app's direct writes and set_bus_active were checked here until 0020 removed them.)
 
 ROLLBACK;
