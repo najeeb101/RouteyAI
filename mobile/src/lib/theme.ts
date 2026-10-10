@@ -1,7 +1,7 @@
 import { useColorScheme, type TextStyle, type ViewStyle } from 'react-native'
 
 /**
- * The app's design tokens (Docs/plans/mobile-ui-refresh.md). Screens never use raw colours, font names or
+ * The app's design tokens (Docs/Claude.md §3). Screens never use raw colours, font names or
  * sizes: they read colours through useTheme() and set text with <Txt variant>. Same families and palette as the landing
  * page: Schibsted Grotesk for headings and big numbers, Inter for body text, deep blue only for things you can act on.
  */
@@ -51,7 +51,7 @@ const light = {
 export type Palette = typeof light
 
 /**
- * The dark palette (landing page `.dark` theme, Docs/plans/mobile-ui-refresh.md "Dark mode"): same token names. Depth
+ * The dark palette (landing page `.dark` theme, Docs/Claude.md §3.3): same token names. Depth
  * comes from `surfaceRaised` instead of shadows, the brand blue is lifted so it reads on dark surfaces, and status text
  * uses lighter shades so it still passes 4.5:1.
  */
