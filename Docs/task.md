@@ -56,7 +56,7 @@ In rough priority order.
 
 - [ ] Connect the custom domain on Vercel.
 - [ ] Launch placeholders in `src/lib/siteConfig.ts`: set `NEXT_PUBLIC_CONTACT_EMAIL` (routeyai.com has no DNS or MX yet), get a legal review and then set `LEGAL_REVIEWED = true`, fill `PLAN_SUPPORT`. Also set `NEXT_PUBLIC_BUSINESS_*` and `REFUND_TERMS`, and work through the open items in [plans/legal-and-accessibility.md](plans/legal-and-accessibility.md).
-- [ ] Landing page Lighthouse performance 90 or more on mobile (local run 2026-10-10: performance 71, total blocking time 1.2 s; accessibility, best practices and SEO 100; re-measure on PageSpeed Insights).
+- [ ] Landing page Lighthouse performance 90 or more on mobile (local runs 2026-10-10 on a production build: performance 80, 87 and 88 when warm, with total blocking time 40 to 250 ms and LCP about 3.8 s; accessibility, best practices and SEO 100. Scores swing by up to 15 points between runs, so check the live site on PageSpeed Insights before changing code).
 - [ ] Redraw the landing page's phone mockups in the new style and in dark.
 
 ### Real-device checks
