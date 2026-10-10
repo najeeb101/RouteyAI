@@ -8,8 +8,9 @@ import { useColorScheme, type TextStyle, type ViewStyle } from 'react-native'
 
 const light = {
   ink: '#0F172A',
-  inkSecondary: '#64748B',
-  inkTertiary: '#94A3B8',
+  // Both greys pass 4.5:1 on white and on the canvas (2026-10-10); the old #64748B and #94A3B8 did not.
+  inkSecondary: '#5B6B82',
+  inkTertiary: '#5F6F86',
   canvas: '#F6F7F9',
   surface: '#FFFFFF',
   // Sheets and cards floating over the map. Light mode uses the surface and a shadow; dark mode a lighter surface.
@@ -58,7 +59,7 @@ export type Palette = typeof light
 const dark: Palette = {
   ink: '#F1F5F9',
   inkSecondary: '#94A3B8',
-  inkTertiary: '#64748B',
+  inkTertiary: '#7C8BA1',
   canvas: '#020617',
   surface: '#0B1220',
   surfaceRaised: '#131C2E',

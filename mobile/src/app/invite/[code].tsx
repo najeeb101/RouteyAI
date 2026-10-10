@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { ActivityIndicator, Image, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { CircleAlert, Mail } from 'lucide-react-native'
+import { LegalLinks } from '@/components/LegalLinks'
 import { Button } from '@/components/primitives/Button'
 import { Icon } from '@/components/primitives/Icon'
 import { Txt } from '@/components/primitives/Txt'
@@ -90,9 +91,10 @@ export default function InviteScreen() {
           <Button label={isValid ? 'Accept invite' : 'Go to sign in'} variant={isValid ? 'primary' : 'secondary'} onPress={isValid ? handleAccept : () => router.replace('/login' as never)} />
           {isValid && (
             <Txt variant="caption" tone="inkTertiary" align="center">
-              By accepting, you agree to create an account with the email this invite was sent to.
+              By accepting, you agree to create an account with the email this invite was sent to, and to our terms and privacy policy.
             </Txt>
           )}
+          {isValid && <LegalLinks />}
         </View>
       </View>
     </SafeAreaView>

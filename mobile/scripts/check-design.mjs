@@ -1,4 +1,4 @@
-// Fails when UI code bypasses the design tokens (Docs/plans/mobile-ui-refresh.md).
+// Fails when UI code bypasses the design tokens (Docs/Claude.md §3).
 //
 //   npm run check:design
 //
