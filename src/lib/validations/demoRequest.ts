@@ -9,6 +9,8 @@ export const demoRequestSchema = z.object({
   phone: z.string().trim().max(40).optional().or(z.literal("")),
   fleetSize: z.enum(FLEET_SIZES, { errorMap: () => ({ message: "Please choose a fleet size" }) }),
   message: z.string().trim().max(1000).optional().or(z.literal("")),
+  // Must be ticked by the visitor; never pre-ticked.
+  consent: z.boolean().refine(value => value === true, "Please tick the box so we can contact you"),
   // Honeypot: real visitors never see or fill this field.
   website: z.string().max(0).optional().or(z.literal("")),
 })

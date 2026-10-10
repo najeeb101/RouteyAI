@@ -2,7 +2,7 @@ import Link from 'next/link'
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center p-6">
+    <main id="main-content" tabIndex={-1} className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center p-6 focus:outline-none">
       <div className="w-16 h-16 rounded-2xl bg-[#EFF6FF] border border-[#BFDBFE] flex items-center justify-center mb-6">
         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1E3A8A" strokeWidth="1.5" strokeLinecap="round">
           <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/>
@@ -21,6 +21,6 @@ export default function NotFound() {
       >
         Back to home
       </Link>
-    </div>
+    </main>
   )
 }

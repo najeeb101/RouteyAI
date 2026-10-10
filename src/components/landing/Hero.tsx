@@ -1,4 +1,5 @@
 import Image from 'next/image'
+import { AiImageNote } from '@/components/landing/AiImageNote'
 import { HeroLiveCards } from '@/components/landing/HeroLiveCards'
 import { WordReveal } from '@/components/landing/WordReveal'
 import { PHOTOS } from '@/components/landing/photos'
@@ -81,6 +82,9 @@ export function Hero() {
         <div aria-hidden="true" className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-background to-transparent lg:h-40" />
 
         <HeroLiveCards />
+        <AiImageNote className="bottom-2 right-2 sm:right-4 lg:bottom-4">
+          Illustration made with AI. The bus, times and notifications are examples.
+        </AiImageNote>
       </div>
     </section>
   )

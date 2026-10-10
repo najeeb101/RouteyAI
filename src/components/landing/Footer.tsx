@@ -4,7 +4,7 @@ import { RouteyLogo } from '@/components/RouteyLogo'
 import { AppDownloadButton } from '@/components/landing/AppDownloadButton'
 import { AppleIcon, GooglePlayIcon } from '@/components/landing/StoreIcons'
 import { ThemeSelect } from '@/components/landing/ThemeSelect'
-import { CONTACT_EMAIL } from '@/lib/siteConfig'
+import { BUSINESS, CONTACT_EMAIL } from '@/lib/siteConfig'
 
 const PRODUCT_LINKS = [
   { label: 'How it works', href: '/#how-it-works' },
@@ -57,6 +57,8 @@ export function Footer() {
               <li><Link href="/login" className={linkClass}>Log in</Link></li>
               <li><Link href="/privacy" className={linkClass}>Privacy policy</Link></li>
               <li><Link href="/terms" className={linkClass}>Terms of service</Link></li>
+              <li><Link href="/cookies" className={linkClass}>Cookie policy</Link></li>
+              <li><Link href="/refunds" className={linkClass}>Cancellations and refunds</Link></li>
             </ul>
           </div>
 
@@ -84,10 +86,15 @@ export function Footer() {
         </div>
 
         <div className="flex flex-col items-center justify-between gap-5 border-t border-white/[0.08] pt-8 md:flex-row">
-          <span className="text-sm text-slate-400">© {new Date().getFullYear()} RouteyAI. Built for Qatar.</span>
-          <div className="flex items-center gap-6">
+          <span className="text-center text-sm text-slate-400 md:text-left">
+            © {new Date().getFullYear()} {BUSINESS.legalName ?? 'RouteyAI'}. Built for Qatar.
+            {BUSINESS.registrationNumber && <> CR no. {BUSINESS.registrationNumber}.</>}
+            {BUSINESS.address && <> {BUSINESS.address}.</>}
+          </span>
+          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3">
             <Link href="/privacy" className={linkClass}>Privacy</Link>
             <Link href="/terms" className={linkClass}>Terms</Link>
+            <Link href="/cookies" className={linkClass}>Cookies</Link>
             <ThemeSelect />
           </div>
         </div>

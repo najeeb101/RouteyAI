@@ -50,7 +50,7 @@ export function DashboardShell({ section, place, userName, userEmail, children }
 
       <div className="flex min-w-0 flex-1 flex-col">
         <TopBar section={section} place={place} onMenu={() => setMenuOpen(true)} />
-        <main className="flex-1 overflow-y-auto">
+        <main id="main-content" tabIndex={-1} className="flex-1 overflow-y-auto focus:outline-none">
           <div className="mx-auto w-full max-w-[1280px] px-5 pb-12 pt-7 lg:px-8 lg:pt-8">{children}</div>
         </main>
       </div>

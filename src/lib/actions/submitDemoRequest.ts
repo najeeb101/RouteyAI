@@ -1,7 +1,7 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
-import { CONTACT_EMAIL } from "@/lib/siteConfig"
+import { CONTACT_EMAIL, LEGAL_LAST_UPDATED } from "@/lib/siteConfig"
 import { demoRequestSchema, type DemoRequestInput } from "@/lib/validations/demoRequest"
 
 export type DemoRequestResult = { ok: true } | { ok: false; error: string }
@@ -17,7 +17,9 @@ export async function submitDemoRequest(input: DemoRequestInput): Promise<DemoRe
   // Honeypot filled in: pretend success so bots don't retry.
   if (website) return { ok: true }
 
-  const notes = [`Fleet size: ${fleetSize}`, message].filter(Boolean).join("\n\n")
+  // Keep a record that the visitor agreed to be contacted, and which version of the policy they saw.
+  const consentNote = `Agreed to be contacted (privacy policy of ${LEGAL_LAST_UPDATED}) on ${new Date().toISOString()}`
+  const notes = [`Fleet size: ${fleetSize}`, message, consentNote].filter(Boolean).join("\n\n")
 
   const supabase = createClient()
   const { error } = await supabase.from("demo_requests").insert({

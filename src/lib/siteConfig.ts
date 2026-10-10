@@ -8,13 +8,35 @@
 export const CONTACT_EMAIL: string | null = process.env.NEXT_PUBLIC_CONTACT_EMAIL?.trim() || null
 
 /**
- * TODO(launch): set to true once /privacy and /terms have had legal review.
- * While false, both pages show a "draft" notice.
+ * TODO(launch): the business behind RouteyAI. Qatar's E-Commerce Law (Law No. 16 of 2010) expects a service provider to
+ * say who it is and how to reach it. Set these on Vercel (and in .env.local) with the details on the commercial
+ * registration; each one is hidden until it is set, so nothing is invented.
+ */
+export const BUSINESS = {
+  /** The legal name exactly as registered, e.g. "Example Trading W.L.L.". */
+  legalName: process.env.NEXT_PUBLIC_BUSINESS_LEGAL_NAME?.trim() || null,
+  /** The registered office address. */
+  address: process.env.NEXT_PUBLIC_BUSINESS_ADDRESS?.trim() || null,
+  /** The commercial registration (CR) number. */
+  registrationNumber: process.env.NEXT_PUBLIC_BUSINESS_CR_NUMBER?.trim() || null,
+  /** A business phone number. */
+  phone: process.env.NEXT_PUBLIC_BUSINESS_PHONE?.trim() || null,
+} as const
+
+/**
+ * TODO(launch): set to true once /privacy, /terms, /cookies and /refunds have had legal review.
+ * While false, all four pages show a "draft" notice.
  */
 export const LEGAL_REVIEWED = false
 
-/** TODO(launch): set the date of the reviewed version. */
-export const LEGAL_LAST_UPDATED = "29 September 2026"
+/** The date of the current version of the legal pages. Change it whenever their wording changes. */
+export const LEGAL_LAST_UPDATED = "10 October 2026"
+
+/**
+ * TODO(launch): the refund and cancellation terms you will offer schools, as plain sentences. While null, /refunds says
+ * the terms are set out in each school's quote and agreement and promises nothing more.
+ */
+export const REFUND_TERMS: string[] | null = null
 
 export type PlanName = "Starter" | "Growth" | "Enterprise"
 

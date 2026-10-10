@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { CheckCircle2, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
+import { ConsentCheckbox } from '@/components/ConsentCheckbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
@@ -22,7 +23,7 @@ export function DemoRequestForm() {
     formState: { errors, isSubmitting },
   } = useForm<DemoRequestInput>({
     resolver: zodResolver(demoRequestSchema),
-    defaultValues: { fullName: '', schoolName: '', email: '', phone: '', message: '', website: '' },
+    defaultValues: { fullName: '', schoolName: '', email: '', phone: '', message: '', website: '', consent: false },
   })
 
   const onSubmit = async (values: DemoRequestInput) => {
@@ -38,9 +39,9 @@ export function DemoRequestForm() {
 
   if (submitted) {
     return (
-      <div className="flex flex-col items-center justify-center text-center py-10 animate-in fade-in zoom-in-95 duration-300">
+      <div role="status" className="flex flex-col items-center justify-center text-center py-10 animate-in fade-in zoom-in-95 duration-300">
         <div className="w-14 h-14 bg-secondary/15 rounded-full flex items-center justify-center mb-5">
-          <CheckCircle2 className="w-7 h-7 text-secondary" />
+          <CheckCircle2 aria-hidden="true" className="w-7 h-7 text-emerald-700 dark:text-secondary" />
         </div>
         <h3 className="text-xl font-semibold text-foreground mb-2">Request received</h3>
         <p className="text-sm text-muted-foreground max-w-xs mb-6">
@@ -49,7 +50,7 @@ export function DemoRequestForm() {
         <button
           type="button"
           onClick={() => setSubmitted(false)}
-          className="text-sm font-semibold text-primary hover:underline"
+          className="rounded-sm text-sm font-semibold text-primary underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         >
           Send another request
         </button>
@@ -57,20 +58,27 @@ export function DemoRequestForm() {
     )
   }
 
+  /** Links an input to its error line so a screen reader reads the error with the field. */
+  const a11y = (id: keyof DemoRequestInput, required = true) => ({
+    'aria-invalid': errors[id] ? true : undefined,
+    'aria-describedby': errors[id] ? `${id}-error` : undefined,
+    'aria-required': required ? true : undefined,
+  })
+
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Field label="Your name" id="fullName" error={errors.fullName?.message}>
-          <Input id="fullName" autoComplete="name" className={fieldClass} {...register('fullName')} />
+          <Input id="fullName" autoComplete="name" className={fieldClass} {...a11y('fullName')} {...register('fullName')} />
         </Field>
         <Field label="School" id="schoolName" error={errors.schoolName?.message}>
-          <Input id="schoolName" autoComplete="organization" className={fieldClass} {...register('schoolName')} />
+          <Input id="schoolName" autoComplete="organization" className={fieldClass} {...a11y('schoolName')} {...register('schoolName')} />
         </Field>
         <Field label="Work email" id="email" error={errors.email?.message}>
-          <Input id="email" type="email" autoComplete="email" className={fieldClass} {...register('email')} />
+          <Input id="email" type="email" autoComplete="email" className={fieldClass} {...a11y('email')} {...register('email')} />
         </Field>
         <Field label="Phone (optional)" id="phone" error={errors.phone?.message}>
-          <Input id="phone" type="tel" autoComplete="tel" className={fieldClass} {...register('phone')} />
+          <Input id="phone" type="tel" autoComplete="tel" className={fieldClass} {...a11y('phone', false)} {...register('phone')} />
         </Field>
       </div>
 
@@ -82,6 +90,7 @@ export function DemoRequestForm() {
             'flex w-full rounded-md border px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
             fieldClass
           )}
+          {...a11y('fleetSize')}
           {...register('fleetSize')}
         >
           <option value="" disabled>
@@ -100,27 +109,41 @@ export function DemoRequestForm() {
           id="message"
           rows={3}
           className="flex w-full rounded-md border border-border bg-background px-3 py-2.5 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none"
+          {...a11y('message', false)}
           {...register('message')}
         />
       </Field>
 
-      {/* Honeypot — hidden from people, filled in by bots */}
+      {/* Honeypot: hidden from people, filled in by bots */}
       <div aria-hidden="true" className="absolute left-[-9999px] h-0 w-0 overflow-hidden">
         <label htmlFor="website">Website</label>
         <input id="website" tabIndex={-1} autoComplete="off" {...register('website')} />
       </div>
 
+      <ConsentCheckbox
+        id="consent"
+        error={errors.consent?.message}
+        textClassName="text-muted-foreground"
+        errorClassName="text-red-700 dark:text-red-400"
+        {...register('consent')}
+      >
+        I agree that RouteyAI may use these details to contact me about a demo and a quote, as described in the{' '}
+        <a href="/privacy" target="_blank" rel="noopener noreferrer" className="font-semibold text-primary underline underline-offset-2">
+          privacy policy<span className="sr-only"> (opens in a new tab)</span>
+        </a>
+        .
+      </ConsentCheckbox>
+
       <button
         type="submit"
         disabled={isSubmitting}
-        className="w-full flex items-center justify-center gap-2 rounded-full bg-primary px-6 py-3.5 text-[15px] font-semibold text-primary-foreground hover:bg-primary/90 active:scale-[0.98] transition-[transform,background-color] disabled:opacity-60"
+        className="w-full flex items-center justify-center gap-2 rounded-full bg-primary px-6 py-3.5 text-[15px] font-semibold text-primary-foreground hover:bg-primary/90 active:scale-[0.98] transition-[transform,background-color] disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card"
       >
-        {isSubmitting && <Loader2 size={16} className="animate-spin" />}
-        {isSubmitting ? 'Sending…' : 'Book my demo'}
+        {isSubmitting && <Loader2 aria-hidden="true" size={16} className="animate-spin" />}
+        {isSubmitting ? 'Sending…' : 'Send demo request'}
       </button>
       <p className="text-[12px] text-center text-muted-foreground">
-        We only use these details to contact you about RouteyAI. See our{' '}
-        <a href="/privacy" className="underline hover:text-foreground">privacy policy</a>.
+        We use these details only to reply to you. You can ask us to delete them at any time.
       </p>
     </form>
   )
@@ -143,7 +166,11 @@ function Field({
         {label}
       </Label>
       {children}
-      {error && <p className="text-[12px] font-medium text-destructive">{error}</p>}
+      {error && (
+        <p id={`${id}-error`} role="alert" className="text-[12px] font-medium text-red-700 dark:text-red-400">
+          {error}
+        </p>
+      )}
     </div>
   )
 }

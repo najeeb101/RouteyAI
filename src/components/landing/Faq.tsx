@@ -11,7 +11,7 @@ export const FAQS = [
   {
     question: 'How are the routes planned?',
     answer:
-      'Students are grouped by where they live, each group is given a bus with enough seats, and the stops are put in the order that gives the shortest drive, using real road travel times from Mapbox. Every bus does a morning run (homes to school) and an afternoon run (school to homes, the same stops in reverse). Once made, a route stays the same so drivers can learn it; it is only recalculated when the school admin chooses to, and only if the new route is clearly shorter.',
+      'Students are grouped by where they live, each group is given a bus with enough seats, and the stops are put in an order that keeps the drive short, using road travel times from Mapbox. Every bus does a morning run (homes to school) and an afternoon run (school to homes, the same stops in reverse). Once made, a route stays the same so drivers can learn it; it is only recalculated when the school admin chooses to, and only if the new route is clearly shorter.',
   },
   {
     question: 'What happens when a new student joins mid-year?',
@@ -26,7 +26,7 @@ export const FAQS = [
   {
     question: 'What do parents see?',
     answer:
-      'Parents see their child’s bus on a map, the arrival time for their stop, and school announcements. They get a notification when their child boards or is marked absent, when the bus is getting close, and when their child is dropped off at home. Parents with more than one child switch between them in the app, can report an absence ahead of time for the morning, the afternoon or both, and can look back at each child’s past rides.',
+      'Parents see their child’s bus on a map, an estimated arrival time for their stop, and school announcements. They get a notification when their child boards or is marked absent, when the bus is getting close, and when their child is dropped off at home. Arrival times are estimates and can change with traffic and phone coverage. Parents with more than one child switch between them in the app, can report an absence ahead of time for the morning, the afternoon or both, and can look back at each child’s past rides.',
   },
   {
     question: 'How is student data protected?',
@@ -41,7 +41,7 @@ export const FAQS = [
   {
     question: 'When are the mobile apps available?',
     answer:
-      'The iOS and Android apps are in final testing. Book a demo and we’ll let your school know as soon as they’re in the stores.',
+      'The iOS and Android apps are not in the stores yet. Book a demo and we’ll let your school know when they are.',
   },
   {
     question: 'How much does RouteyAI cost?',

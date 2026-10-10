@@ -73,7 +73,7 @@ One design everywhere: the landing page, the phone apps and the admin dashboards
 | Token (web / app) | Light | Dark (app) | Use |
 |---|---|---|---|
 | `ink` | `#0F172A` | `#F1F5F9` | Primary text |
-| `ink-2` / `inkSecondary` | `#64748B` | `#94A3B8` | Secondary text |
+| `ink-2` / `inkSecondary` | `#64748B` (web: `#5B6B82`, darker to pass 4.5:1 on the canvas) | `#94A3B8` | Secondary text |
 | `ink-3` / `inkTertiary` | `#94A3B8` | `#64748B` | Placeholders, disabled |
 | `canvas` | `#F6F7F9` | `#020617` | Screen background |
 | `surface` | `#FFFFFF` | `#0B1220` | Cards, lists |
@@ -127,7 +127,7 @@ RouteyAI/
 │   │   │   ├── school/           school admin: overview, routes, students, absences, buses (fleet), analytics
 │   │   │   ├── driver/           web driver page
 │   │   │   └── parent/           web parent page
-│   │   ├── privacy/, terms/      legal pages (also used for store listings)
+│   │   ├── privacy/, terms/, cookies/, refunds/   legal pages (privacy also used for store listings)
 │   │   └── page.tsx              landing page (Server Component)
 │   ├── components/
 │   │   ├── ui/                   shadcn/ui primitives (never edit)

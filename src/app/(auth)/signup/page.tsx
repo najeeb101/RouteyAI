@@ -6,6 +6,8 @@ import Link from 'next/link'
 import { House, Lock, Mail, User } from 'lucide-react'
 import { AuthHeading, AuthShell } from '@/components/auth/AuthShell'
 import { AuthInput } from '@/components/auth/AuthInput'
+import { LegalLinks } from '@/components/auth/LegalLinks'
+import { ConsentCheckbox } from '@/components/ConsentCheckbox'
 import { MobileAppNotice } from '@/components/auth/MobileAppNotice'
 import { ActionButton } from '@/components/dashboard/ActionButton'
 import { Notice } from '@/components/dashboard/Notice'
@@ -16,6 +18,7 @@ export default function SignupPage() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [agreed, setAgreed] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -78,6 +81,16 @@ export default function SignupPage() {
         <AuthInput label="Full name" icon={User} placeholder="Mohammed Al-Rashid" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} required />
         <AuthInput label="Email address" icon={Mail} type="email" placeholder="admin@school.edu" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
         <AuthInput label="Password" icon={Lock} type="password" placeholder="Min. 8 characters" autoComplete="new-password" minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} required />
+        <ConsentCheckbox
+          id="terms-consent"
+          required
+          checked={agreed}
+          onChange={(e) => setAgreed(e.target.checked)}
+          textClassName="text-ink-2"
+          errorClassName="text-bad-text"
+        >
+          I agree to the <LegalLinks />.
+        </ConsentCheckbox>
         <ActionButton type="submit" loading={loading} className="mt-1 w-full">
           {loading ? 'Creating account…' : 'Create account'}
         </ActionButton>

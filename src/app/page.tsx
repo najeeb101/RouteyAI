@@ -64,7 +64,7 @@ export default function HomePage() {
           React hydrate the sections one at a time in short tasks instead of the whole page in one long task, which
           kept the main thread blocked for over a second on phones.
         */}
-        <main className="overflow-x-clip bg-background font-sans">
+        <main id="main-content" tabIndex={-1} className="overflow-x-clip bg-background font-sans focus:outline-none">
           <Hero />
           <Suspense>
             <HowItWorks />

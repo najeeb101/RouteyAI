@@ -1,5 +1,6 @@
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
+import { AiImageNote } from '@/components/landing/AiImageNote'
 import { Parallax } from '@/components/landing/Parallax'
 import { Reveal } from '@/components/landing/Reveal'
 
@@ -39,6 +40,8 @@ export function AppShowcase({
             className="object-cover"
             style={{ objectPosition }}
           />
+          {/* Top left on phones, where the phone mockup overlaps the bottom; bottom right from sm up, where it sits on the left. */}
+          <AiImageNote className="left-2 top-2 sm:bottom-2 sm:left-auto sm:right-2 sm:top-auto" />
         </div>
         <span aria-hidden="true" className={cn('absolute -top-5 h-12 w-12 rounded-full bg-warning', left ? 'right-10' : 'left-10')} />
         <span aria-hidden="true" className={cn('absolute -bottom-4 h-8 w-8 rounded-full bg-accent', left ? 'right-24' : 'left-24')} />

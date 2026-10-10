@@ -55,7 +55,7 @@ In rough priority order.
 ### Web (Phases 11 and 13)
 
 - [ ] Connect the custom domain on Vercel.
-- [ ] Launch placeholders in `src/lib/siteConfig.ts`: set `NEXT_PUBLIC_CONTACT_EMAIL` (routeyai.com has no DNS or MX yet), get a legal review and then set `LEGAL_REVIEWED = true`, fill `PLAN_SUPPORT`.
+- [ ] Launch placeholders in `src/lib/siteConfig.ts`: set `NEXT_PUBLIC_CONTACT_EMAIL` (routeyai.com has no DNS or MX yet), get a legal review and then set `LEGAL_REVIEWED = true`, fill `PLAN_SUPPORT`. Also set `NEXT_PUBLIC_BUSINESS_*` and `REFUND_TERMS`, and work through the open items in [plans/legal-and-accessibility.md](plans/legal-and-accessibility.md).
 - [ ] Landing page Lighthouse performance 90 or more on mobile (last measured 62–73 live on 2026-10-02, improved locally on 2026-10-05; re-measure with PageSpeed Insights).
 - [ ] Redraw the landing page's phone mockups in the new style and in dark.
 

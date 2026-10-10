@@ -43,6 +43,7 @@ export function LandingNav({ overlay = false }: { overlay?: boolean }) {
 
   return (
     <nav
+      aria-label="Main"
       className={cn(
         'top-0 z-30 w-full border-b transition-[background-color,border-color,box-shadow] duration-300',
         overlay ? 'fixed inset-x-0' : 'sticky',

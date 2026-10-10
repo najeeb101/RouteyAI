@@ -45,7 +45,7 @@ function formatReported(iso: string) {
 }
 
 function BusLabel({ name, color }: { name: string | null; color: string | null }) {
-  if (!name) return <span className="text-ink-3">No bus</span>
+  if (!name) return <span className="text-ink-2">No bus</span>
   return (
     <span className="inline-flex items-center gap-1.5">
       <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: color ?? '#3B82F6' }} aria-hidden="true" />
@@ -76,7 +76,7 @@ function AbsenceItem({ a, showDate, step }: { a: AbsenceRow; showDate: boolean; 
         </div>
         {a.note && <p className="mt-1.5 text-[13px] text-ink">&ldquo;{a.note}&rdquo;</p>}
       </div>
-      <span className="shrink-0 text-xs text-ink-3">{formatReported(a.created_at)}</span>
+      <span className="shrink-0 text-xs text-ink-2">{formatReported(a.created_at)}</span>
     </li>
   )
 }
@@ -178,8 +178,8 @@ export default async function AbsencesPage() {
                     <td className="px-3 py-3 text-[13px] text-ink"><BusLabel name={a.bus_name} color={a.bus_color} /></td>
                     <td className="px-3 py-3 text-[13px]"><Rides runs={a.runs} /></td>
                     <td className="px-3 py-3 text-[13px] text-ink">{REASONS[a.reason]}</td>
-                    <td className="max-w-[240px] truncate px-3 py-3 text-[13px] text-ink-2">{a.note ?? <span className="text-ink-3">—</span>}</td>
-                    <td className="whitespace-nowrap px-3 py-3 text-xs text-ink-3">{formatReported(a.created_at)}</td>
+                    <td className="max-w-[240px] truncate px-3 py-3 text-[13px] text-ink-2">{a.note ?? <span className="text-ink-2">—</span>}</td>
+                    <td className="whitespace-nowrap px-3 py-3 text-xs text-ink-2">{formatReported(a.created_at)}</td>
                   </tr>
                 ))}
               </tbody>

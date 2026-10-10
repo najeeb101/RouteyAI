@@ -22,6 +22,7 @@ Written before bigger pieces of work and kept as the record of the decisions.
 |---|---|---|
 | [plans/two-runs-a-day.md](plans/two-runs-a-day.md) | Morning and afternoon runs, stable routes, the new apps and dashboard | Done and live |
 | [plans/mobile-ui-refresh.md](plans/mobile-ui-refresh.md) | The phone app's design system, identity and dark mode | Done; dark mode to check on an iPhone |
+| [plans/legal-and-accessibility.md](plans/legal-and-accessibility.md) | Legal pages, consent, claims, accessibility; open decisions for the owner | Done; owner items open |
 | [plans/landing-page-launch.md](plans/landing-page-launch.md) | Turning the landing page into the public site | In progress |
 
 ## Elsewhere in the repository

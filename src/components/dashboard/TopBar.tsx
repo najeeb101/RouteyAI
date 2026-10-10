@@ -45,7 +45,7 @@ export function TopBar({ section, place, onMenu }: { section: NavSection; place:
         {now ? (
           <>
             <span className="hidden sm:inline">{qatarClock.format(now)} · </span>
-            {qatarTime.format(now)} <span className="hidden text-ink-3 md:inline">Qatar</span>
+            {qatarTime.format(now)} <span className="hidden text-ink-2 md:inline">Qatar</span>
           </>
         ) : null}
       </p>

@@ -111,6 +111,7 @@ export function HowItWorks() {
             style={{ top: 'max(5.5rem, calc(50vh - 19rem))' }}
           >
             <OptimizeDemo stage={stage} inView={panelInView} />
+            <p className="mt-3 text-sm text-muted-foreground">An example with made-up students, on a real map of Doha.</p>
             <div className="mt-4 flex gap-1.5 lg:hidden" aria-hidden="true">
               {STEPS.map((step, i) => (
                 <span key={step.title} className={cn('h-1 flex-1 rounded-full transition-colors duration-500', stage === i ? 'bg-primary' : 'bg-border')} />

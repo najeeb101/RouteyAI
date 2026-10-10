@@ -1,6 +1,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { BellRing, Bus, Building2, UserRound, type LucideIcon } from 'lucide-react'
+import { AiImageNote } from '@/components/landing/AiImageNote'
 import { Reveal } from '@/components/landing/Reveal'
 import { SectionHeading } from '@/components/landing/SectionHeading'
 import { PHOTOS } from '@/components/landing/photos'
@@ -9,12 +10,12 @@ const POINTS: { icon: LucideIcon; title: string; desc: string }[] = [
   {
     icon: Building2,
     title: 'Each school’s data is kept separate',
-    desc: 'Access rules are enforced in the database itself, so one school can never see another school’s students, buses or routes.',
+    desc: 'Access rules are enforced in the database itself, so each school only sees its own students, buses and routes.',
   },
   {
     icon: UserRound,
     title: 'Parents see only their own child',
-    desc: 'A parent sees their child’s bus, stop and attendance. They never see other students or their addresses.',
+    desc: 'A parent sees their child’s bus, stop and attendance. They don’t see other students or their addresses.',
   },
   {
     icon: Bus,
@@ -23,8 +24,8 @@ const POINTS: { icon: LucideIcon; title: string; desc: string }[] = [
   },
   {
     icon: BellRing,
-    title: 'Parents hear about absences at once',
-    desc: 'When a driver marks a student boarded or absent, the parent gets a notification straight away.',
+    title: 'Parents are told about absences',
+    desc: 'When a driver marks a student boarded or absent, the parent gets a notification on their phone.',
   },
 ]
 
@@ -40,6 +41,7 @@ export function SafetyPrivacy() {
           sizes="(min-width: 1024px) 46vw, 100vw"
           className="object-cover object-[50%_60%]"
         />
+        <AiImageNote className="bottom-3 right-3 lg:bottom-4 lg:right-4" />
         <div aria-hidden="true" className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-brand-ink to-transparent lg:hidden" />
         <div aria-hidden="true" className="absolute inset-y-0 left-0 hidden w-48 bg-gradient-to-r from-brand-ink to-transparent lg:block" />
       </div>
