@@ -34,7 +34,7 @@ type Student = DriverStudentData & { stopOrder: number | null; address: string }
 const clock = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Qatar', hour: 'numeric', minute: '2-digit' })
 
 /**
- * The web version of the driver app (Docs/plans/two-runs-a-day.md): it picks the run, starts and ends it with
+ * The web version of the driver app (Docs/Claude.md §1.1): it picks the run, starts and ends it with
  * start_run / end_run and checks children in with mark_attendance, so it follows the same rules as the phone. Live GPS
  * only comes from the phone app.
  */

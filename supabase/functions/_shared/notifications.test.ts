@@ -1,4 +1,4 @@
-// Tests for what parents are told, row by row against the notifications table in Docs/plans/two-runs-a-day.md.
+// Tests for what parents are told, row by row against the notifications table in Docs/Claude.md §1.2.
 // Run from the repo root: pnpm test:logic
 import { test } from 'node:test'
 import assert from 'node:assert/strict'

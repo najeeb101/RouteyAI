@@ -1,5 +1,5 @@
 /**
- * optimize-route: plans bus routes (Docs/plans/two-runs-a-day.md, "Step 2 in detail"). A route never changes by
+ * optimize-route: plans bus routes (Docs/Claude.md §1.2). A route never changes by
  * itself: its order changes only when a school admin applies a proposal that is clearly better.
  *
  *   { action: 'update', bus_id | school_id }                 keep each bus's order, slot changes in, save both runs

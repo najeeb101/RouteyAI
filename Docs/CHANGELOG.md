@@ -25,7 +25,7 @@ Dated notes on what was built, decided and learned, newest first. The checklist 
 
 ## 2026-10-06: Two runs a day built; identity; fixes
 
-- **Plan decided** ([plans/two-runs-a-day.md](plans/two-runs-a-day.md)). Step 1 (`0017_two_runs.sql`, the route rules in `_shared/routePlan.ts`, SQL checks) went to production the same day; nothing changed for users.
+- **Plan decided** (the plan file was folded into [Claude.md §1.2](Claude.md) on 2026-10-10). Step 1 (`0017_two_runs.sql`, the route rules in `_shared/routePlan.ts`, SQL checks) went to production the same day; nothing changed for users.
 - **Step 2:** `optimize-route` with `update` and proposal-style `optimize`, run-aware `send-notification` with `dry_run`. 49 logic tests and 35 local end-to-end checks.
 - **Step 4:** the new driver and parent apps (run picker, afternoon boarding and drop-offs, "Which rides?" absences, history per run) and the privacy fix `0018_parent_route.sql`. 22 checks through a simulated day in the web preview, 11 database checks, 59 logic tests.
 - **Mobile UI refresh** merged (PR #4): tokens, Schibsted Grotesk and Inter, Lucide icons, and a RouteyAI identity (logo header, navy signature card, stop line, pulsing live pill, navy login) after the first light version felt "white everywhere".
