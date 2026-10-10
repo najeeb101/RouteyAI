@@ -1,5 +1,5 @@
 /**
- * The two runs a day as the website sees them (Docs/plans/two-runs-a-day.md). The rules shared with the apps are copied
+ * The two runs a day as the website sees them (Docs/Claude.md §1.1). The rules shared with the apps are copied
  * from mobile/src/lib/runs.ts; the dashboard's own (a bus's day, the school's day) are below them. Plain functions with
  * no imports, so Node's test runner checks them (runs.test.ts; `pnpm test:logic`).
  */

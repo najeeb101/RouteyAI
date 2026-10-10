@@ -1,5 +1,5 @@
 /**
- * What parents are told, for both runs (the notifications table in Docs/plans/two-runs-a-day.md), and when the "bus
+ * What parents are told, for both runs (the notifications table in Docs/Claude.md §1.2), and when the "bus
  * almost there" alert may go out. Plain functions, so they run in send-notification and in Node's test runner
  * (notifications.test.ts).
  */

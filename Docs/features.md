@@ -4,7 +4,7 @@ What RouteyAI does, grouped by who uses it. Build status is in [task.md](task.md
 
 ## Two runs a day
 
-The core of every role. Every bus does a **morning run** (homes to school) and an **afternoon run** (school to homes, the same stops in reverse), every school day. Routes never change by themselves: new children slot in, and re-planning is a proposal the school admin applies only if it is clearly better. Rules: [Claude.md §1.1](Claude.md#11-two-runs-a-day-the-core-rule); plan: [plans/two-runs-a-day.md](plans/two-runs-a-day.md).
+The core of every role. Every bus does a **morning run** (homes to school) and an **afternoon run** (school to homes, the same stops in reverse), every school day. Routes never change by themselves: new children slot in, and re-planning is a proposal the school admin applies only if it is clearly better. Rules: [Claude.md §1.1](Claude.md#11-two-runs-a-day-the-core-rule).
 
 | Role | What changes with two runs |
 |---|---|

@@ -1,5 +1,5 @@
 /**
- * The two runs a day as the apps see them (Docs/plans/two-runs-a-day.md): which run the driver is on, the order of
+ * The two runs a day as the apps see them (Docs/Claude.md §1.1): which run the driver is on, the order of
  * stops on each run, and what the parent's card says at any moment of the day. Plain functions with no imports, so
  * Node's test runner checks them (runs.test.ts; run `pnpm test:logic` from the repo root).
  */

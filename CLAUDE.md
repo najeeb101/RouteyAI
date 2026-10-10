@@ -16,7 +16,7 @@ Every bus does a **morning run** (homes to school) and an **afternoon run** (sch
 - **Routes never change by themselves.** Adding, moving or removing a child slots them in (`optimize-route` action `update`); re-planning is a proposal an admin applies only if it is clearly better.
 - Drivers start and end runs with `start_run` / `end_run` and mark students with `mark_attendance` (no direct table writes). Parents read their route only through `get_parent_route`.
 - The shared run rules live in `src/lib/runs.ts` and `mobile/src/lib/runs.ts` (keep them in step) and are tested with `pnpm test:logic`.
-- Full rules: [Docs/Claude.md §1.1](Docs/Claude.md) and [Docs/plans/two-runs-a-day.md](Docs/plans/two-runs-a-day.md).
+- Full rules: [Docs/Claude.md §1.1 and §1.2](Docs/Claude.md).
 
 ## Stack
 

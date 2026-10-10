@@ -177,7 +177,7 @@ Plan: [plans/mobile-ui-refresh.md](plans/mobile-ui-refresh.md).
 
 ## Phase 16: Two runs a day
 
-Plan: [plans/two-runs-a-day.md](plans/two-runs-a-day.md); the rules: [Claude.md §1.1](Claude.md). Every bus does a morning run and an afternoon run (the same stops in reverse), and routes never change by themselves.
+The rules: [Claude.md §1.1 and §1.2](Claude.md). Every bus does a morning run and an afternoon run (the same stops in reverse), and routes never change by themselves.
 
 - [x] Step 1: `0017_two_runs.sql` (`bus_runs`, attendance per run with `dropped_off`, absence reports per run, a route per bus and run, `start_run`, `end_run`, `mark_attendance`, `save_route_plan`), the route rules with tests, SQL checks per role
 - [x] Step 2: `optimize-route` (`update`; `optimize` as a proposal; both directions) and run-aware `send-notification`

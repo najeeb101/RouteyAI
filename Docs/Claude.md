@@ -30,13 +30,64 @@
 
 ### 1.1 Two runs a day: the core rule
 
-Plan, decisions and history: [plans/two-runs-a-day.md](plans/two-runs-a-day.md). Live since 2026-10-07. Every new feature must respect these five rules.
+Details in 1.2; dated history in the [engineering log](CHANGELOG.md). Live since 2026-10-07. Every new feature must respect these five rules.
 
 1. **Always two runs.** Every bus does a **morning run** (homes to school: pick up stop by stop, end at the school) and an **afternoon run** (school to homes: every student boards at the school and is dropped off in the **reverse** order, so the last morning stop is the first afternoon stop). There is no setting. The driver only chooses which run to start; the afternoon is offered from 11:00 Qatar time.
 2. **One stop order per bus, kept.** `students.stop_order` is the chain in morning order and the afternoon is the same chain reversed. `routes` has a morning and an afternoon row per bus; its `plan_version` goes up only when the order changes. **Routes never change by themselves.** A new, moved or removed child is slotted in or out (`optimize-route` action `update`, called by the Students page) and every other stop keeps its place. A full re-plan (`optimize`) is only ever a **proposal** a school admin applies, and only if it is clearly better.
 3. **Runs are records.** `bus_runs` (one per bus, Qatar day and run, written only by `start_run` / `end_run`), `attendance` per student, day and run (`boarded`, `absent`, `dropped_off`, written through `mark_attendance`), and `absence_reports.runs` (`both`, `morning`, `afternoon`).
 4. **What each role sees.** Driver: the run's stops in driving order; board or absent in the morning; board at school and drop off at each stop in the afternoon; ending the afternoon with a child still on board asks first. Parent: a card for every moment of the day (waiting, on the bus, at school, dropped off, absent), the arrival time, and "Which rides?" when reporting an absence. School admin: run status per bus, children not yet dropped off (flagged in red), Morning and Afternoon routes with Update, Re-plan and Re-plan all.
 5. **Privacy.** A parent never reads `routes`. `get_parent_route` and `get_parent_bus_progress` return only the road line, their own child's stop and counts.
+
+### 1.2 Two runs a day: the details
+
+Moved here from the finished plan (the dated history is in the [engineering log](CHANGELOG.md)).
+
+**Run lifecycle (per bus, per Qatar day).** Morning: `start_run('morning')`, then `end_run()`. Afternoon: `start_run('afternoon')` after the morning, or from 11:00 if the morning never happened.
+- Only one run runs at a time; starting the afternoon ends a morning run left open. `start_run` and `end_run` keep `buses.is_active` in step.
+- `start_run` copies the run's stops into `bus_runs.stops` (student ids and order, never homes). If the school changes the route mid-drive, the driver's list does not move; the change applies from the next run and the driver sees "Your route changed".
+- Ending the morning marks everyone still on board `dropped_off` (arrived at school), which sends the "arrived at school" alert.
+- Per student and run: nothing → `boarded` → `dropped_off` (afternoon only), or nothing → `absent`. Every step can be undone; undoing a drop-off returns to `boarded` without a second alert. A child can't be dropped off before boarding.
+- Ending the afternoon with a child still on board shows their names with "Go to Route" or "End anyway". "End anyway" keeps them flagged on the trip summary and the school dashboard and never tells parents the child was dropped off.
+
+**Planner rules (`optimize-route`).**
+- `update` never reorders. A new child goes where they add the least driving (or joins an existing stop at the same address); a leaver's stop goes if nobody else uses it; a bus with no changes and both runs saved is left alone (no Mapbox call, no new version). The dashboard says what changed ("Omar added between stops 3 and 4").
+- `optimize` is a proposal. "Clearly better" means it saves at least 5 minutes a run, or at least 10% and 2 minutes; otherwise the current route is kept ("Your route is already good"). Applying is refused if the bus's children changed since the proposal. After an `update`, a quick check of a fresh plan stores a hint ("Re-planning would save about N minutes a run"); it is never applied by itself.
+- Re-plan all proposes which children move bus (K-means seeded from where each bus's children live, so only children better off elsewhere are listed) and applies only after confirmation, and only if no listed child has changed bus.
+- Daily absences never touch the route: a stop where nobody rides today shows "No one today" and the driver skips it.
+- Mapbox Directions is called once per direction (two requests per bus) because one-way streets mean the way back is not the way out reversed. Minutes per stop come from `legs[].duration`; over 24 stops the request is split and the lines joined; without Mapbox, straight lines at 30 km/h. Both runs are saved together by `save_route_plan` (one transaction).
+- Existing routes were flipped once (2026-10-07) so each morning ends at the school; only buses without an afternoon row are ever flipped (`update` with `reverse: true`, service role).
+
+**What the parent's card says.**
+
+| Moment | Card | Arrival time |
+|---|---|---|
+| Morning, bus coming | "6 min", 2 stops before yours | To your stop |
+| Morning, picked up | "On the bus", boarded at 6:52 | To school |
+| Morning run ended | "At school", arrived at 7:25 | none |
+| Afternoon, boarded at school | "On the way home", 3 stops before yours | To your stop |
+| Afternoon, dropped off | "Home", dropped off at 2:05 | none |
+| Absent or reported | For that run | none |
+
+A child left on the bus by "End anyway" shows "Not confirmed", never "Home". The "bus almost there" alert is remembered per child, day and run on the phone so a restart does not resend it.
+
+**Notifications** (wording lives in `supabase/functions/_shared/notifications.ts`, tested row by row in `notifications.test.ts`; times in Qatar time).
+
+| When | Title | Body |
+|---|---|---|
+| Morning, bus about 5 min away | Bus arriving in ~5 minutes | Get Lina ready - the bus is almost at your stop. |
+| Morning, boarded | Lina has boarded | Lina is on the bus and on the way to school. |
+| Morning run ended | Lina arrived at school | The bus reached Doha International Academy at 7:25 AM. |
+| Morning, absent | Lina marked absent | Lina was not on the bus this morning. |
+| Afternoon, boarded at school | Lina is on the bus home | Lina boarded at school at 1:35 PM. |
+| Afternoon, absent at school | Lina isn't on the bus home | The driver marked Lina absent at school. Contact the school if you didn't expect this. |
+| Afternoon, bus about 5 min from home | Lina is almost home | The bus is about 5 minutes from your stop. |
+| Afternoon, dropped off | Lina was dropped off | Lina got off at Al Waab, Doha at 2:05 PM. |
+
+**Decisions.** The "arrived at school" alert exists. Absence reports can be for Both, Morning or Afternoon, with Both preselected. The afternoon is offered from 11:00 if the morning never happened (one fixed time). At school the driver taps each child as they board, because the tap is the record that a child is on the bus.
+
+**Out of scope for now.** Bus depots or a start point before the first pickup, more than two runs, different afternoon stops (a child going to another address), and a better optimizer than nearest-neighbour. The design leaves room for each.
+
+**Older problems this work fixed (all live 2026-10-07).** The Students page re-planned every route after each change (now `update` for the touched buses only); editing an address did not move the stop (now geocoded and re-slotted, needs `NEXT_PUBLIC_MAPBOX_TOKEN` on Vercel); and a parent could read every home on the bus through `routes` (now `get_parent_route`, SQL checks in `supabase/tests/0018_parent_route.sql`).
 
 ---
 

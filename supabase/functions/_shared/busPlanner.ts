@@ -1,5 +1,5 @@
 /**
- * Plans one bus for optimize-route (Docs/plans/two-runs-a-day.md, step 2): what the database holds for the bus in,
+ * Plans one bus for optimize-route (Docs/Claude.md §1.2): what the database holds for the bus in,
  * what to save (or propose) out. No database access, and Mapbox comes in as a Directions function, so the tests
  * (busPlanner.test.ts) drive it with a fake one.
  *

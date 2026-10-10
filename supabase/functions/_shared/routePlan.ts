@@ -1,5 +1,5 @@
 /**
- * Route planning rules for optimize-route (Docs/plans/two-runs-a-day.md). Plain functions with no imports,
+ * Route planning rules for optimize-route (Docs/Claude.md §1.1). Plain functions with no imports,
  * so they run in the Edge Function (Deno) and in Node's test runner (routePlan.test.ts).
  *
  * A bus has one stop chain, kept in morning order: the morning run drives it and ends at the school, the afternoon run
