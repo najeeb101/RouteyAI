@@ -148,12 +148,12 @@ RouteyAI/
 │       ├── components/           primitives/, brand/, navigation/
 │       └── lib/                  theme.ts, runs.ts, mapStyle.ts, supabase.ts, push.ts
 ├── supabase/
-│   ├── migrations/               0001 to 0021 (section 5.6)
+│   ├── migrations/               0001 to 0022 (section 5.6)
 │   ├── functions/
 │   │   ├── optimize-route/       route planner
 │   │   ├── send-notification/    Expo push
 │   │   └── _shared/              pure planning and wording logic, with Node tests
-│   ├── tests/                    SQL checks for 0017, 0018, 0020 and 0021
+│   ├── tests/                    SQL checks for 0017, 0018, 0020, 0021 and 0022
 │   └── seed.sql                  demo data for local development
 ├── scripts/                      app-icons/, landing-map/, review-accounts/ (demo accounts), store-graphics/
 ├── deck/                         pitch deck (HTML)
@@ -256,6 +256,7 @@ Run in order with `pnpm db:push`. Types in `src/types/database.ts` are maintaine
 | 0019 | Email columns cast to text in `get_buses_with_drivers` and `get_schools_with_admins` (they failed on Postgres 17) |
 | 0020 | Clean-up: drops `set_bus_active`, `save_optimized_route`, drivers' direct attendance writes and the parent policy on `routes` |
 | 0021 | Drops the unused `recalculate_route`, `get_routes_with_buses` and `get_school_stats` |
+| 0022 | `redeem_invite` only accepts the caller's own account, created in the last 15 minutes and without a role |
 
 SQL checks for 0017, 0018 and 0020 are in `supabase/tests/` (section 7.3).
 

@@ -15,9 +15,9 @@ export type AbsenceRuns = 'both' | Run
 export type InviteRole = 'school_admin' | 'driver' | 'parent'
 export type AbsenceReason = 'sick' | 'appointment' | 'travel' | 'other'
 
-/** JSONB returned by the redeem_invite RPC (supabase/migrations/0002_invites.sql). */
+/** JSONB returned by the redeem_invite RPC (supabase/migrations/0022_redeem_invite_caller.sql). */
 export type RedeemInviteResult =
-  | { error: 'invite_not_found' | 'invite_already_used' | 'invite_expired' }
+  | { error: 'invite_not_found' | 'invite_already_used' | 'invite_expired' | 'invalid_user' }
   | { role: InviteRole; school_id: string | null; bus_id: string | null }
 
 export interface RouteWaypoint {
