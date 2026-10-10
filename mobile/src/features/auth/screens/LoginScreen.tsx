@@ -5,6 +5,7 @@ import { StatusBar } from 'expo-status-bar'
 import { useRouter } from 'expo-router'
 import { BrandMark } from '@/components/brand/BrandMark'
 import { NightGlow, ROUTE_MOTIF_LINE_Y, RouteMotif } from '@/components/brand/SignatureCard'
+import { LegalLinks } from '@/components/LegalLinks'
 import { Banner } from '@/components/primitives/Banner'
 import { Button } from '@/components/primitives/Button'
 import { TextField } from '@/components/primitives/TextField'
@@ -134,6 +135,7 @@ export function LoginScreen() {
               {error ? <Banner text={error} /> : null}
 
               <Button label="Sign in" onPress={handleLogin} loading={loading} />
+              <LegalLinks />
             </View>
 
             {/* Dev shortcuts: development builds only, never in store builds */}

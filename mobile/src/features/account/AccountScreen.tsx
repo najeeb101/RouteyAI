@@ -12,6 +12,7 @@ import { ScreenHeader } from '@/components/primitives/ScreenHeader'
 import { Txt } from '@/components/primitives/Txt'
 import { routes } from '@/lib/navigation/routes'
 import { clearPushToken, hasPushToken, isPushOptedOut, setPushEnabled } from '@/lib/push'
+import { SITE_URL } from '@/lib/site'
 import { supabase } from '@/lib/supabase'
 import { gutter, space, useTheme } from '@/lib/theme'
 import { stopBackgroundGps } from '@/features/driver/gpsTask'
@@ -19,8 +20,6 @@ import { stopBackgroundGps } from '@/features/driver/gpsTask'
 /** A detail row: an icon (or, for a person, their initials) with a label and a value or subtitle. */
 export type AccountRow = { icon?: LucideIcon; person?: string; label: string; value?: string; subtitle?: string }
 export type AccountSection = { title: string; rows: AccountRow[] }
-
-const SITE_URL = process.env.EXPO_PUBLIC_SITE_URL ?? 'https://routeyai.vercel.app'
 
 type AccountScreenProps = {
   role: 'parent' | 'driver'

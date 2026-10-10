@@ -124,8 +124,8 @@ One design everywhere: the landing page, the phone apps and the admin dashboards
 | Token (web / app) | Light | Dark (app) | Use |
 |---|---|---|---|
 | `ink` | `#0F172A` | `#F1F5F9` | Primary text |
-| `ink-2` / `inkSecondary` | `#64748B` (web: `#5B6B82`, darker to pass 4.5:1 on the canvas) | `#94A3B8` | Secondary text |
-| `ink-3` / `inkTertiary` | `#94A3B8` | `#64748B` | Placeholders, disabled |
+| `ink-2` / `inkSecondary` | `#5B6B82` | `#94A3B8` | Secondary text (passes 4.5:1 on white and the canvas) |
+| `ink-3` / `inkTertiary` | `#5F6F86` (web `ink-3` stays `#94A3B8`: icons and borders only, never text) | `#7C8BA1` | Placeholders, captions, disabled |
 | `canvas` | `#F6F7F9` | `#020617` | Screen background |
 | `surface` | `#FFFFFF` | `#0B1220` | Cards, lists |
 | `surfaceRaised` (app) | `#FFFFFF` | `#131C2E` | Sheets and cards floating over the map |
