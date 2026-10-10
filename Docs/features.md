@@ -101,7 +101,7 @@ The logic behind assigning children to buses and ordering stops (Edge Function `
 
 ## Landing page
 
-Public page at `/`. Plan: [plans/landing-page-launch.md](plans/landing-page-launch.md).
+Public page at `/`. Rules: [Claude.md §6.5](Claude.md).
 
 | Feature | Description |
 |---|---|

@@ -56,7 +56,7 @@ In rough priority order.
 
 - [ ] Connect the custom domain on Vercel.
 - [ ] Launch placeholders in `src/lib/siteConfig.ts`: set `NEXT_PUBLIC_CONTACT_EMAIL` (routeyai.com has no DNS or MX yet), get a legal review and then set `LEGAL_REVIEWED = true`, fill `PLAN_SUPPORT`. Also set `NEXT_PUBLIC_BUSINESS_*` and `REFUND_TERMS`, and work through the open items in [plans/legal-and-accessibility.md](plans/legal-and-accessibility.md).
-- [ ] Landing page Lighthouse performance 90 or more on mobile (last measured 62–73 live on 2026-10-02, improved locally on 2026-10-05; re-measure with PageSpeed Insights).
+- [ ] Landing page Lighthouse performance 90 or more on mobile (local run 2026-10-10: performance 71, total blocking time 1.2 s; accessibility, best practices and SEO 100; re-measure on PageSpeed Insights).
 - [ ] Redraw the landing page's phone mockups in the new style and in dark.
 
 ### Real-device checks
@@ -144,7 +144,7 @@ Open: see "Store submission" under Open work.
 
 ## Phase 13: Landing page launch
 
-Plan: [plans/landing-page-launch.md](plans/landing-page-launch.md).
+Rules: [Claude.md §6.5](Claude.md).
 
 - [x] Decisions: the main call to action is "Book a demo", pricing is by fleet size with "Contact us", Arabic and right-to-left after launch
 - [x] Page split into `src/components/landing/*` (Server Component with client islands); copy corrected to what ships; new sections (problem, how it works, safety and privacy, pricing)
@@ -168,7 +168,7 @@ Real-device checks: see Open work.
 
 ## Phase 15: Mobile UI refresh
 
-Plan: [plans/mobile-ui-refresh.md](plans/mobile-ui-refresh.md).
+Rules: [Claude.md §3](Claude.md).
 
 - [x] Decisions (2026-10-05): Lucide icons, large-title headers, rounded-rectangle buttons, dark mode after light
 - [x] Foundations (`theme.ts`, Schibsted Grotesk and Inter, `Txt`, `check:design`) and every screen moved to the tokens
