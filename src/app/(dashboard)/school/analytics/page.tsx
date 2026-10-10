@@ -106,7 +106,7 @@ export default async function AnalyticsPage() {
             <div className="relative h-56 pl-8">
               {[0, 0.5, 1].map((f) => (
                 <div key={f} className="absolute inset-x-0 flex items-center" style={{ bottom: `${f * 100}%` }} aria-hidden="true">
-                  <span className="w-7 -translate-y-px pr-2 text-right text-[11px] tabular-nums text-ink-3">{Math.round(top * f)}</span>
+                  <span className="w-7 -translate-y-px pr-2 text-right text-[11px] tabular-nums text-ink-2">{Math.round(top * f)}</span>
                   <span className="h-px flex-1 bg-line" />
                 </div>
               ))}

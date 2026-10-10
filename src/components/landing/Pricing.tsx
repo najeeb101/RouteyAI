@@ -59,7 +59,7 @@ export function Pricing() {
             href="#demo"
             className="mt-8 rounded-full bg-primary px-5 py-3.5 text-center text-[15px] font-semibold text-primary-foreground transition-[transform,background-color] duration-200 hover:bg-primary/90 active:scale-[0.98]"
           >
-            Get a quote
+            Request a quote
           </a>
         </div>
       </div>

@@ -18,15 +18,14 @@ export function ThemeSelect() {
   useEffect(() => setMounted(true), [])
 
   return (
-    <div role="radiogroup" aria-label="Colour theme" className="inline-flex rounded-full bg-white/[0.06] p-1 ring-1 ring-white/10">
+    <div role="group" aria-label="Colour theme" className="inline-flex rounded-full bg-white/[0.06] p-1 ring-1 ring-white/10">
       {OPTIONS.map(({ value, label, icon: Icon }) => {
         const selected = mounted && theme === value
         return (
           <button
             key={value}
             type="button"
-            role="radio"
-            aria-checked={selected}
+            aria-pressed={selected}
             aria-label={label}
             title={label}
             onClick={() => setTheme(value)}
@@ -35,7 +34,7 @@ export function ThemeSelect() {
               selected ? 'bg-white/15 text-white' : 'text-slate-400 hover:text-white'
             )}
           >
-            <Icon size={15} />
+            <Icon size={15} aria-hidden="true" />
           </button>
         )
       })}

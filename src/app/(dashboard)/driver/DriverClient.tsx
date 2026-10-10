@@ -194,7 +194,7 @@ export default function DriverClient({ bus, students: rawStudents, announcements
     if (!running) return null
     if (kind === 'drop') {
       if (m === 'absent') return <Badge tone="danger">Absent</Badge>
-      if (m === undefined) return <span className="text-[13px] text-ink-3">Not on the bus</span>
+      if (m === undefined) return <span className="text-[13px] text-ink-2">Not on the bus</span>
       const dropped = m === 'dropped_off'
       return (
         <ActionButton size="sm" variant={dropped ? 'secondary' : 'primary'} loading={isBusy} onClick={() => mark(s.id, dropped ? 'boarded' : 'dropped_off')}>

@@ -148,7 +148,7 @@ export default function ParentClient({ child, route, run, attendanceStatus }: Pr
               <span className="text-[#00D4FF]">AI</span>
             </span>
           </div>
-          <div className="text-[11px] text-white/40">Good morning</div>
+          <div className="text-[11px] text-white/60">Good morning</div>
         </div>
 
         {/* Child info bar */}

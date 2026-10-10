@@ -304,7 +304,7 @@ export default function StudentsTable({ initialStudents, buses }: { initialStude
                   filter === f.value ? 'bg-brand text-white' : 'bg-canvas text-ink-2 hover:text-ink',
                 )}
               >
-                {f.label} <span className={cn('tabular-nums', filter === f.value ? 'text-white/70' : 'text-ink-3')}>{f.count}</span>
+                {f.label} <span className={cn('tabular-nums', filter === f.value ? 'text-white/70' : 'text-ink-2')}>{f.count}</span>
               </button>
             ))}
           </div>
@@ -347,11 +347,11 @@ export default function StudentsTable({ initialStudents, buses }: { initialStude
                           {s.bus_name}
                         </span>
                       ) : (
-                        <span className="text-ink-3">No bus</span>
+                        <span className="text-ink-2">No bus</span>
                       )}
                     </td>
                     <td className="px-3 py-3 text-[13px] tabular-nums text-ink-2">
-                      {s.stop_order ?? (s.bus_id ? <Badge tone="warning">Not on route</Badge> : <span className="text-ink-3">—</span>)}
+                      {s.stop_order ?? (s.bus_id ? <Badge tone="warning">Not on route</Badge> : <span className="text-ink-2">—</span>)}
                     </td>
                     <td className="px-5 py-3 text-right">
                       <DropdownMenu>

@@ -44,7 +44,7 @@ export function HeroLiveCards() {
           <div className="rounded-2xl border border-border/70 bg-card/95 p-4 shadow-[0_24px_48px_-24px_hsl(var(--brand-ink)/0.55)]">
             <div className="flex items-center justify-between text-[13px]">
               <span className="font-semibold text-foreground">Bus 3 · Al Waab</span>
-              <span className="flex items-center gap-1.5 font-medium text-secondary">
+              <span className="flex items-center gap-1.5 font-medium text-emerald-700 dark:text-secondary">
                 <span className="h-1.5 w-1.5 rounded-full bg-secondary" />
                 Live
               </span>

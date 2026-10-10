@@ -33,13 +33,13 @@ const APPS: {
   {
     role: 'For parents',
     title: 'Where the bus is, and when it will arrive',
-    desc: 'Parents follow their child’s bus, hear straight away when their child gets on, and can tell the driver when their child is staying home.',
+    desc: 'Parents follow their child’s bus, get a notification when their child gets on, and can tell the driver when their child is staying home.',
     features: [
       { icon: MapPin, text: 'The bus on a live street map while the route is running' },
-      { icon: Clock, text: 'Arrival time for their stop, and an alert when the bus is close' },
+      { icon: Clock, text: 'Estimated arrival time for their stop, and an alert when the bus is close' },
       { icon: BellRing, text: 'A notification when their child boards or is marked absent' },
       { icon: Users, text: 'Every child on one account, one tap to switch' },
-      { icon: CalendarX, text: 'Report an absence ahead of time, so the bus doesn’t wait' },
+      { icon: CalendarX, text: 'Report an absence ahead of time, so the driver knows' },
       { icon: History, text: 'Each child’s past rides and absences' },
     ],
     showcase: { photo: PHOTOS.parent, objectPosition: '55% 62%', phone: <ParentAppScreen />, phoneSide: 'left' },
@@ -83,7 +83,11 @@ export function MobileAppsSection() {
         ))}
       </div>
 
-      <Reveal className="mt-20">
+      <p className="mt-10 text-center text-sm text-muted-foreground">
+        The phone screens and photos above are examples. The names, addresses and times are not real.
+      </p>
+
+      <Reveal className="mt-10">
         <div className="flex flex-col gap-4 rounded-2xl border border-border bg-card px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-[15px] text-foreground">
             <span className="font-semibold">Parent or driver?</span>{' '}
@@ -97,7 +101,7 @@ export function MobileAppsSection() {
               Log in
             </Link>
             <AppDownloadButton className="rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90">
-              Get the app
+              About the apps
             </AppDownloadButton>
           </div>
         </div>

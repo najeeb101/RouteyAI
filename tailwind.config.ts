@@ -66,7 +66,7 @@ const config: Config = {
   			// Dashboard palette: the mobile app's tokens (mobile/src/lib/theme.ts), so the web and the apps match.
   			ink: {
   				DEFAULT: '#0F172A',
-  				2: '#64748B',
+  				2: '#5B6B82',
   				3: '#94A3B8'
   			},
   			canvas: '#F6F7F9',

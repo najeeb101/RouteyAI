@@ -4,6 +4,12 @@ Dated notes on what was built, decided and learned, newest first. The checklist 
 
 ---
 
+## 2026-10-10: Legal and accessibility pass
+
+- New `/cookies` and `/refunds`; `/privacy` and `/terms` expanded; consent boxes on the demo, sign-up and invite forms; AI-image labels; unsupported claims reworded; contrast, keyboard and screen-reader fixes. Details and the open decisions: [plans/legal-and-accessibility.md](plans/legal-and-accessibility.md).
+- Web token `ink-2` is now `#5B6B82` (was `#64748B`) so small grey text passes 4.5:1 on the canvas; the phone app's token is unchanged.
+- Business details come from `NEXT_PUBLIC_BUSINESS_*` variables and stay hidden until set.
+
 ## 2026-10-07: Two runs a day goes live
 
 - **Release.** Migrations 0017 to 0020, both Edge Functions and the existing routes (flipped once so each morning ends at the school) went to production, followed by the website (PRs #6, #8, #9, #10, #11). All four buses have both runs; no run is left open. The iPhone test in Expo Go passed.
