@@ -6,7 +6,7 @@ Legend: `[x]` done, `[ ]` open.
 
 ---
 
-## Status (2026-10-07)
+## Status (2026-10-23)
 
 | Phase | Scope | Status |
 |---|---|---|
@@ -27,7 +27,7 @@ Legend: `[x]` done, `[ ]` open.
 | 15 | Mobile UI refresh (light and dark) | Done; iPhone check of dark mode open |
 | 16 | Two runs a day | Done and live (2026-10-07) |
 
-Everything through migration `0020` is on production, together with both Edge Functions and the website at https://routeyai.vercel.app.
+Everything through migration `0022` is on production, together with both Edge Functions and the website at https://routeyai.vercel.app.
 
 ---
 
@@ -38,8 +38,8 @@ In rough priority order.
 ### Security and clean-up
 
 - [ ] **Revoke the Mapbox secret token** in the Mapbox account (Tokens page). It sat in `app.json` and `eas.json` in the public repo from phase 7 until 2026-10-01, so it is still in git history. Nothing uses it any more.
-- [ ] `redeem_invite` (migration `0022`, written, not yet checked locally or pushed): the target must be an account created in the last 15 minutes with no role, and must be the caller if signed in. Run `supabase/tests/0022_redeem_invite_caller.sql` against the local database (needs Docker), then `pnpm db:push` and try one real invite.
-- [ ] Test the Edge Function caller checks with a signed-in school admin and parent.
+- [ ] `redeem_invite` (migration `0022`): the SQL checks pass locally and the migration is on production (confirmed 2026-10-23). Still to do: try one real invite end to end.
+- [ ] Edge Function caller checks: no token and the public anon key are refused (401) by both functions (checked on production 2026-10-22). Still to do: a signed-in school admin (own school allowed, another school refused) and a signed-in parent (`optimize-route` refused, `send-notification` only `eta_alert` for their own child).
 
 ### Store submission (Phase 12)
 
