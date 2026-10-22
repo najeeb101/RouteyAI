@@ -4,6 +4,10 @@ Dated notes on what was built, decided and learned, newest first. The checklist 
 
 ---
 
+## 2026-10-23: Landing page, day on the bus
+
+- New section after How it works (`DayOnTheBus.tsx`): the morning and afternoon runs as two timelines with the six parent notifications, worded exactly as `supabase/functions/_shared/notifications.ts` sends them (names, school and times are examples).
+
 ## 2026-10-22: Landing page, phase A
 
 - The AI photos are gone. The hero now shows the real driver and parent screens over a real map of Doha (`HeroPhones.tsx`); the app sections use map crops (`AppShowcase.tsx`); the privacy band is text only. `AiImageNote`, `HeroLiveCards`, `photos.ts` and `public/assets/photos/` were deleted. Plan and what is next: [plans/landing-upgrade.md](plans/landing-upgrade.md).
