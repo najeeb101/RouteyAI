@@ -1,17 +1,16 @@
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
-import { AiImageNote } from '@/components/landing/AiImageNote'
 import { Parallax } from '@/components/landing/Parallax'
 import { Reveal } from '@/components/landing/Reveal'
+import { MAP_IMAGES } from '@/components/landing/optimizeDemoData'
 
-/** A photo with a phone mockup overlapping one side and a few brand-coloured circles around it. */
+/** A street map of Doha with a phone mockup overlapping one side and a few brand-coloured circles around it. */
 export function AppShowcase({
-  photo,
   objectPosition,
   phone,
   phoneSide,
 }: {
-  photo: { src: string; alt: string }
+  /** Which part of the map shows. */
   objectPosition: string
   phone: React.ReactNode
   phoneSide: 'left' | 'right'
@@ -23,7 +22,7 @@ export function AppShowcase({
         from={left ? 'right' : 'left'}
         className={cn('relative aspect-square w-full sm:aspect-[4/5] sm:w-[72%]', left ? 'sm:ml-auto' : 'sm:mr-auto')}
       >
-        {/* Outline frame offset behind the photo */}
+        {/* Outline frame offset behind the map */}
         <div
           aria-hidden="true"
           className={cn(
@@ -31,17 +30,23 @@ export function AppShowcase({
             left ? '-right-3' : '-left-3'
           )}
         />
-        <div className="relative h-full w-full overflow-hidden rounded-[28px]">
+        <div aria-hidden="true" className="relative h-full w-full overflow-hidden rounded-[28px] bg-muted">
           <Image
-            src={photo.src}
-            alt={photo.alt}
+            src={MAP_IMAGES.light}
+            alt=""
             fill
             sizes="(min-width: 640px) 404px, 100vw"
-            className="object-cover"
+            className="object-cover dark:hidden"
             style={{ objectPosition }}
           />
-          {/* Top left on phones, where the phone mockup overlaps the bottom; bottom right from sm up, where it sits on the left. */}
-          <AiImageNote className="left-2 top-2 sm:bottom-2 sm:left-auto sm:right-2 sm:top-auto" />
+          <Image
+            src={MAP_IMAGES.dark}
+            alt=""
+            fill
+            sizes="(min-width: 640px) 404px, 100vw"
+            className="hidden object-cover dark:block"
+            style={{ objectPosition }}
+          />
         </div>
         <span aria-hidden="true" className={cn('absolute -top-5 h-12 w-12 rounded-full bg-warning', left ? 'right-10' : 'left-10')} />
         <span aria-hidden="true" className={cn('absolute -bottom-4 h-8 w-8 rounded-full bg-accent', left ? 'right-24' : 'left-24')} />

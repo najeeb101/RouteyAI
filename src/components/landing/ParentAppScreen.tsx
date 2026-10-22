@@ -130,7 +130,7 @@ function ChildChip({ initials, name, status, dot, selected = false }: { initials
         selected ? 'bg-slate-900 text-white' : 'bg-white text-slate-900'
       )}
     >
-      <span className={cn('flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[8.5px] font-extrabold text-white', selected ? 'bg-primary ring-2 ring-sky-400' : 'bg-sky-600')}>
+      <span className={cn('flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[8.5px] font-extrabold text-white', selected ? 'bg-primary ring-2 ring-sky-400' : 'bg-sky-700')}>
         {initials}
       </span>
       <span className="min-w-0 leading-tight">
@@ -149,7 +149,7 @@ function InfoTile({ icon, label, value }: { icon: React.ReactNode; label: string
     <span className="flex min-w-0 items-center gap-1.5 rounded-xl bg-slate-100 px-2 py-1.5">
       <span className="text-primary-light">{icon}</span>
       <span className="min-w-0">
-        <span className="block text-[7px] font-semibold uppercase tracking-wider text-slate-400">{label}</span>
+        <span className="block text-[7px] font-semibold uppercase tracking-wider text-slate-600">{label}</span>
         <span className="block truncate text-[9.5px] font-bold text-slate-900">{value}</span>
       </span>
     </span>
