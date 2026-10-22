@@ -12,7 +12,7 @@ export function PhoneTabBar({ items, active }: { items: { label: string; icon: L
             <span className={cn('flex h-[22px] w-8 items-center justify-center rounded-full', on && 'bg-primary/10')}>
               <Icon size={14} strokeWidth={on ? 2.5 : 2} className={on ? 'text-primary' : 'text-slate-400'} />
             </span>
-            <span className={cn('text-[7.5px]', on ? 'font-bold text-primary' : 'font-medium text-slate-400')}>{label}</span>
+            <span className={cn('text-[7.5px]', on ? 'font-bold text-primary' : 'font-medium text-slate-500')}>{label}</span>
           </span>
         )
       })}
