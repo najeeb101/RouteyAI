@@ -31,7 +31,7 @@ Goal: https://routeyai.vercel.app should look like a real company with a real pr
 ### C. More engaging
 
 - [ ] Hero headline that states the outcome, one clear call to action
-- [ ] A "day in the life" scroll for the two daily runs (morning pickup, arrival at school, afternoon, the parent's notification at each moment)
+- [x] A "day on the bus" section for the two daily runs (`DayOnTheBus.tsx`, 2026-10-23): the six notifications a parent gets, with the real wording from `notifications.ts`. A scroll-driven or animated version could come later
 - [ ] A no-sign-in interactive demo: drag a student pin and watch the route slot them in
 - [ ] Shorter copy, with benefits per role (school admin, driver, parent)
 - [ ] Arabic and right-to-left after launch

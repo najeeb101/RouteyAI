@@ -4,6 +4,7 @@ import { AppModalProvider } from '@/components/landing/AppModalProvider'
 import { LandingNav } from '@/components/landing/LandingNav'
 import { Hero } from '@/components/landing/Hero'
 import { HowItWorks } from '@/components/landing/HowItWorks'
+import { DayOnTheBus } from '@/components/landing/DayOnTheBus'
 import { MobileAppsSection } from '@/components/landing/MobileApps'
 import { SafetyPrivacy } from '@/components/landing/SafetyPrivacy'
 import { Pricing } from '@/components/landing/Pricing'
@@ -68,6 +69,9 @@ export default function HomePage() {
           <Hero />
           <Suspense>
             <HowItWorks />
+          </Suspense>
+          <Suspense>
+            <DayOnTheBus />
           </Suspense>
           <Suspense>
             <MobileAppsSection />
