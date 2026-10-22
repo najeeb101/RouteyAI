@@ -7,7 +7,6 @@ import { DriverAppScreen } from '@/components/landing/DriverAppScreen'
 import { ParentAppScreen } from '@/components/landing/ParentAppScreen'
 import { Reveal } from '@/components/landing/Reveal'
 import { SectionHeading, noOrphan } from '@/components/landing/SectionHeading'
-import { PHOTOS } from '@/components/landing/photos'
 
 const APPS: {
   role: string
@@ -28,7 +27,7 @@ const APPS: {
       { icon: Radio, text: 'Shares the bus location every 10 seconds' },
       { icon: ClipboardCheck, text: 'A summary of who rode when the route ends' },
     ],
-    showcase: { photo: PHOTOS.driver, objectPosition: '60% 50%', phone: <DriverAppScreen />, phoneSide: 'left' },
+    showcase: { objectPosition: '30% 55%', phone: <DriverAppScreen />, phoneSide: 'left' },
   },
   {
     role: 'For parents',
@@ -42,7 +41,7 @@ const APPS: {
       { icon: CalendarX, text: 'Report an absence ahead of time, so the driver knows' },
       { icon: History, text: 'Each child’s past rides and absences' },
     ],
-    showcase: { photo: PHOTOS.parent, objectPosition: '55% 62%', phone: <ParentAppScreen />, phoneSide: 'left' },
+    showcase: { objectPosition: '80% 70%', phone: <ParentAppScreen />, phoneSide: 'left' },
   },
 ]
 
@@ -84,7 +83,7 @@ export function MobileAppsSection() {
       </div>
 
       <p className="mt-10 text-center text-sm text-muted-foreground">
-        The phone screens and photos above are examples. The names, addresses and times are not real.
+        The phone screens above are drawn from the real apps. The names, addresses and times in them are examples.
       </p>
 
       <Reveal className="mt-10">
