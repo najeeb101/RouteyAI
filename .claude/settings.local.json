@@ -6,7 +6,8 @@
       "Bash(npx tsc *)",
       "Bash(npx supabase *)",
       "Bash(pnpm typecheck *)",
-      "Bash(Get-ChildItem \"C:\\\\Users\\\\ACER\\\\Documents\\\\GitHub\\\\RouteyAI\" -Filter \"*.env*\" -Force)"
+      "Bash(Get-ChildItem \"C:\\\\Users\\\\ACER\\\\Documents\\\\GitHub\\\\RouteyAI\" -Filter \"*.env*\" -Force)",
+      "Bash(curl *)"
     ]
   }
 }
