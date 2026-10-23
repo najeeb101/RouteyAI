@@ -11,7 +11,7 @@ Dated notes on what was built, decided and learned, newest first. The checklist 
 ## 2026-10-22: Landing page, phase A
 
 - The AI photos are gone. The hero now shows the real driver and parent screens over a real map of Doha (`HeroPhones.tsx`); the app sections use map crops (`AppShowcase.tsx`); the privacy band is text only. `AiImageNote`, `HeroLiveCards`, `photos.ts` and `public/assets/photos/` were deleted. Plan and what is next: [plans/landing-upgrade.md](plans/landing-upgrade.md).
-- Edge Function caller checks, run against production: no token and the public anon key are both refused (401) by `optimize-route` and `send-notification`. Signed-in school admin and parent checks still open.
+- Edge Function caller checks, run against production with the demo school's parent, driver and school admin (sessions from admin-issued magic links, nothing written): 12 of 12 as expected. Anon key and no token are refused (401); every wrong-role call is refused (403); the school admin's proposal for their own bus returns 200.
 - Migration `0022` (`redeem_invite`) passes its SQL checks locally; not pushed to production yet.
 
 ## 2026-10-10: Legal and accessibility pass

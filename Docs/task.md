@@ -39,7 +39,7 @@ In rough priority order.
 
 - [ ] **Revoke the Mapbox secret token** in the Mapbox account (Tokens page). It sat in `app.json` and `eas.json` in the public repo from phase 7 until 2026-10-01, so it is still in git history. Nothing uses it any more.
 - [ ] `redeem_invite` (migration `0022`): the SQL checks pass locally and the migration is on production (confirmed 2026-10-23). Still to do: try one real invite end to end.
-- [ ] Edge Function caller checks: no token and the public anon key are refused (401) by both functions (checked on production 2026-10-22). Still to do: a signed-in school admin (own school allowed, another school refused) and a signed-in parent (`optimize-route` refused, `send-notification` only `eta_alert` for their own child).
+- [x] Edge Function caller checks, done on production 2026-10-23 with the demo school's accounts: no token and the anon key are refused (401); a parent, a driver and a school admin are refused (403) wherever they should be (parent and driver can't plan routes, nobody but the service role can send announcement pushes, a school admin can't plan another school, a parent can only ask for an `eta_alert` for their own child); a school admin can ask for a proposal for their own bus (200). 12 of 12 as expected.
 
 ### Store submission (Phase 12)
 
