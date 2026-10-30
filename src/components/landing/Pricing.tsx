@@ -21,7 +21,7 @@ const INCLUDED = [
 
 export function Pricing() {
   return (
-    <section id="pricing" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-20 sm:px-6 md:py-28">
+    <section id="pricing" className="mx-auto max-w-7xl 2xl:max-w-[88rem] scroll-mt-20 px-4 py-20 sm:px-6 md:py-28">
       <SectionHeading
         title="One product, priced by fleet size"
         intro="Every plan includes everything. Tell us how many buses you run and we’ll send you a quote."

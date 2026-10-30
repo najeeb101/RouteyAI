@@ -47,7 +47,7 @@ const APPS: {
 
 export function MobileAppsSection() {
   return (
-    <section id="apps" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-20 sm:px-6 md:py-28">
+    <section id="apps" className="mx-auto max-w-7xl 2xl:max-w-[88rem] scroll-mt-20 px-4 py-20 sm:px-6 md:py-28">
       <Reveal>
         <SectionHeading
           title="An app for every driver and every parent"

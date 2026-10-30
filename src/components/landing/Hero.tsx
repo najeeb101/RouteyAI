@@ -27,10 +27,10 @@ export function Hero() {
         <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-background to-transparent" />
       </div>
 
-      <div className="mx-auto grid w-full max-w-6xl items-center gap-12 px-4 pb-20 pt-28 sm:px-6 lg:min-h-[min(100svh,860px)] lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:pb-20 lg:pt-24">
-        <div className="max-w-[35rem]">
+      <div className="mx-auto grid w-full max-w-7xl 2xl:max-w-[88rem] items-center gap-12 px-4 pb-20 pt-28 sm:px-6 lg:min-h-[min(100svh,860px)] lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:pb-20 lg:pt-24">
+        <div className="max-w-[35rem] 2xl:max-w-[40rem]">
           <p className={`text-sm font-semibold text-white/80 ${fadeUp}`}>For schools in Qatar</p>
-          <h1 className="mt-4 font-display text-[2.6rem] font-bold leading-[1.02] tracking-[-0.03em] text-white sm:text-6xl lg:text-[4.1rem]">
+          <h1 className="mt-4 font-display text-[2.6rem] font-bold leading-[1.02] tracking-[-0.03em] text-white sm:text-6xl lg:text-[4.1rem] 2xl:text-[4.75rem]">
             <WordReveal text="Plan every school bus route. Track every bus live." delayMs={80} />
           </h1>
           <p

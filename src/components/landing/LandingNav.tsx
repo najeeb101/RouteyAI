@@ -57,7 +57,7 @@ export function LandingNav({ overlay = false }: { overlay?: boolean }) {
           : 'border-transparent bg-transparent'
       )}
     >
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4 sm:px-6 lg:h-[72px]">
+      <div className="mx-auto flex h-16 max-w-7xl 2xl:max-w-[88rem] items-center justify-between gap-3 px-4 sm:px-6 lg:h-[72px]">
         <Link href="/" onClick={close} className="flex items-center gap-2 rounded-md">
           <RouteyLogo size={28} variant={onHero ? 'white' : 'gradient'} />
           <span className={cn('font-display text-lg font-bold tracking-tight', onHero ? 'text-white' : 'text-foreground')}>

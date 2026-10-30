@@ -31,7 +31,7 @@ const RUNS: { name: string; summary: string; moments: Moment[] }[] = [
 
 export function DayOnTheBus() {
   return (
-    <section id="day" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-20 sm:px-6 md:py-28">
+    <section id="day" className="mx-auto max-w-7xl 2xl:max-w-[88rem] scroll-mt-20 px-4 py-20 sm:px-6 md:py-28">
       <Reveal>
         <SectionHeading
           title="Two runs every school day, and a parent knows each step"
