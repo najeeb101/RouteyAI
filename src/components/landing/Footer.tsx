@@ -19,7 +19,7 @@ const linkClass = 'text-sm text-slate-400 transition-colors hover:text-white'
 
 export function Footer() {
   return (
-    <footer className="border-t border-white/[0.06] bg-brand-ink pb-10 pt-16 md:pt-20">
+    <footer className="border-t border-white/[0.06] bg-brand-ink pb-8 pt-12 md:pt-16">
       <div className="mx-auto max-w-7xl 2xl:max-w-[88rem] px-4 sm:px-6">
         <div className="mb-14 grid grid-cols-2 gap-10 lg:grid-cols-4">
           <div className="col-span-2 lg:col-span-1">

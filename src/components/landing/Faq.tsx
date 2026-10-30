@@ -55,7 +55,7 @@ export function Faq() {
     <section id="faqs" className="scroll-mt-20 border-t border-border bg-muted/60">
       <Reveal className="mx-auto flex max-w-7xl 2xl:max-w-[88rem] flex-col gap-10 px-4 py-20 sm:px-6 md:flex-row md:gap-16 md:py-28">
         <div className="shrink-0 md:sticky md:top-28 md:w-[36%] md:self-start">
-          <h2 className="font-display text-[2rem] font-bold leading-[1.08] tracking-[-0.025em] text-foreground md:text-5xl">
+          <h2 className="font-display text-[1.75rem] font-bold leading-[1.08] tracking-[-0.025em] text-foreground md:text-4xl lg:text-[2.6rem]">
             Common questions
           </h2>
           <p className="mt-4 text-base leading-relaxed text-muted-foreground">

@@ -22,17 +22,17 @@ export function SectionHeading({
   className?: string
 }) {
   return (
-    <div className={cn('mb-12 max-w-2xl md:mb-16', className)}>
+    <div className={cn('mb-8 max-w-2xl md:mb-12', className)}>
       <h2
         className={cn(
-          'max-w-[34rem] font-display text-[2rem] font-bold leading-[1.08] tracking-[-0.025em] md:text-5xl',
+          'max-w-[34rem] font-display text-[1.75rem] font-bold leading-[1.08] tracking-[-0.025em] md:text-4xl lg:text-[2.6rem]',
           inverted ? 'text-white' : 'text-foreground'
         )}
       >
         {typeof title === 'string' ? noOrphan(title) : title}
       </h2>
       {intro && (
-        <p className={cn('mt-4 text-base leading-relaxed md:text-lg', inverted ? 'text-white/80' : 'text-muted-foreground')}>
+        <p className={cn('mt-3 text-base leading-relaxed', inverted ? 'text-white/80' : 'text-muted-foreground')}>
           {intro}
         </p>
       )}

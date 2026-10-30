@@ -47,7 +47,7 @@ const APPS: {
 
 export function MobileAppsSection() {
   return (
-    <section id="apps" className="mx-auto max-w-7xl 2xl:max-w-[88rem] scroll-mt-20 px-4 py-20 sm:px-6 md:py-28">
+    <section id="apps" className="mx-auto max-w-7xl 2xl:max-w-[88rem] scroll-mt-20 px-4 py-14 sm:px-6 md:py-20">
       <Reveal>
         <SectionHeading
           title="An app for every driver and every parent"
@@ -55,7 +55,7 @@ export function MobileAppsSection() {
         />
       </Reveal>
 
-      <div className="space-y-24 md:space-y-28">
+      <div className="space-y-16 md:space-y-20">
         {APPS.map((app, i) => (
           <div key={app.role} className="grid items-center gap-12 lg:grid-cols-2 lg:gap-20">
             <div className={cn(i % 2 === 1 && 'lg:order-2')}>
@@ -63,7 +63,7 @@ export function MobileAppsSection() {
             </div>
             <Reveal delay={0.1} className={cn(i % 2 === 1 && 'lg:order-1')}>
               <p className="text-sm font-semibold text-primary">{app.role}</p>
-              <h3 className="mt-3 max-w-md font-display text-[1.75rem] font-bold leading-[1.12] tracking-[-0.02em] text-foreground md:text-4xl">
+              <h3 className="mt-3 max-w-md font-display text-[1.5rem] font-bold leading-[1.12] tracking-[-0.02em] text-foreground md:text-3xl">
                 {noOrphan(app.title)}
               </h3>
               <p className="mt-4 max-w-md text-base leading-relaxed text-muted-foreground md:text-lg">{app.desc}</p>

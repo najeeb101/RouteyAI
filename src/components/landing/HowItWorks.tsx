@@ -70,11 +70,11 @@ export function HowItWorks() {
 
   return (
     <section id="how-it-works" className="scroll-mt-20 border-y border-border bg-muted/60">
-      <div className="mx-auto max-w-7xl 2xl:max-w-[88rem] px-4 py-20 sm:px-6 md:py-28">
+      <div className="mx-auto max-w-7xl 2xl:max-w-[88rem] px-4 py-14 sm:px-6 md:py-20">
         <SectionHeading title="From a list of addresses to buses on the road" intro="Four steps to your first school day." />
 
         <div className="grid gap-10 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-16">
-          <ol className="lg:py-[16vh]">
+          <ol className="lg:py-[8vh]">
             {STEPS.map((step, i) => (
               <li
                 key={step.title}
@@ -83,7 +83,7 @@ export function HowItWorks() {
                   stepRefs.current[i] = el
                 }}
                 className={cn(
-                  'flex gap-5 py-4 transition-opacity duration-500 lg:min-h-[44vh] lg:items-center lg:py-0',
+                  'flex gap-5 py-4 transition-opacity duration-500 lg:min-h-[30vh] lg:items-center lg:py-0',
                   stage === i ? 'opacity-100' : 'opacity-100 lg:opacity-35'
                 )}
               >
@@ -97,7 +97,7 @@ export function HowItWorks() {
                     {i + 1}
                   </span>
                   <div className="pt-1">
-                    <h3 className="font-display text-xl font-bold tracking-tight text-foreground md:text-2xl">{step.title}</h3>
+                    <h3 className="font-display text-lg font-bold tracking-tight text-foreground md:text-xl">{step.title}</h3>
                     <p className="mt-2 max-w-md text-[15px] leading-relaxed text-muted-foreground md:text-base">{step.desc}</p>
                   </div>
                 </div>
