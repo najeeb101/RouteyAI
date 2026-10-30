@@ -13,6 +13,7 @@ Start here. The project's main idea, in one line: **every bus does a morning run
 | [task.md](task.md) | The live checklist: status by phase and the open work in priority order |
 | [CHANGELOG.md](CHANGELOG.md) | The engineering log: dated notes on what was built, decided and learned |
 | [store-listing.md](store-listing.md) | App Store and Google Play listing text, review notes and privacy answers |
+| [idea-council-evaluation.md](idea-council-evaluation.md) | Market, competitor and pricing research from an independent evaluation of the idea, and the next test to run (2026-10-30) |
 
 ## Plans
 
