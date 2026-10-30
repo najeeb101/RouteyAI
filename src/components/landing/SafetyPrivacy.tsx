@@ -30,7 +30,7 @@ const POINTS: { icon: LucideIcon; title: string; desc: string }[] = [
 export function SafetyPrivacy() {
   return (
     <section id="safety" className="relative isolate scroll-mt-20 overflow-hidden bg-brand-ink">
-      <div className="relative mx-auto max-w-6xl px-4 py-20 sm:px-6 lg:py-28">
+      <div className="relative mx-auto max-w-7xl 2xl:max-w-[88rem] px-4 py-20 sm:px-6 lg:py-28">
         <div>
           <Reveal>
             <SectionHeading inverted title="Student data stays private" intro="Everyone sees only what they need for their role." />

@@ -60,6 +60,7 @@ const config: Config = {
   				DEFAULT: 'hsl(var(--brand))',
   				ink: 'hsl(var(--brand-ink))',
   				pressed: '#172E6E',
+  				bright: '#2563EB',
   				tint: 'rgba(30, 58, 138, 0.08)',
   				'tint-pressed': 'rgba(30, 58, 138, 0.14)'
   			},

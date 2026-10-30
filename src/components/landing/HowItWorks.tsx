@@ -70,7 +70,7 @@ export function HowItWorks() {
 
   return (
     <section id="how-it-works" className="scroll-mt-20 border-y border-border bg-muted/60">
-      <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 md:py-28">
+      <div className="mx-auto max-w-7xl 2xl:max-w-[88rem] px-4 py-20 sm:px-6 md:py-28">
         <SectionHeading title="From a list of addresses to buses on the road" intro="Four steps to your first school day." />
 
         <div className="grid gap-10 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-16">
