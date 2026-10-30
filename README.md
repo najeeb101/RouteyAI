@@ -4,6 +4,8 @@
 
 **Website:** [routeyai.vercel.app](https://routeyai.vercel.app)
 
+[![The RouteyAI landing page: "Plan every school bus route. Track every bus live." beside the driver and parent apps](Docs/screenshots/landing.png)](https://routeyai.vercel.app)
+
 ---
 
 ## What is RouteyAI?
@@ -168,7 +170,7 @@ RouteyAI/
 ├── mobile/                  # Phone app for drivers and parents (Expo)
 ├── deck/                    # Pitch deck (HTML, open deck/index.html)
 ├── supabase/
-│   ├── migrations/          # Database changes, in order (0001 to 0020)
+│   ├── migrations/          # Database changes, in order (0001 to 0022)
 │   ├── functions/           # Server functions: route planning, push notifications
 │   └── seed.sql             # Sample data for local testing
 └── Docs/                    # Project documentation
