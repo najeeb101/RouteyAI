@@ -40,11 +40,6 @@ export function LandingNav({ overlay = false }: { overlay?: boolean }) {
 
   const close = () => setMenuOpen(false)
   const solid = !overlay || scrolled || menuOpen
-  // Floating over the hero's blue: white text until the bar gets its own background.
-  const onHero = !solid
-  const linkClass = onHero
-    ? 'text-white/85 hover:bg-white/10 hover:text-white'
-    : 'text-foreground/75 hover:bg-foreground/[0.06] hover:text-foreground'
 
   return (
     <nav
@@ -59,9 +54,9 @@ export function LandingNav({ overlay = false }: { overlay?: boolean }) {
     >
       <div className="mx-auto flex h-16 max-w-7xl 2xl:max-w-[88rem] items-center justify-between gap-3 px-4 sm:px-6 lg:h-[72px]">
         <Link href="/" onClick={close} className="flex items-center gap-2 rounded-md">
-          <RouteyLogo size={28} variant={onHero ? 'white' : 'gradient'} />
-          <span className={cn('font-display text-lg font-bold tracking-tight', onHero ? 'text-white' : 'text-foreground')}>
-            Routey<span className={onHero ? 'text-white/70' : 'text-primary'}>AI</span>
+          <RouteyLogo size={28} variant="gradient" />
+          <span className="font-display text-lg font-bold tracking-tight text-foreground">
+            Routey<span className="text-primary">AI</span>
           </span>
         </Link>
 
@@ -70,7 +65,7 @@ export function LandingNav({ overlay = false }: { overlay?: boolean }) {
             <a
               key={link.href}
               href={link.href}
-              className={cn('rounded-full px-3.5 py-2 text-sm font-medium transition-colors', linkClass)}
+              className="rounded-full px-3.5 py-2 text-sm font-medium text-foreground/75 transition-colors hover:bg-foreground/[0.06] hover:text-foreground"
             >
               {link.label}
             </a>
@@ -78,19 +73,16 @@ export function LandingNav({ overlay = false }: { overlay?: boolean }) {
         </div>
 
         <div className="flex items-center gap-1.5 sm:gap-2">
-          <ThemeButton className={cn('hidden sm:flex', linkClass)} />
+          <ThemeButton className="hidden sm:flex" />
           <Link
             href="/login"
-            className={cn('hidden rounded-full px-3.5 py-2 text-sm font-medium transition-colors sm:block', linkClass)}
+            className="hidden rounded-full px-3.5 py-2 text-sm font-medium text-foreground/75 transition-colors hover:bg-foreground/[0.06] hover:text-foreground sm:block"
           >
             Log in
           </Link>
           <a
             href="/#demo"
-            className={cn(
-              'whitespace-nowrap rounded-full px-4 py-2.5 text-sm font-semibold transition-[transform,background-color] duration-200 active:scale-[0.98] sm:px-5',
-              onHero ? 'bg-white text-brand hover:bg-white/90' : 'bg-primary text-primary-foreground hover:bg-primary/90'
-            )}
+            className="whitespace-nowrap rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-[transform,background-color] duration-200 hover:bg-primary/90 active:scale-[0.98] sm:px-5"
           >
             Book a demo
           </a>
@@ -100,10 +92,7 @@ export function LandingNav({ overlay = false }: { overlay?: boolean }) {
             aria-label={menuOpen ? 'Close menu' : 'Open menu'}
             aria-expanded={menuOpen}
             aria-controls="mobile-menu"
-            className={cn(
-              'flex h-10 w-10 items-center justify-center rounded-full transition-colors lg:hidden',
-              onHero ? 'text-white hover:bg-white/10' : 'text-foreground hover:bg-foreground/[0.06]'
-            )}
+            className="flex h-10 w-10 items-center justify-center rounded-full text-foreground transition-colors hover:bg-foreground/[0.06] lg:hidden"
           >
             {menuOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
