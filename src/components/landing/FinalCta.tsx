@@ -17,7 +17,7 @@ export function FinalCta() {
       <span aria-hidden="true" className="absolute -bottom-40 left-1/3 -z-10 h-96 w-96 rounded-full bg-white/[0.04]" />
       <span aria-hidden="true" className="absolute right-8 top-8 -z-10 hidden h-10 w-10 rounded-full bg-warning lg:block" />
       <span aria-hidden="true" className="absolute right-24 top-8 -z-10 hidden h-10 w-10 rounded-full bg-accent lg:block" />
-      <div className="mx-auto grid max-w-7xl 2xl:max-w-[88rem] items-start gap-12 px-4 py-20 sm:px-6 md:py-28 lg:grid-cols-[1fr_1.1fr] lg:gap-16">
+      <div className="mx-auto grid max-w-7xl 2xl:max-w-[88rem] items-start gap-12 px-4 py-14 sm:px-6 md:py-20 lg:grid-cols-[1fr_1.1fr] lg:gap-16">
         <Reveal>
           <SectionHeading
             inverted

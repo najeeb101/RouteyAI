@@ -15,7 +15,7 @@ import { ParentAppScreen } from '@/components/landing/ParentAppScreen'
 export function HeroPhones() {
   const { desktop, ready } = useHeroState()
   return (
-    <div className="relative mx-auto flex h-[37rem] w-full max-w-[24rem] justify-center lg:h-[40rem] lg:max-w-none lg:justify-end">
+    <div className="relative mx-auto flex h-[37rem] w-full max-w-[24rem] justify-center lg:h-[40rem] lg:ml-auto lg:mr-0 lg:max-w-[35rem] lg:justify-end lg:[zoom:0.85]">
       {ready && desktop && (
         <div className="absolute left-[2%] top-16 -rotate-3 animate-fade-up motion-reduce:animate-none" style={{ animationDelay: '200ms' }}>
           <DriverAppScreen />
